@@ -1,13 +1,10 @@
 import React from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter  } from 'expo-router';
 const productImage = require('../../../assets/images/1.jpg');
 const pro = require('../../../assets/images/2.jpg');
 const pae = require('../../../assets/images/3.jpg');
 const ur = require('../../../assets/images/4.jpg');
-
-
-
 
 const products = [
   { id: '1', name: 'Shopping bag', category: 'Basic', price: '$23.45', image: productImage },
@@ -19,9 +16,9 @@ const products = [
 const ProductDetail = () => {
   const { id } = useLocalSearchParams();
   console.log(id);
+  const router = useRouter();
   
   const item = products.find((x) => x.id === id);
-
   console.log(item);
   
 
@@ -69,9 +66,20 @@ const ProductDetail = () => {
         </View>
 
         {/* Add to Cart Button */}
-        <TouchableOpacity style={styles.addToCartButton}>
-          <Text style={styles.addToCartText}>Add to Cart</Text>
-        </TouchableOpacity>
+<TouchableOpacity
+  className="bg-blue-600 px-4 py-2 rounded-full"
+  onPress={() => {
+    router.push({
+      pathname: '/Basket',
+      params: {
+        namee: item.name,
+        price: item.price,
+      },
+    });
+  }}
+>
+  <Text className="text-white text-center font-semibold">Add to Cart</Text>
+</TouchableOpacity>
       </View>
     </ScrollView>
   );

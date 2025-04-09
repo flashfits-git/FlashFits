@@ -14,6 +14,13 @@ const products = [
   { id: '2', name: 'Warning T-shirt', category: 'Basic', price: '$23.45', image: pro },
   { id: '3', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
   { id: '4', name: 'Black T-shirt', category: 'Basic', price: '$23.45', image: ur },
+  { id: '5', name: 'Black T-shirt', category: 'Basic', price: '$23.45', image: ur },
+  { id: '6', name: 'Black T-shirt', category: 'Basic', price: '$23.45', image: ur },
+  { id: '7', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
+  { id: '3', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
+  { id: '3', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
+  { id: '3', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
+  { id: '3', name: 'Sneakers', category: 'Basic', price: '$23.45', image: pae },
 ];
 
 const PopularProducts = () => {
