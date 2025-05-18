@@ -1,18 +1,25 @@
-import { View, Text, FlatList, TouchableOpacity, Image, StyleSheet, ScrollView,Animated, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Platform,
+} from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
-import { Ionicons, Feather } from '@expo/vector-icons'; 
 import { useNavigation } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
-
-
 
 const Categories = () => {
   const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
   const [selectedSideCategory, setSelectedSideCategory] = useState('1');
-    const navigation = useNavigation();
-    const scrollOffset = useRef(new Animated.Value(0)).current;
-    const currentOffset = useRef(0);
-    const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const navigation = useNavigation();
+  const scrollOffset = useRef(new Animated.Value(0)).current;
+  const currentOffset = useRef(0);
+  const [isTabBarVisible, setIsTabBarVisible] = useState(true);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
@@ -23,9 +30,6 @@ const Categories = () => {
         navigation.setOptions({
           tabBarStyle: {
             position: 'absolute',
-            // bottom: 3,
-            // marginLeft: 12,
-            // marginRight: 12,
             height: Platform.OS === 'ios' ? 70 : 70,
             backgroundColor: '#fff',
             borderTopLeftRadius: 30,
@@ -36,8 +40,6 @@ const Categories = () => {
             shadowRadius: 10,
             elevation: 5,
             paddingTop: Platform.OS === 'ios' ? 18 : 10,
-            // margin: 8,
-           
           },
         });
       } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
@@ -53,8 +55,6 @@ const Categories = () => {
       scrollOffset.removeListener(listener);
     };
   }, []);
-
-
 
   const mainCategories = [
     { id: 'mens', name: 'MENS', image: require('../../assets/images/3.jpg') },
@@ -93,33 +93,57 @@ const Categories = () => {
 
   const products = {
     '1': [
-      { id: 'p1', title: 'boAt Stone 135 BT Speaker', price: 899, oldPrice: 1990, discount: '54%', image: require('../../assets/images/3.jpg') },
-      { id: 'p2', title: 'Dell WM118 Optical Mouse', price: 649, oldPrice: 1299, discount: '50%', image: require('../../assets/images/4.jpg') },
+      {
+        id: 'p1',
+        title: 'Jeans',
+        image: require('../../assets/images/3.jpg'),
+      },
+      {
+        id: 'p2',
+        title: 'Jeans',
+        image: require('../../assets/images/3.jpg'),
+      },
     ],
     '2': [
-      { id: 'p3', title: 'Kitchen Knife Set', price: 499, oldPrice: 999, discount: '50%', image: require('../../assets/images/2.jpg') },
+      {
+        id: 'p3',
+        title: 'Jeans',
+        image: require('../../assets/images/3.jpg'),
+      },
     ],
     '5': [
-      { id: 'p4', title: 'Women Dress', price: 1499, oldPrice: 2999, discount: '50%', image: require('../../assets/images/2.jpg') },
+      {
+        id: 'p4',
+        title: 'Jeans',
+        image: require('../../assets/images/3.jpg'),
+      },
     ],
     '9': [
-      { id: 'p5', title: 'Boys T-Shirt', price: 399, oldPrice: 799, discount: '50%', image: require('../../assets/images/2.jpg') },
+      {
+        id: 'p5',
+        title: 'Jeans',
+        image: require('../../assets/images/3.jpg'),
+      },
     ],
   };
 
   return (
     <>
       <CategoryTitleBar />
-      
+
       {/* Main Categories Bar */}
       <View style={styles.categoryBarContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScrollContent}
+        >
           {mainCategories.map((cat) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={cat.id}
               style={[
                 styles.mainCategoryButton,
-                selectedMainCategory === cat.id && { borderColor: '#bbdcff' }
+                selectedMainCategory === cat.id && { borderColor: '#bbdcff' },
               ]}
               onPress={() => {
                 setSelectedMainCategory(cat.id);
@@ -138,13 +162,16 @@ const Categories = () => {
       <View style={styles.container}>
         {/* Sidebar */}
         <ScrollView style={styles.sidebar} contentContainerStyle={{ alignItems: 'center' }}>
-          <View style={{ width: '100%', padding: 3, }}>
+          <View style={{ width: '100%', padding: 3 }}>
             {(sideCategories[selectedMainCategory] || []).map((cat) => (
-              <TouchableOpacity 
-                key={cat.id} 
+              <TouchableOpacity
+                key={cat.id}
                 style={[
                   styles.sideCategoryButton,
-                  selectedSideCategory === cat.id && { backgroundColor: '#e8f8ff', borderRadius: 10 }
+                  selectedSideCategory === cat.id && {
+                    backgroundColor: '#e8f8ff',
+                    borderRadius: 10,
+                  },
                 ]}
                 onPress={() => setSelectedSideCategory(cat.id)}
               >
@@ -155,50 +182,45 @@ const Categories = () => {
         </ScrollView>
 
         {/* Products */}
-        <View style={styles.productsContainer}>
-          <FlatList
-            data={products[selectedSideCategory] || []}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            renderItem={({ item }) => (
-              <View style={styles.productCard}>
-                <Image source={item.image} style={styles.productImage} />
-                <Text style={styles.productTitle} numberOfLines={2}>{item.title}</Text>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.price}>₹{item.price}</Text>
-                  <Text style={styles.oldPrice}>₹{item.oldPrice}</Text>
-                </View>
-                <View style={styles.discountTag}>
-                  <Text style={styles.discountText}>{item.discount} OFF</Text>
-                </View>
-              </View>
-            )}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
+<View style={styles.productsContainer}>
+  <FlatList
+    data={products[selectedSideCategory] || []}
+    keyExtractor={(item) => item.id}
+    numColumns={2}
+    renderItem={({ item }) => (
+      <TouchableOpacity
+        style={styles.productCard}
+        onPress={() => navigation.navigate('(stack)/SelectionPage')}
+      >
+        <Image source={item.image} style={styles.productImage} />
+        <Text style={styles.productTitle} numberOfLines={2}>
+          {item.title}
+        </Text>
+      </TouchableOpacity>
+    )}
+    showsVerticalScrollIndicator={false}
+  />
+</View>
       </View>
     </>
   );
 };
-
-export default Categories;
-
 const styles = StyleSheet.create({
   container: {
     flex: 3,
     flexDirection: 'row',
   },
   sidebar: {
-    flex: 1,   // <-- 1 part
+    flex: 1,
     backgroundColor: '#fff',
   },
   sideCategoryButton: {
     width: '100%',
-    height: 60,         // ⭐️ Increase height (try 50, or 60 if you want bigger)
+    height: 60,
     paddingHorizontal: 10,
-    justifyContent: 'center',  // ⭐️ Center the text vertically inside
-    alignItems: 'flex-start',  // ⭐️ Align text to left
-    marginBottom: 5,           // Optional spacing between items
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 5,
   },
   sideCategoryText: {
     fontSize: 14,
@@ -207,7 +229,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   productsContainer: {
-    flex:2.3,   // <-- 3 parts
+    flex: 2.3,
     backgroundColor: '#fff',
   },
   productCard: {
@@ -215,57 +237,40 @@ const styles = StyleSheet.create({
     margin: 5,
     backgroundColor: '#fafafa',
     borderRadius: 8,
-    padding: 10,
+    padding: 2, // 👈 Updated padding
     position: 'relative',
+    alignItems: 'center', // 👈 Ensure image is centered
+    justifyContent: 'center',
+    overflow: 'hidden', // 👈 Ensures image corners stay inside card
   },
   productImage: {
     width: '100%',
-    height: 100,
+    height: 140,
     resizeMode: 'contain',
-    marginBottom: 10,
-  },
-  productTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  price: {
-    fontWeight: 'bold',
-    color: 'black',
-    marginRight: 5,
-  },
-  oldPrice: {
-    textDecorationLine: 'line-through',
-    color: 'grey',
-    fontSize: 10,
-  },
-  discountTag: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'orange',
-    paddingHorizontal: 4,
-    borderRadius: 3,
-  },
-  discountText: {
-    fontSize: 10,
-    color: '#fff',
+    borderRadius: 20, // 👈 Rounded corners
+    paddingLeft:6,
+    paddingRight:6
   },
   categoryBarContainer: {
-    height: 100,
+    height: 110,
     backgroundColor: '#ffffff',
     paddingHorizontal: 10,
     paddingTop: 10,
     elevation: 3,
     zIndex: 10,
   },
+productTitle: {
+  fontSize: 13,
+  fontWeight: '600',
+  color: '#1a1a1a',
+  textAlign: 'center',
+  marginBottom: 10,
+  paddingHorizontal: 6,
+  lineHeight: 18,
+  textTransform: 'capitalize',
+},
   categoryScrollContent: {
     alignItems: 'center',
-    paddingRight: 40,
   },
   mainCategoryButton: {
     alignItems: 'center',
@@ -275,8 +280,8 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
   },
   mainCategoryImage: {
-    width: 50,
-    height: 50,
+    width: 70,
+    height: 70,
     borderRadius: 10,
     marginBottom: 5,
     resizeMode: 'cover',
@@ -286,3 +291,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+
+export default Categories;

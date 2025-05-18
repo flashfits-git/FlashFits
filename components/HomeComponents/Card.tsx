@@ -1,83 +1,102 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import jfrnfr from '../../assets/images/2.jpg'
-import fmg from '../../assets/images/4.jpg'
+import jfrnfr from '../../assets/images/2.jpg';
+import fmg from '../../assets/images/4.jpg';
+import { useNavigation } from 'expo-router';
 
+// Dummy Data
+const dressData = [
+  {
+    image: jfrnfr,
+    title: "Yellow Quirky Fit Flare Maxi Dress",
+    price: "1299",
+    oldPrice: "1379",
+    discount: "6%",
+    rating: "4.7",
+    delivery: "5 - 6 Days",
+    offerPrice: "1174",
+  },
+  {
+    image: fmg,
+    title: "Yellow Bodycon Maxi Dress",
+    price: "1349",
+    oldPrice: "1459",
+    discount: "8%",
+    rating: "4.6",
+    delivery: null,
+    offerPrice: "1224",
+  },
+];
 
-
+// DressCard Component
 const DressCard = ({ image, title, price, oldPrice, discount, rating, delivery, offerPrice }) => {
   return (
     <View style={styles.card}>
-<View style={styles.imageWrapper}>
-  <Image source={image} style={styles.image} />
-  <View style={styles.ratingContainer}>
-    <Text style={styles.star}>★</Text>
-    <Text style={styles.rating}>{rating}</Text>
-  </View>
-</View>
-        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-        {title}
-        </Text>
+      <View style={styles.imageWrapper}>
+        <Image source={image} style={styles.image} />
+        <View style={styles.ratingContainer}>
+          <Text style={styles.star}>★</Text>
+          <Text style={styles.rating}>{rating}</Text>
+        </View>
+      </View>
+      <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
       <View style={styles.priceRow}>
         <Text style={styles.price}>₹{price}</Text>
         <Text style={styles.oldPrice}>₹{oldPrice}</Text>
         <Text style={styles.discount}>{discount} off</Text>
       </View>
-      <Text style={styles.offerText}>Get it at ₹{offerPrice}<Text style={styles.code}> with <Text style={styles.codeBold}>frst15</Text></Text></Text>
+      <Text style={styles.offerText}>
+        Get it at ₹{offerPrice}
+        <Text style={styles.code}> with <Text style={styles.codeBold}>frst15</Text></Text>
+      </Text>
     </View>
   );
 };
 
+// Main Card List Component
 export default function Card() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.container}>
-      <DressCard
-        image= {jfrnfr}
-        title="Yellow Quirky Fit Flare Maxi Dress"
-        price="1299"
-        oldPrice="1379"
-        discount="6%"
-        rating="4.7"
-        delivery="5 - 6 Days"
-        offerPrice="1174"
-      />
-      <DressCard
-        image= {fmg}
-        title="Yellow Bodycon Maxi Dress"
-        price="1349"
-        oldPrice="1459"
-        discount="8%"
-        rating="4.6"
-        delivery={null}
-        offerPrice="1224"
-      />
+      {dressData.map((item, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.touchable}
+          onPress={() => navigation.navigate('(stack)/ProductDetail/productdetailpage ')}
+        >
+          <DressCard {...item} />
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     padding: 10,
     justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  touchable: {
+    width: '48%',
+    marginBottom: 10,
   },
   card: {
-    width: '48%',
     backgroundColor: '#fff',
     borderRadius: 10,
-    backgroundColor:'white'
   },
   imageWrapper: {
     position: 'relative',
   },
-
   image: {
     height: 250,
     width: '100%',
-    borderRadius:10,
+    borderRadius: 10,
     resizeMode: 'cover',
   },
-  
   ratingContainer: {
     position: 'absolute',
     bottom: 8,
@@ -97,7 +116,7 @@ const styles = StyleSheet.create({
   star: {
     fontSize: 10,
     color: '#FFD700',
-    padding:2
+    padding: 2,
   },
   rating: {
     fontSize: 12,
@@ -140,17 +159,5 @@ const styles = StyleSheet.create({
   },
   codeBold: {
     fontWeight: 'bold',
-  },
-  delivery: {
-    fontSize: 12,
-    color: '#f4a300',
-    marginTop: 6,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#800000',
-    marginTop: 8,
   },
 });
