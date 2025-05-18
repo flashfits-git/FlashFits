@@ -4,279 +4,217 @@ import {
   View,
   TextInput,
   Animated,
-  TextInputBase,
-  FlatList,
+  Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState, useRef, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
+// import PopularProducts from '../../components/HomeComponents/PopularProducts'; // Fixed typo
+import PopupCart from '../../components/HomeComponents/PopupCart';
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
+import Card from '../../components/HomeComponents/Card'
+import Carousel from '@/components/HomeComponents/Carousel';
+import Banner from '@/components/HomeComponents/Banner';
+import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
+import SearchCartProfileButton  from '../../components/FlexibleComponents/SearchCartProfileButton';
 
-import Category from '../../components/HomeComponents/Category';
-import PopularProducts from '../../components/HomeComponents/PopulatProducts';
-import PopupCart from '../../components/CartComponents/PopupCart';
+
+// import TitleCard from '@/components/HomeComponents/TitleCard'
+
+
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation();
   const scrollOffset = useRef(new Animated.Value(0)).current;
-  // console.log(scrollOffset);
-
   const currentOffset = useRef(0);
-  // console.log(currentOffset);
-  const isScrollingDown = useRef(false);
-  console.log("hi",isScrollingDown);
-  
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
-  // const [scroll, setScroll] = useEffect(false)
-
-  // useEffect(() => {
-  //   const listener = scrollOffset.addListener(({ value }) => { 
-  //     if (value <= currentOffset.current && !isScrollingDown.current) {    
-  //       isScrollingDown.current = true;
-  //       setIsTabBarVisible(false);
-  //       navigation.setOptions({
-  //         tabBarStyle: { display: 'none' },
-  //       });
-  //     } else if (value > currentOffset.current && isScrollingDown.current) {
-  //       isScrollingDown.current = false;
-  //       setIsTabBarVisible(true);
-  //       navigation.setOptions({
-  //         tabBarStyle: {
-  //           position: 'absolute',
-  //           bottom: 0,
-  //           left: 20,
-  //           right: 20,
-  //           height: 70,
-  //           backgroundColor: '#fff',
-  //           borderRadius: 16,
-  //           shadowColor: '#000',
-  //           shadowOffset: { width: 0, height: 5 },
-  //           shadowOpacity: 0.1,
-  //           shadowRadius: 10,
-  //           elevation: 5,
-  //           paddingTop: 10,
-  //         },
-  //       });
-  //     }
-  //     currentOffset.current = value;
-  //   });
-
-  //   return () => {
-  //     scrollOffset.removeListener(listener);
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   const listener = scrollOffset.addListener(({ value }) => {
-  //     // SCROLLING DOWN → HIDE TAB BAR
-  //     if (value > currentOffset.current + 5) {
-  //       setIsTabBarVisible(false);
-  //       navigation.setOptions({
-  //         tabBarStyle: { display: 'none' },
-  //       });
-  //     }
-  
-  //     // SCROLLING UP → SHOW TAB BAR
-  //     else if (value < currentOffset.current - 5) {
-  //       setIsTabBarVisible(true);
-  //       navigation.setOptions({
-  //         tabBarStyle: {
-  //           position: 'absolute',
-  //           bottom: 0,
-  //           left: 20,
-  //           right: 20,
-  //           height: 70,
-  //           backgroundColor: '#fff',
-  //           borderRadius: 16,
-  //           shadowColor: '#000',
-  //           shadowOffset: { width: 0, height: 5 },
-  //           shadowOpacity: 0.1,
-  //           shadowRadius: 10,
-  //           elevation: 5,
-  //           paddingTop: 10,
-  //         },
-  //       });
-  //     }
-  
-  //     currentOffset.current = value;
-  //   });
-  
-  //   return () => {
-  //     scrollOffset.removeListener(listener);
-  //   };
-  // }, []);
-  
-
-  
-  // useEffect(() => {
-  //   const listener = scrollOffset.addListener(({ value }) => {
-  //     // SCROLLING UP (user dragging content down)
-  //     if (value < currentOffset.current - 5) {
-  //       setIsTabBarVisible(true);
-  //       navigation.setOptions({
-  //         tabBarStyle: {
-  //           position: 'absolute',
-  //           bottom: 0,
-  //           left: 20,
-  //           right: 20,
-  //           height: 70,
-  //           backgroundColor: '#fff',
-  //           borderRadius: 16,
-  //           shadowColor: '#000',
-  //           shadowOffset: { width: 0, height: 5 },
-  //           shadowOpacity: 0.1,
-  //           shadowRadius: 10,
-  //           elevation: 5,
-  //           paddingTop: 10,
-  //         },
-  //       });
-  //     }
-  
-  //     // SCROLLING DOWN (user dragging content up)
-  //     else if (value > currentOffset.current + 5) {
-  //       setIsTabBarVisible(false);
-  //       navigation.setOptions({
-  //         tabBarStyle: { display: 'none' },
-  //       });
-  //     }
-  
-  //     // Update current offset for next comparison
-  //     currentOffset.current = value;
-  //   });
-  
-  //   return () => {
-  //     scrollOffset.removeListener(listener);
-  //   };
-  // }, []);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
-      // Prevent negative scroll values
       const clampedValue = Math.max(0, value);
-  
-      // SCROLLING UP (user dragging content down)
+
       if (clampedValue < currentOffset.current - 5) {
         setIsTabBarVisible(true);
         navigation.setOptions({
           tabBarStyle: {
             position: 'absolute',
-            bottom: 0,
-            left: 20,
-            right: 20,
-            height: 70,
+            // bottom: 3,
+            // marginLeft: 12,
+            // marginRight: 12,
+            height: Platform.OS === 'ios' ? 70 : 70,
             backgroundColor: '#fff',
-            borderRadius: 16,
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 5 },
             shadowOpacity: 0.1,
             shadowRadius: 10,
             elevation: 5,
-            paddingTop: 10,
+            paddingTop: Platform.OS === 'ios' ? 18 : 10,
+            // margin: 8,
+           
           },
         });
-      }
-  
-      // SCROLLING DOWN (user dragging content up),
-      // only hide tab bar if not at top of screen
-      else if (
-        clampedValue > currentOffset.current + 5 &&
-        clampedValue > 30 // Avoid hiding when near top or on initial load
-      ) {
+      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
         setIsTabBarVisible(false);
         navigation.setOptions({
           tabBarStyle: { display: 'none' },
         });
       }
-  
-      // Update current offset for next comparison
       currentOffset.current = clampedValue;
     });
-  
+
     return () => {
       scrollOffset.removeListener(listener);
     };
   }, []);
-  
-  
 
   return (
-    <View style={{ flex: 1 }}>
-      <LinearGradient
-        colors={['#f7f7f7a', '#f7f7f7']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
-        style={{ flex: 1 }}
-      >
-        {/* Header Section */}
-        <View className="flex-row items-center justify-between p-1">
-          <View className="flex-row items-center ml-2 p-2">
-            <View className="w-8 h-8 bg-white rounded-lg items-center justify-center mr-2">
-              <Ionicons name="location-outline" size={20} color="#6E4E37" />
+    <View style={styles.container}>
+
+
+        <Banner/>
+        <View style={styles.header}>
+          <View style={styles.locationWrapper}>
+            <View style={styles.locationIcon}>
+              <Ionicons name="location-outline" size={20} color="#091f5b" />
             </View>
-            <View className="w-[200px]">
-              <View className="flex-row items-center">
-                <Text
-                  className="text-base font-bold text-black mr-2 max-w-[200px]"
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
+            <View style={styles.locationTextWrapper}>
+              <View style={styles.locationRow}>
+                <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
                   New York, USA
                 </Text>
-                <Ionicons
-                  name="chevron-down-outline"
-                  size={16}
-                  color="black"
-                />
+                <Ionicons name="chevron-down-outline" size={16} color="black" />
               </View>
-              <Text
-                className="text-sm text-[#868c8f] leading-5"
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
+              <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
                 Explore trending styles around you!
               </Text>
             </View>
           </View>
-          <View className="justify-center items-center mr-5">
-            <Ionicons name="notifications-outline" size={30} color="#000" />
-          </View>
+        <View style={styles.notificationIcon}>
+<SearchCartProfileButton/>
         </View>
-
-        {/* Search Section */}
-        <View className="flex-row items-center mx-5 mb-2">
-          <View className="flex-row items-center bg-[#F0F0F0] rounded-xl px-3 h-11 flex-1">
-            <Ionicons name="search" size={20} color="#868c8f" />
-            <TextInput
-              placeholder="Search"
-              placeholderTextColor="#868c8f"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              className="flex-1 h-full text-sm text-black ml-2"
-            />
-          </View>
-          <View className="bg-[#7B4F32] rounded-xl p-2.5 ml-2">
-            <Ionicons name="git-branch-outline" size={24} color="#fff" />
-          </View>
         </View>
-
-        {/* FlatList with Scroll Listener */}
+        {/* List */}
         <Animated.FlatList
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
             { useNativeDriver: false }
           )}
           scrollEventThrottle={16}
-          ListHeaderComponent={<Category />}
-          ListFooterComponent={<View className="h-5" />}
+          ListHeaderComponent={
+            <>
+            <Carousel/>
+            <RecentlyViewed />
+            <ParentCategoryIndexing/>
+            </>
+          }
+          ListFooterComponent={<View style={{ height: 20 }} />}
           data={[{ key: 'popular-products' }]}
-          renderItem={() => <PopularProducts />}
+          renderItem={() =>
+            <>             
+            <Card/>            
+            </> 
+            }
           keyExtractor={(item) => item.key}
         />
-      </LinearGradient>
-
-      {/* PopupCart Positioned Above Bottom Tab */}
+      {/* </LinearGradient> */}
       <PopupCart isTabBarVisible={isTabBarVisible} />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor:'white'
+  },
+  gradient: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding:4,
+    height:70
+  },
+  locationWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 6,
+  },
+  locationIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  locationTextWrapper: {
+    paddingRight:14,
+    width: 200,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cityText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#091f5b',
+    marginRight: 8,
+    maxWidth: 200,
+  },
+  subText: {
+    fontSize: 12,
+    color: '#b4bcc4',
+    lineHeight: 20,
+  },
+  notificationIcon: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
+  },
+  
+  flx: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12, // Spacing between icons (alternative: use marginRight on icon)
+  },  
+  searchSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    marginBottom: 8,
+    padding: 10,
+    justifyContent: 'space-between',
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    height: 44,
+    flex: 1,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    fontSize: 14,
+    color: 'black',
+    marginLeft: 8,
+  },
+  filterButton: {
+    backgroundColor: '#a8cdff',
+    borderRadius: 16,
+    padding: 10,
+    marginLeft: 8,
+  },
+});
