@@ -63,7 +63,7 @@ export default function Card() {
         <TouchableOpacity
           key={index}
           style={styles.touchable}
-          onPress={() => navigation.navigate('(stack)/ProductDetail/productdetailpage ')}
+          onPress={() => navigation.navigate('(stack)/ProductDetail/productdetailpage')}
         >
           <DressCard {...item} />
         </TouchableOpacity>
