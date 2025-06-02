@@ -55,18 +55,24 @@ const SlideToPay = ({ label, onComplete }: { label: string; onComplete: () => vo
 
   return (
     <View style={styles.slideToPayContainer}>
-      <View style={styles.slideTrack}>
-        <Animated.View
-          style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-          {...panResponder.panHandlers}
-        >
-          <View style={styles.slideArrows}>
-            <Ionicons name="chevron-forward" size={18} color="#000" />
-            <Ionicons name="chevron-forward" size={18} color="#000" />
-          </View>
-        </Animated.View>
-        <Text style={styles.slideText}>{label}</Text>
-      </View>
+<LinearGradient
+  colors={['#25834F', '#31a263']}
+  start={{ x: 0, y: 0 }}
+  end={{ x: 1, y: 0 }}
+  style={styles.slideTrack}
+>
+  <Animated.View
+    style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
+    {...panResponder.panHandlers}
+  >
+    <View style={styles.slideArrows}>
+      <Ionicons name="chevron-forward" size={18} color="#000" />
+      <Ionicons name="chevron-forward" size={18} color="#000" />
+    </View>
+  </Animated.View>
+  <Text style={styles.slideText}>{label}</Text>
+</LinearGradient>
+
     </View>
   );
 };
@@ -90,28 +96,36 @@ const CartScreen = () => {
       {/* Separated Tab Selector */}
       <View style={styles.tabSelector}>
         
-        <TouchableOpacity
-            onPress={() => setActiveTab('TryandBuy')}
-            style={styles.tabButton}
-            activeOpacity={0.9}
-          >
-              {activeTab === 'TryandBuy' ? (
-                <LinearGradient
-                  colors={['#ddc2ff', '#ffdcf1']}
-                  start={{ x: 0, y: 1 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[StyleSheet.absoluteFill, { borderRadius: 20 }]} // Or use 60 if you prefer
-                />
-              ) : null}
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'TryandBuy' && styles.activeTabText,
-              ]}
-            >
-              Try and Buy
-            </Text>
-          </TouchableOpacity>
+<TouchableOpacity
+  onPress={() => setActiveTab('TryandBuy')}
+  style={styles.tabButton}
+  activeOpacity={0.9}
+>
+  {activeTab === 'TryandBuy' && (
+    <LinearGradient
+      colors={['#ddc2ff', '#ffdcf1']}
+      start={{ x: 0, y: 1 }}
+      end={{ x: 1, y: 0 }}
+      style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
+    />
+  )}
+
+  {/* Flex Row Container */}
+  <View style={styles.flexRow}>
+    <MaterialIcons name="auto-fix-high" size={18} color="black" style={styles.icon} />
+
+    <Text
+      style={[
+        styles.tabText,
+        activeTab === 'TryandBuy' && styles.activeTabText,
+      ]}
+    >
+      Try then Buy.
+    </Text>
+  </View>
+</TouchableOpacity>
+
+
         <TouchableOpacity
           onPress={() => setActiveTab('Payment')}
           style={[
@@ -125,7 +139,7 @@ const CartScreen = () => {
               activeTab === 'Payment' && styles.activeTabText1,
             ]}
           >
-            Payment
+            Pay Order
           </Text>
         </TouchableOpacity>
 
@@ -143,7 +157,9 @@ const CartScreen = () => {
             <View style={styles.paymentMethod}>
               <View style={styles.paymentMethodLeft}>
                 <View style={styles.googlePayIcon}>
-                  <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} />
+                  {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
+                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+
                 </View>
                 <View>
                   <Text style={styles.payUsingText}>Pay using</Text>
@@ -156,12 +172,31 @@ const CartScreen = () => {
               </TouchableOpacity>
             </View>
           </View>
-          <SlideToPay label="Slide to Pay | ₹445" onComplete={handlePaymentComplete} />
+          <SlideToPay label="Slide to Pay | ₹663" onComplete={handlePaymentComplete} />
         </>
       )}
 
       {activeTab === 'TryandBuy' && (
+        <>
+                  <View style={styles.paymentMethodContainer}>
+            <View style={styles.paymentMethod}>
+              <View style={styles.paymentMethodLeft}>
+                <View style={styles.googlePayIcon}>
+                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+                </View>
+                <View>
+                  <Text style={styles.payUsingText}>Pay using</Text>
+                  <Text style={styles.googlePayText}>Delivery Charge |  ₹45</Text>
+                </View>
+              </View>
+              <TouchableOpacity style={styles.changeButton}>
+                <Text style={styles.changeButtonText}>Change</Text>
+                <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
+              </TouchableOpacity>
+            </View>
+          </View>
         <SlideToPay label="DELIVER THE ORDER" onComplete={handlePaymentComplete} />
+        </>
       )}
     </SafeAreaView>
   );
@@ -173,12 +208,12 @@ const styles = StyleSheet.create({
   scrollContent: { paddingBottom: 24 },
 
   savingsBanner: {
-    backgroundColor: '#000',
+    // backgroundColor: '#0D1F23',
     paddingVertical: 7,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
-  savingsText: { color: '#fff', fontSize: 12, fontWeight: '500' },
+  savingsText: { color: '#31a263', fontSize: 12, fontWeight: '500',     fontFamily:'Montserrat' },
 
   paymentMethodContainer: {
     backgroundColor: '#fff',
@@ -189,15 +224,15 @@ const styles = StyleSheet.create({
   paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   paymentMethodLeft: { flexDirection: 'row', alignItems: 'center' },
   googlePayIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#f2f2f2',
-    alignItems: 'center',
-    justifyContent: 'center',
+    // width: 10,
+    // height: 10,
+    // // borderRadius: 20,
+    // // backgroundColor: '#f2f2f2',
+    // alignItems: 'center',
+    // justifyContent: 'center',
     marginRight: 12,
   },
-  googlePayImage: { width: 24, height: 24 },
+  googlePayImage: { width: 40, height: 30 },
   payUsingText: { fontSize: 13, color: '#666' },
   googlePayText: { fontSize: 16, fontWeight: '600', color: '#000' },
   changeButton: { flexDirection: 'row', alignItems: 'center' },
@@ -206,7 +241,7 @@ const styles = StyleSheet.create({
   slideToPayContainer: { padding: 16, backgroundColor: '#fff' },
   slideTrack: {
     height: 70,
-    backgroundColor: '#000',
+    // backgroundColor: '#25834F',
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
@@ -238,17 +273,19 @@ const styles = StyleSheet.create({
   tabSelector: {
     flexDirection: 'row',
     justifyContent: 'center',
-    backgroundColor: '#f1f1f1',
-    paddingVertical: 0,
-    borderRadius:60
+    // backgroundColor: '#fff',
+    paddingVertical: 2,
+    borderRadius:60,
+    margin:7
   },
   tabButton: {
     width: '50%',
-    paddingVertical: 10,
+    paddingVertical: 15,
     backgroundColor: '#e0e0e0',
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius:60
+    borderRadius:60,
+    margin:3
   },
   activeTabBackground: {
     backgroundColor: '#000',
@@ -262,12 +299,22 @@ const styles = StyleSheet.create({
   tabText: {
     fontSize: 16,
     color: '#000',
+    fontFamily:'Montserrat' 
   },
   activeTabText: {
     color: '#000',
     fontWeight: 'bold',
 
   },
+  flexRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+icon: {
+  marginRight: 6,
+},
+
   activeTabText1: {
     color: '#fff',
     fontWeight: 'bold',

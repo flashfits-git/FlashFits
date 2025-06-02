@@ -60,12 +60,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#000',
+    fontFamily:'Montserrat'
   },
   subHeader: {
     fontSize: 12,
     color: '#999',
     marginBottom: 16,
     marginTop: 2,
+    fontFamily:'Montserrat'
   },
   row: {
     flexDirection: 'row',
@@ -75,35 +77,42 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     color: '#333',
+    fontFamily:'Montserrat'
   },
   value: {
     fontSize: 14,
     color: '#333',
+    fontFamily:'Montserrat'
   },
   discount: {
     fontSize: 14,
     color: 'green',
+    fontFamily:'Montserrat'
   },
   coupon: {
     fontSize: 14,
     color: 'green',
     fontWeight: '500',
+    fontFamily:'Montserrat'
   },
   separator: {
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     borderStyle: 'dotted',
     marginVertical: 16,
+    fontFamily:'Montserrat'
   },
   totalLabel: {
     fontSize: 16,
     fontWeight: '700',
     color: '#000',
+    fontFamily:'Montserrat'
   },
   totalValue: {
     fontSize: 16,
     fontWeight: '700',
     color: '#000',
+    fontFamily:'Montserrat'
   },
 });
 

@@ -249,7 +249,8 @@ const ProductDetailPage = () => {
                   <Ionicons name="chevron-forward" size={18} color="#000" />
                 </View>
               </Animated.View>
-              <Text style={styles.slideText}>Proceed to Bag</Text>
+              
+              <Text style={styles.slideText}>ADD TO BAG</Text>
             </View>
           </View>
         </View>
@@ -325,7 +326,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', marginBottom: 10,
   },
-  title: { fontSize: 20, fontWeight: '600' },
+  title: { fontSize: 20, fontWeight: '600',fontFamily:'Montserrat'},
   price: { fontSize: 18, fontWeight: 'bold' },
   strike: { textDecorationLine: 'line-through', fontSize: 14, color: '#888', marginLeft: 5 },
   ratingContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 4,
   },
   slideArrows: { flexDirection: 'row', alignItems: 'center' },
-  slideText: { color: '#fff', fontSize: 23, fontWeight: 'bold', left: 10 },
+  slideText: { color: '#fff', fontSize: 23, fontWeight: 'bold', left: 10 , fontFamily: 'Montserrat'},
   card: {
     backgroundColor: '#f9f9f9', margin: 10, padding: 15,
     borderRadius: 10, elevation: 2,

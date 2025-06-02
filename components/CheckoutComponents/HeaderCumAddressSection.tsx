@@ -16,8 +16,12 @@ const HeaderCumAddressSection = () => {
           <View style={styles.headerTitle}>
             <View style={styles.homeRow}>
               <Ionicons name="home" size={20} color="#333" />
-              <Text style={styles.homeText}>HOME</Text>
+              <Text style={styles.homeText} numberOfLines={1}>Kachapilly Maradu P.O</Text>
               <Ionicons name="chevron-down" size={16} color="#333" />
+     
+     
+     <Text style={styles.greenText}>2 hour</Text>
+
             </View>
             <Text style={styles.addressText} numberOfLines={1}>
               72/1533 Baby Smarka Road, Mamangalam, Mamang...
@@ -56,10 +60,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    padding: 4,
+    paddingRight: 4,
   },
   headerTitle: {
-    marginLeft: 12,
+    marginLeft: 4,
     flex: 1,
   },
   homeRow: {
@@ -72,6 +76,8 @@ const styles = StyleSheet.create({
     color: '#000000',
     marginLeft: 4,
     marginRight: 2,
+    width:140,
+    // backgroundColor:'red'
   },
   addressText: {
     color: '#666666',
@@ -88,6 +94,10 @@ const styles = StyleSheet.create({
     padding: 8,
     marginRight: 12,
   },
+  greenText:{
+    marginLeft:8,
+    fontFamily:'YourFont'
+  }
 });
 
 export default HeaderCumAddressSection;

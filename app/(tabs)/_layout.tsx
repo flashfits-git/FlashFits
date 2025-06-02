@@ -1,13 +1,17 @@
-import { Tabs } from 'expo-router';
+import { Tabs , } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Text,
   Platform,
   StyleSheet,
   Animated,
   Easing,
+  ActivityIndicator
 } from 'react-native';
+// import * as Font from 'expo-font';
+// import * as SplashScreen from 'expo-splash-screen';
+import Colors from '../../assets/theme/Colors';
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -62,8 +66,28 @@ const AnimatedIconWrapper = ({
 
   const backgroundColor = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['transparent', '#e4f3ff'],
+    outputRange: ['transparent', Colors.accent],
   });
+
+  // FONTS
+
+    const [fontsLoaded, setFontsLoaded] = useState(false);
+  
+  // useEffect(() => {
+  //   async function loadFonts() {
+  //     await Font.loadAsync({
+  //       'YourFont': require('../../assets/fonts/Montserrat-VariableFont_wght.ttf'),
+  //       'Oswald-Regular': require('../../assets/fonts/Oswald-VariableFont_wght.ttf'),
+  //     });
+  //     setFontsLoaded(true);
+  //     await SplashScreen.hideAsync();
+  //   }
+  //   loadFonts();
+  // }, []);
+
+  // if (!fontsLoaded) {
+  //   return <ActivityIndicator size="large" />;
+  // }
 
   return (
     <Animated.View
@@ -82,8 +106,9 @@ const AnimatedIconWrapper = ({
         style={{
           fontSize: focused ? 6:10,
           marginTop: 2,
-          color: focused ? '#008ab7' : '#006486',
+          color: focused ? Colors.dark1 : Colors.dark1,
           fontWeight: focused ? 'bold' : 'normal',
+          fontFamily:'Oswald-Regular'
         }}
       >
         {label}
@@ -100,8 +125,8 @@ export default function TabLayout() {
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: '#008ab7',
-        tabBarInactiveTintColor: '#006486',
+        tabBarActiveTintColor: Colors.dark1,
+        tabBarInactiveTintColor: Colors.dark1,
         tabBarIcon: ({ color, size, focused }) => {
           let iconName = 'home-outline';
           let label = 'Home';

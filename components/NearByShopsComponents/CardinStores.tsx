@@ -19,9 +19,9 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, delivery, 
         {title}
       </Text>
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{price}</Text>
+        {/* <Text style={styles.price}>₹{price}</Text>
         <Text style={styles.oldPrice}>₹{oldPrice}</Text>
-        <Text style={styles.discount}>{discount} off</Text>
+        <Text style={styles.discount}>{discount} off</Text> */}
       </View>
     </View>
   );
@@ -124,6 +124,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginVertical: 6,
     color: '#333',
+            fontFamily: 'Montserrat',
+
   },
   priceRow: {
     flexDirection: 'row',
@@ -131,8 +133,10 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#000',
+            fontFamily: 'Montserrat',
+
   },
   oldPrice: {
     fontSize: 12,
@@ -142,7 +146,7 @@ const styles = StyleSheet.create({
   },
   discount: {
     fontSize: 12,
-    color: 'red',
+    color: '#ff6666',
     marginLeft: 6,
   },
   offerText: {

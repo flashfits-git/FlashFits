@@ -10,7 +10,7 @@ export default function SelectionPage() {
   const router1 = useRouter();
 
 
-  const mockData = Array.from({ length: 13 }, (_, i) => ({
+  const mockData = Array.from({ length: 2 }, (_, i) => ({
   id: i.toString(),
   title: `Item ${i + 1}`,
 }));

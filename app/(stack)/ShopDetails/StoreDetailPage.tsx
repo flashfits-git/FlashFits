@@ -13,7 +13,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
-import jfnefn from '../../../assets/images/image.png'
+import jfnefn from '../../../assets/images/2.jpg'
 
 const StoreDetailPage = () => {
   return (

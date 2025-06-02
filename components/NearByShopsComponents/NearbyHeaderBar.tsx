@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
     color: '#5c565c',
+    fontFamily:'Montserrat'
   },
   iconWrapper: {
     flexDirection: 'row',

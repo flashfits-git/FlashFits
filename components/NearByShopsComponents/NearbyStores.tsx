@@ -54,6 +54,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
     elevation: 5,
+    margin:5
   },
   header: {
     flexDirection: 'row',
@@ -65,11 +66,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     flexShrink: 1,
+    fontFamily:'Montserrat'
   },
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#555',
+    fontFamily:'Montserrat',
+    opacity:.5
   },
 });
 

@@ -11,6 +11,11 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Colors from '../../assets/theme/Colors';
+// import * as SplashScreen from 'expo-splash-screen';
+
+
+// SplashScreen.preventAutoHideAsync(); // Prevent hiding until fonts are loaded
 
 
 const { width, height } = Dimensions.get('window');
@@ -75,9 +80,6 @@ const router = useRouter()
         <Text style={styles.itemText}>1 Item | ₹127</Text>
         <Text style={styles.saveText}>You save ₹20</Text>      
       </View>
-      <View style={styles.downArrow}>
-      <Ionicons name="chevron-down-outline" size={16} color="black" />
-      </View>
       <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/(stack)/ShoppingBag')}
@@ -132,19 +134,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   itemText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '400',
     color: '#000',
     marginBottom: 4,
-    width:100
+    width:100,
+    fontFamily: 'Montserrat',
   },
   saveText: {
-    fontSize: 10,
+    fontSize: 9,
     color: '#256D1B',
     fontWeight: '500',
+    fontFamily: 'Montserrat',
   },
   button: {
-    backgroundColor: '#008ab7', // blue button
+    backgroundColor: Colors.dark1, // blue button
     paddingVertical: 15,
     paddingHorizontal:25,
     borderRadius: 8,
@@ -155,12 +159,10 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '700',
+    fontWeight: '400',
     fontSize: 14,
+    fontFamily: 'Montserrat',
   },
-  downArrow:{
-    paddingEnd:20
-  }
 });
 
 export default PopupCart;

@@ -45,10 +45,10 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, delivery, 
         <Text style={styles.oldPrice}>₹{oldPrice}</Text>
         <Text style={styles.discount}>{discount} off</Text>
       </View>
-      <Text style={styles.offerText}>
+      {/* <Text style={styles.offerText}>
         Get it at ₹{offerPrice}
         <Text style={styles.code}> with <Text style={styles.codeBold}>frst15</Text></Text>
-      </Text>
+      </Text> */}
     </View>
   );
 };
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   },
   star: {
     fontSize: 10,
-    color: '#FFD700',
+    color: '#90d5ff',
     padding: 2,
   },
   rating: {
@@ -128,6 +128,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginVertical: 6,
     color: '#333',
+        fontFamily: 'Montserrat',
+
   },
   priceRow: {
     flexDirection: 'row',
@@ -135,18 +137,22 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#000',
+        fontFamily: 'Montserrat',
+
   },
   oldPrice: {
     fontSize: 12,
     color: '#777',
     textDecorationLine: 'line-through',
     marginLeft: 6,
+        fontFamily: 'Montserrat',
+
   },
   discount: {
     fontSize: 12,
-    color: 'red',
+    color: '#ff6666',
     marginLeft: 6,
   },
   offerText: {

@@ -14,6 +14,7 @@ interface Address {
   address: string;
   contact: string;
   email: string;
+  distance:string
 }
 
 const addresses: Address[] = [
@@ -23,6 +24,7 @@ const addresses: Address[] = [
     address: 'kachappilly house, kachappilly house, fr george vakayil road, maradu p.o, ernakulam, Cochin, KL, 682304',
     contact: '8138834116',
     email: 'antonyefron007@gmail.com',
+    distance: '20Km'
   },
   {
     id: '2',
@@ -30,6 +32,7 @@ const addresses: Address[] = [
     address: 'North Paravur, KL, 682509',
     contact: '8138834116',
     email: 'antonyefron007@gmail.com',
+    distance: '20Km'
   },
 ];
 const { width } = Dimensions.get('window'); 
@@ -108,7 +111,7 @@ const SelectAddressBottomSheet = () => {
                 <Ionicons name="chevron-forward" size={18} color="#000" />
               </View>
             </Animated.View>
-            <Text style={styles.slideText}>Proceed to CheckOut</Text>
+            <Text style={styles.slideText}>PROCEED TO CHECKOUT</Text>
           </View>
         </View>
         
@@ -152,7 +155,7 @@ const SelectAddressBottomSheet = () => {
         <Text style={styles.heading}>Select an address</Text>
 
         <TouchableOpacity style={styles.addAddressButton} onPress={() => navigation.navigate('(stack)/ProductDetail/LocationselectionPage')}>
-          <Ionicons name="add" size={20} color="#FF5A5F" />
+          <Ionicons name="add" size={18} color="#FF5A5F" style={{opacity:.5}}/>
           <Text style={styles.addAddressText}>Add address</Text>
         </TouchableOpacity>
 
@@ -286,20 +289,20 @@ const styles = StyleSheet.create({
   icon: { marginRight: 6 },
   distance: { color: '#aaa', fontSize: 12 },
   label: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  address: { color: '#ccc', marginTop: 2 },
+  address: { color: '#ccc', marginTop: 2, fontFamily:'Raleway'  },
   phone: { color: '#aaa', marginTop: 6 },
   phoneBold: { color: '#ccc', fontWeight: 'bold' },
   actionRow: {
     flexDirection: 'row', justifyContent: 'space-between', marginTop: 12,
     paddingRight: 20,
   },
-  heading: { color: '#000', fontSize: 22, fontWeight: 'bold', marginBottom: 20 },
+  heading: { color: '#000', fontSize: 22, fontWeight: 'bold', marginBottom: 20, fontFamily:'Montserrat' },
   addAddressButton: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#1F1F1F', paddingVertical: 14, paddingHorizontal: 20,
     borderRadius: 12, marginBottom: 20,
   },
-  addAddressText: { color: '#FF5A5F', fontSize: 16, marginLeft: 10 },
+  addAddressText: { color: '#FF5A5F', fontSize: 16, marginLeft: 10 , opacity:.5, fontFamily:'Montserrat' },
   savedLabel: {
     color: '#888', fontSize: 12, letterSpacing: 1.2,
     marginBottom: 10, marginTop: 10,
@@ -316,7 +319,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3, shadowRadius: 4,
   },
   slideArrows: { flexDirection: 'row', alignItems: 'center' },
-  slideText: { color: '#fff', fontSize: 18, fontWeight: 'bold', left: 20 },
+  slideText: { color: '#fff', fontSize: 18, fontWeight: 'bold', left: 20,
+    fontFamily:'Montserrat'
+   },
   card: {
     backgroundColor: '#1E1E1E', borderRadius: 12,
     padding: 16, marginBottom: 16,

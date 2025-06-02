@@ -98,9 +98,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#333',
+    color: '#111',
     marginTop: 16,
-    marginLeft: 16,
+    marginLeft: 20,
     marginBottom: 12,
+    fontFamily:'Montserrat'
+
   },
 });

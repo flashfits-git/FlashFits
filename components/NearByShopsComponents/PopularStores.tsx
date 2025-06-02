@@ -60,11 +60,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
+    fontFamily:'Montserrat'
   },
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
+    fontFamily:'Montserrat',
+    opacity:.5
   },
 });
 

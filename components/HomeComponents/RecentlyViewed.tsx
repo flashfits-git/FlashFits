@@ -30,8 +30,8 @@ const DressCard = ({ item, onPress }) => {
       <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
       <View style={styles.priceRow}>
         <Text style={styles.price}>₹{item.price}</Text>
-        <Text style={styles.oldPrice}>₹{item.oldPrice}</Text>
-        <Text style={styles.discount}>{item.discount} off</Text>
+        {/* <Text style={styles.oldPrice}>₹{item.oldPrice}</Text> */}
+        {/* <Text style={styles.discount}>{item.discount} off</Text> */}
       </View>
     </TouchableOpacity>
   );
@@ -82,8 +82,8 @@ export default function ImageCardHome() {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'column',
-    paddingBottom: 16,
-    paddingTop: 16,
+    // paddingBottom: 2,
+    paddingTop: 15,
   },
   card: {
     margin: 5,
@@ -128,6 +128,8 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     color: '#333',
     paddingHorizontal: 6,
+            fontFamily: 'Montserrat',
+
   },
   priceRow: {
     flexDirection: 'row',
@@ -137,8 +139,10 @@ const styles = StyleSheet.create({
   },
   price: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '500',
     color: '#000',
+            fontFamily: 'Montserrat',
+
   },
   oldPrice: {
     fontSize: 12,

@@ -93,7 +93,8 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 15,
+    fontFamily:'Montserrat'
   },
 });
 

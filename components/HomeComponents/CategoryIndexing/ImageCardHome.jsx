@@ -58,7 +58,7 @@ const DressCard = ({ item, onPress }) => (
     <View style={styles.priceRow}>
       <Text style={styles.price}>₹{item.price}</Text>
       <Text style={styles.oldPrice}>₹{item.oldPrice}</Text>
-      <Text style={styles.discount}>{item.discount} off</Text>
+      {/* <Text style={styles.discount}>{item.discount} off</Text> */}
     </View>
   </TouchableOpacity>
 );
@@ -134,6 +134,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginVertical: 6,
     color: '#333',
+    fontFamily: 'Montserrat',
+    fontWeight:'500'
   },
   priceRow: {
     flexDirection: 'row',
@@ -143,16 +145,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#000',
+        fontFamily: 'Montserrat',
+    fontWeight:'500'
   },
   oldPrice: {
     fontSize: 12,
     color: '#777',
     textDecorationLine: 'line-through',
     marginLeft: 6,
+        fontFamily: 'Montserrat',
+    // fontWeight:'400'
   },
   discount: {
     fontSize: 12,
-    color: 'red',
+    color: '#ff6666',
     marginLeft: 6,
+    
   },
 });
