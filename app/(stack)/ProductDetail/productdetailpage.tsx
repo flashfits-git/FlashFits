@@ -185,125 +185,89 @@ const ProductDetailPage = () => {
         </Animated.ScrollView>
 
         <View style={styles.fixedButtonRow}>
-          <View style={styles.fixedSelectorsRow}>
-            <View style={styles.selectorLeft}>
-              <View style={styles.optionsRow}>
-                {['S', 'M', 'L', 'XL'].map(size => (
-                  <TouchableOpacity
-                    key={size}
-                    style={[
-                      styles.sizeOption,
-                      {
-                        borderColor: selectedSize === size ? '#000' : '#ccc',
-                        borderWidth: selectedSize === size ? 2 : 1,
-                        borderRadius: selectedSize === size ? 6 : 8,
-                      },
-                    ]}
-                    onPress={() => setSelectedSize(size)}
-                  >
-                    <Text>{size}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.selectorRight}>
-              <View style={styles.optionsRow}>
-                {['#E1E1E1', '#000000', '#D4CFCF'].map((color, idx) => {
-                  const isSelected = selectedColor === color;
-                  return (
-                    <TouchableOpacity
-                      key={idx}
-                      style={[
-                        styles.colorCircle,
-                        {
-                          backgroundColor: color,
-                          opacity: isSelected ? 1 : 0.5,
-                          borderColor: isSelected ? '#000' : '#ccc',
-                          borderWidth: isSelected ? 2 : 1,
-                          borderRadius: isSelected ? 12 : 15,
-                        },
-                      ]}
-                      onPress={() => setSelectedColor(color)}
-                    />
-                  );
-                })}
-              </View>
-            </View>
-          </View>
-
           <View style={styles.slideToPayContainer}>
-            <View style={styles.slideTrack}>
-              <Animated.View
-                style={[
-                  styles.slideThumb,
-                  {
-                    transform: [{ translateX: slideAnimation }],
-                    opacity: isSlideDisabled ? 0.5 : 1,
-                  },
-                ]}
-                {...(isSlideDisabled ? {} : panResponder.panHandlers)}
-              >
-                <View style={styles.slideArrows}>
-                  <Ionicons name="chevron-forward" size={18} color="#000" />
-                  <Ionicons name="chevron-forward" size={18} color="#000" />
-                </View>
-              </Animated.View>
-              
+            <TouchableOpacity
+              style={styles.slideTrack}
+              activeOpacity={0.8}
+              // disabled={isSlideDisabled}
+              onPress={() => modalizeRef.current?.open()}
+            >
               <Text style={styles.slideText}>ADD TO BAG</Text>
-            </View>
-          </View>
+            </TouchableOpacity>
+        </View>
         </View>
       </View>
 
-      <Modalize
+<Modalize
   ref={modalizeRef}
-  modalHeight={Dimensions.get('window').height * 0.75}
+  modalHeight={Dimensions.get('window').height * 0.35}
   handleStyle={styles.handle}
   modalStyle={styles.modal}
-  flatListProps={{
-    data: addresses,
-    keyExtractor: (item) => item.id,
-    renderItem: ({ item }) => (
-<TouchableOpacity
-  style={styles.card}
-  onPress={() => router.push('/Payment')}
+  scrollViewProps={{ contentContainerStyle: { flexGrow: 1 } }}
 >
-  <View style={styles.topRow}>
-    <View style={styles.distanceIconRow}>
-      <Ionicons name="home" size={13} color="#fff" style={styles.icon} />
-      <Text style={styles.distance}>13 Km</Text>
-    </View>
-    <Text style={styles.label}>{item.label}</Text>
-  </View>
-  <Text style={styles.address}>{item.address}</Text>
-  <Text style={styles.phone}>
-    Phone number: <Text style={styles.phoneBold}>{item.phone}</Text>
-  </Text>
-  <View style={styles.actionRow}>
-    <TouchableOpacity>
-      <MaterialIcons name="more-horiz" size={22} color="#aaa" />
-    </TouchableOpacity>
-    <TouchableOpacity>
-      <Ionicons name="share-social-outline" size={18} color="#aaa" />
-    </TouchableOpacity>
-  </View>
-</TouchableOpacity>
-    ),
-    ListHeaderComponent: () => (
-      <View style={styles.header}>
-        <Text style={styles.heading} >Select an address</Text>
-        <TouchableOpacity style={styles.addAddressButton} activeOpacity={0.8}>
-          <Ionicons name="add" size={20} color="#FF5A5F" />
-          <Text style={styles.addAddressText}>Add address</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.savedLabel}>SAVED ADDRESSES</Text>
+  <View style={styles.fixedSelectorsRow}>
+    {/* Size Section */}
+    <Text style={styles.sectionTitle}>Select Size</Text>
+      <View style={styles.optionsRow}>
+        {['S', 'M', 'L', 'XL'].map(size => (
+          <TouchableOpacity
+            key={size}
+            style={[
+              styles.sizeOption,
+              {
+                borderColor: selectedSize === size ? '#000' : '#ccc',
+                borderWidth: selectedSize === size ? 2 : 1,
+                borderRadius: selectedSize === size ? 6 : 8,
+              },
+            ]}
+            onPress={() => setSelectedSize(size)}
+          >
+            <Text>{size}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    ),
-    showsVerticalScrollIndicator: false,
-  }}
-/>
+
+    {/* Color Section */}
+    <Text style={styles.sectionTitle}>Select Color</Text>
+      <View style={styles.optionsRow}>
+        {['#E1E1E1', '#000000', '#D4CFCF'].map((color, idx) => {
+          const isSelected = selectedColor === color;
+          return (
+            <TouchableOpacity
+              key={idx}
+              style={[
+                styles.colorCircle,
+                {
+                  backgroundColor: color,
+                  opacity: isSelected ? 1 : 0.5,
+                  borderColor: isSelected ? '#000' : '#ccc',
+                  borderWidth: isSelected ? 2 : 1,
+                  borderRadius: isSelected ? 12 : 15,
+                },
+              ]}
+              onPress={() => setSelectedColor(color)}
+            />
+          );
+        })}
+      </View>
+  </View>
+
+  {/* Fixed Select Button */}
+  <View style={styles.selectButtonContainer}>
+    <TouchableOpacity
+      style={[
+        styles.slideTrack2,
+        { backgroundColor: isSlideDisabled ? '#ccc' : '#000' },
+      ]}
+      activeOpacity={0.8}
+      disabled={isSlideDisabled}
+onPress={() => router.push('/ShoppingBag')}
+    >
+      <Text style={styles.slideText}>Select</Text>
+    </TouchableOpacity>
+  </View>
+</Modalize>
+
     </>
   );
 };
@@ -344,11 +308,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#ccc',
   },
   fixedSelectorsRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    paddingHorizontal: 16, paddingTop: 10,
+    alignItems: 'flex-start',
+    paddingHorizontal: 16, paddingTop: 10,  paddingBottom: 10,
   },
   slideToPayContainer: { width: '100%', paddingHorizontal: 16, paddingVertical: 10 },
   slideTrack: {
+    height: 70, backgroundColor: '#000', borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center', position: 'relative',
+  },
+    slideTrack2: {
     height: 70, backgroundColor: '#000', borderRadius: 28,
     justifyContent: 'center', alignItems: 'center', position: 'relative',
   },
@@ -428,6 +396,18 @@ const styles = StyleSheet.create({
     padding: 8,
     zIndex: 10,
   },
+  sectionTitle: {
+  fontSize: 16,
+  fontWeight: '600',
+  marginBottom: 8,
+  marginTop: 12,
+},
+selectButtonContainer: {
+  paddingHorizontal: 16,
+  paddingBottom: 24,
+  paddingTop: 16,
+  position:'relative'
+},
 });
 
 

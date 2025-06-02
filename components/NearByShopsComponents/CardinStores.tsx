@@ -1,13 +1,24 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import jfrnfr from '../../assets/images/2.jpg'
-import fmg from '../../assets/images/2.jpg'
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+} from 'react-native';
+import jfrnfr from '../../assets/images/2.jpg';
+import fmg from '../../assets/images/2.jpg';
+import { useNavigation } from 'expo-router';
 
+const DressCard = ({ image, title, price, oldPrice, discount, rating }) => {
+  const navigation = useNavigation();
 
-
-const DressCard = ({ image, title, price, oldPrice, discount, rating, delivery, offerPrice }) => {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
+    >
       <View style={styles.imageWrapper}>
         <Image source={image} style={styles.image} />
         <View style={styles.ratingContainer}>
@@ -15,15 +26,17 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, delivery, 
           <Text style={styles.rating}>{rating}</Text>
         </View>
       </View>
+
       <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
         {title}
       </Text>
+
       <View style={styles.priceRow}>
-        {/* <Text style={styles.price}>₹{price}</Text>
+        <Text style={styles.price}>₹{price}</Text>
         <Text style={styles.oldPrice}>₹{oldPrice}</Text>
-        <Text style={styles.discount}>{discount} off</Text> */}
+        <Text style={styles.discount}>{discount} off</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -38,8 +51,6 @@ export default function CardinStores() {
           oldPrice="1379"
           discount="6%"
           rating="4.7"
-          delivery="5 - 6 Days"
-          offerPrice="1174"
         />
         <DressCard
           image={fmg}
@@ -48,50 +59,39 @@ export default function CardinStores() {
           oldPrice="1459"
           discount="8%"
           rating="4.6"
-          delivery={null}
-          offerPrice="1224"
         />
-                <DressCard
+        <DressCard
           image={fmg}
           title="Yellow Bodycon Maxi Dress"
           price="1349"
           oldPrice="1459"
           discount="8%"
           rating="4.6"
-          delivery={null}
-          offerPrice="1224"
         />
       </ScrollView>
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
   },
   card: {
-    
-    margin:5,
-    // paddingLeft:2,
+    margin: 5,
     width: 140,
     backgroundColor: '#fff',
     borderRadius: 10,
-    backgroundColor:'white'
   },
   imageWrapper: {
     position: 'relative',
   },
-
   image: {
     height: 170,
     width: 140,
-    borderRadius:10,
+    borderRadius: 10,
     resizeMode: 'cover',
   },
-  
   ratingContainer: {
     position: 'absolute',
     bottom: 8,
@@ -107,12 +107,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-    opacity:.8
+    opacity: 0.8,
   },
   star: {
     fontSize: 10,
     color: '#90d5ff',
-    padding:2
+    padding: 2,
   },
   rating: {
     fontSize: 12,
@@ -124,19 +124,20 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginVertical: 6,
     color: '#333',
-            fontFamily: 'Montserrat',
-
+    fontFamily: 'Montserrat',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    marginBottom: 6,
+    marginLeft: 4,
   },
   price: {
     fontSize: 14,
     fontWeight: '500',
     color: '#000',
-            fontFamily: 'Montserrat',
-
+    fontFamily: 'Montserrat',
   },
   oldPrice: {
     fontSize: 12,
@@ -148,28 +149,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#ff6666',
     marginLeft: 6,
-  },
-  offerText: {
-    fontSize: 13,
-    marginTop: 4,
-    color: '#1aaf1a',
-  },
-  code: {
-    color: '#000',
-  },
-  codeBold: {
-    fontWeight: 'bold',
-  },
-  delivery: {
-    fontSize: 12,
-    color: '#f4a300',
-    marginTop: 6,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#800000',
-    marginTop: 8,
   },
 });

@@ -37,7 +37,7 @@ const DressCard = ({ item, onPress }) => {
   );
 };
 
-export default function ImageCardHome() {
+export default function ImageCardHome(){
   const scrollRef = useRef(null);
   const [scrollX, setScrollX] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -78,6 +78,7 @@ export default function ImageCardHome() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -128,7 +129,7 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     color: '#333',
     paddingHorizontal: 6,
-            fontFamily: 'Montserrat',
+    fontFamily: 'Montserrat',
 
   },
   priceRow: {

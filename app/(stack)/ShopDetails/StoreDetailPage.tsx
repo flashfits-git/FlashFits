@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
+import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import jfnefn from '../../../assets/images/2.jpg'
 
 const StoreDetailPage = () => {
@@ -60,6 +61,9 @@ const StoreDetailPage = () => {
             <ShopOffersCarousel />
           </View>
           <View style={styles.sectionContainer}>
+            <RecentlyViewed />
+          </View>
+          <View style={styles.sectionContainer}>
             <TrendingStyles />
           </View>
           <View style={styles.sectionContainer}>
@@ -80,12 +84,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFEDE2',
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 4,
   },
 avatar: {
   width: 60,
@@ -98,10 +102,12 @@ avatar: {
     fontSize: 30,
     fontWeight: '600',
     color: '#000',
+    fontFamily: 'Montserrat',
   },
   welcomeText: {
     fontSize: 13,
     color: '#444',
+    fontFamily: 'Montserrat',
   },
   iconContainer: {
     marginLeft: 'auto',
