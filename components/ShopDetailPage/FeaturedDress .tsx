@@ -17,13 +17,13 @@ const CARD_HEIGHT = 140;
 const plans = [
   {
     id: '1',
-    title: 'Massive Upper Body',
+    title: 'Jeans Cargo Collection',
     subtitle: '5 week • 4x/week',
     image: ennc, // Replace with real image
   },
   {
     id: '2',
-    title: 'Shredded Core',
+    title: 'T-Shirts Acid Wash ',
     subtitle: '4 week • 3x/week',
     image: ennc,
   },
@@ -32,7 +32,7 @@ const plans = [
 const FeaturedDress = () => {
   return (
     <View style={{ marginVertical: 12 }}>
-      <Text style={styles.sectionTitle}>Featured Plans</Text>
+      <Text style={styles.sectionTitle}>View All Collections</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -43,8 +43,8 @@ const FeaturedDress = () => {
             <View style={styles.textContainer}>
               <Text style={styles.title}>{plan.title}</Text>
               <View style={styles.subtitleRow}>
-                <Text style={styles.icon}>👁️</Text>
-                <Text style={styles.subtitle}>{plan.subtitle}</Text>
+                {/* <Text style={styles.icon}>👁️</Text>
+                <Text style={styles.subtitle}>{plan.subtitle}</Text> */}
               </View>
               <TouchableOpacity style={styles.exploreButton}>
                 <Text style={styles.exploreButtonText}>Explore</Text>

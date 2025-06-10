@@ -2,6 +2,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity} from 'react-native';
 
 export default function ReviewItemCardsSection() {
   return (
+    <>
     <View style={styles.container}>
       <Image
         source={require('../../assets/images/3.jpg')} // Update path if needed
@@ -32,17 +33,21 @@ export default function ReviewItemCardsSection() {
                       style={styles.googlePayImage}
                     />          
         </View>
-
-
-        {/* <View style={styles.returnRow}>
-          <Ionicons name="reload" size={16} color="black" />
-          <Text style={styles.returnText}> 7 Days - Returns/Exchanges</Text>
-        </View> */}
       </View>
+      {/* make the section here  */}
+
     </View>
+<View style={styles.careContainer}>
+  <Text style={styles.careText1}>Note:</Text>
+  <Text style={styles.careText}>
+    • Orders cannot be cancelled or refunded once packed for delivery.{"\n"}
+    • Please do not make your delivery partner wait more than 15 minutes for returns.
+  </Text>
+</View>
+    </>
   );
 }
-
+ 
 const styles = StyleSheet.create({
     container: {
       flexDirection: 'row',
@@ -129,10 +134,25 @@ const styles = StyleSheet.create({
       color: 'green',
       fontWeight: '600',
     },
-  //     detailsContainer: {
-  //   flex: 1,
-  //   marginLeft: 12,
-  // },
+careContainer: {
+  marginTop: 8,
+  backgroundColor: '#f8f8f8',
+  padding: 8,
+  borderRadius: 6,
+},
+
+careText: {
+  fontSize: 11,
+  color: '#444',
+  fontFamily: 'Montserrat',
+  lineHeight: 14,
+},
+careText1: {
+  fontSize: 14,
+  color: '#444',
+  fontFamily: 'Montserrat',
+  lineHeight: 14,
+},
   discount: {
     color: 'green',
     fontSize: 12,

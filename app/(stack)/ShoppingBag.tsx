@@ -4,6 +4,7 @@ import BagProduct from '../../components/CartBagComponents/BagProduct';
 import HeaderBag from '@/components/CartBagComponents/HeaderBag';
 import BillSection from '@/components/CartBagComponents/BillSection';
 import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectAddressBottomSheet'
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed'
 import { useRouter } from 'expo-router';
 
 const CartBag = () => {
@@ -20,8 +21,15 @@ const CartBag = () => {
       >
         <BagProduct />
               <TouchableOpacity style={styles.confirmButton} onPress={() => router.push('/(stack)/ShopDetails/StoreDetailPage')}>
-                <Text style={styles.confirmButtonText}>EXPLORE MAX MORE</Text>
+                <Text style={styles.confirmButtonText}>EXPLORE STORE MORE</Text>
               </TouchableOpacity>
+        {/* create a section that having bg light grey in color and having a horizontal scroll view of RecentlyViewed in it  */}
+          <View style={{ backgroundColor: '#fff', borderRadius: 10 , width:'100%'}}>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, paddingHorizontal: 10, paddingTop: 15, fontFamily:'Montserrat'  }}>Related Products in Store</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 10 }}>
+            <RecentlyViewed />
+          </ScrollView>
+        </View>
         <BillSection />
       </ScrollView>
     </View>

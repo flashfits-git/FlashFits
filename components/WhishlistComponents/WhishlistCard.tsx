@@ -4,6 +4,7 @@ import { AntDesign } from '@expo/vector-icons';
 import frfef from '../../assets/images/3.jpg';
 import { useNavigation } from 'expo-router';
 import PopupCart from '../../components/HomeComponents/PopupCart';
+import Card from '../HomeComponents/Card';
 
 
 

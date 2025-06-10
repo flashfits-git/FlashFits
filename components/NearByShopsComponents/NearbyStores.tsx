@@ -4,10 +4,10 @@ import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
 
 const DUMMY_STORES = [
-  { id: '1', name: 'Adidas Originals', rating: '10 mins' },
-  { id: '2', name: 'Nike Store', rating: '12 mins' },
-  { id: '3', name: 'Puma Select', rating: '15 mins' },
-  { id: '4', name: 'Zara Outlet', rating: '8 mins' },
+  { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
+  { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
+  { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
+  { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
 ];
 
 const NearbyStores = () => {
@@ -23,15 +23,17 @@ const NearbyStores = () => {
       renderItem={({ item }) => (
         <View style={styles.storeCard}>
           {/* TouchableOpacity ONLY on header */}
-          <TouchableOpacity
-            style={styles.header}
-            onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
-          >
-            <Text style={styles.storeName}>{item.name}</Text>
-            <Text style={styles.ratingText}>{item.rating}</Text>
-          </TouchableOpacity>
+<TouchableOpacity
+  style={styles.header}
+  onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
+>
+  <View style={styles.leftBlock}>
+    <Text style={styles.storeName}>{item.name}</Text>
+    <Text style={styles.ratingText1}>{item.address}</Text>
+  </View>
+  <Text style={styles.ratingText}>{item.rating}</Text>
+</TouchableOpacity>
 
-          {/* Other card content can go here, for example: */}
           <CardinStores />
         </View>
       )}
@@ -75,6 +77,16 @@ const styles = StyleSheet.create({
     fontFamily:'Montserrat',
     opacity:.5
   },
+    ratingText1: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#555',
+    fontFamily:'Montserrat',
+    opacity:.5,
+  },
+  leftBlock: {
+  flexDirection: 'column',
+}
 });
 
 export default NearbyStores;

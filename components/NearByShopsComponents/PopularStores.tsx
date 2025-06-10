@@ -6,24 +6,28 @@ import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 const PopularStores = () => {
   const navigation = useNavigation(); // ✅ Hook for navigation
 
-  const DUMMY_STORES = [
-    { id: '1', name: 'Adidas Originals', rating: '10 mins' },
-    { id: '2', name: 'Nike Store', rating: '12 mins' },
-    { id: '3', name: 'Puma Select', rating: '15 mins' },
-    { id: '4', name: 'Zara Outlet', rating: '8 mins' },
-  ];
+
+const DUMMY_STORES = [
+  { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
+  { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
+  { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
+  { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
+];
 
   return (
     <View style={styles.wrapper}>
-      {DUMMY_STORES.map((store) => (
-        <View key={store.id} style={styles.inputContainer}>
-          <TouchableOpacity
-            style={styles.header}
-            onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
-          >
-            <Text style={styles.storeName}>{store.name}</Text>
-            <Text style={styles.ratingText}>{store.rating}</Text>
-          </TouchableOpacity>
+      {DUMMY_STORES.map((item) => (
+        <View key={item.id} style={styles.inputContainer}>
+<TouchableOpacity
+  style={styles.header}
+  onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
+>
+  <View style={styles.leftBlock}>
+    <Text style={styles.storeName}>{item.name}</Text>
+    <Text style={styles.ratingText1}>{item.address}</Text>
+  </View>
+  <Text style={styles.ratingText}>{item.rating}</Text>
+</TouchableOpacity>
           <CardinStores />
         </View>
       ))}
@@ -69,6 +73,16 @@ const styles = StyleSheet.create({
     fontFamily:'Montserrat',
     opacity:.5
   },
+    ratingText1: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#333',
+    fontFamily:'Montserrat',
+    opacity:.5
+  },
+    leftBlock: {
+  flexDirection: 'column',
+}
 });
 
 export default PopularStores;

@@ -12,20 +12,21 @@ import {
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
 import { useNavigation } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
+import { fetchCategories } from '../api/categories.js';
 
 const Categories = () => {
-  const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
   const navigation = useNavigation();
+  const [categoriesData, setCategoriesData] = useState([]);
+  const [selectedMainId, setSelectedMainId] = useState(null);
+  const [selectedSubId, setSelectedSubId] = useState(null);
+
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
-  const [isTabBarVisible, setIsTabBarVisible] = useState(true);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
-
       if (clampedValue < currentOffset.current - 5) {
-        setIsTabBarVisible(true);
         navigation.setOptions({
           tabBarStyle: {
             position: 'absolute',
@@ -42,10 +43,7 @@ const Categories = () => {
           },
         });
       } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
-        setIsTabBarVisible(false);
-        navigation.setOptions({
-          tabBarStyle: { display: 'none' },
-        });
+        navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
       currentOffset.current = clampedValue;
     });
@@ -55,83 +53,118 @@ const Categories = () => {
     };
   }, []);
 
-  const mainCategories = [
-    { id: 'mens', name: 'MENS', image: require('../../assets/images/3.jpg') },
-    { id: 'womens', name: 'WOMENS', image: require('../../assets/images/3.jpg') },
-    { id: 'boys', name: 'BOYS', image: require('../../assets/images/3.jpg') },
-    { id: 'girls', name: 'GIRLS', image: require('../../assets/images/3.jpg') },
-    { id: 'baby', name: 'BABY', image: require('../../assets/images/3.jpg') },
-  ];
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const data = await fetchCategories();
+        setCategoriesData(data);
+      } catch (err) {
+        // Handle error
+      }
+    };
+    loadCategories();
+  }, []);
 
-  const products = {
-    mens: [
-      { id: 'p1', title: 'Mens Jeans', image: require('../../assets/images/3.jpg') },
-      { id: 'p2', title: 'Mens Shirt', image: require('../../assets/images/3.jpg') },
-      { id: 'p3', title: 'Mens Jacket', image: require('../../assets/images/3.jpg') },
-      { id: 'p4', title: 'Mens Hoodie', image: require('../../assets/images/3.jpg') },
-      { id: 'p5', title: 'Mens Suit', image: require('../../assets/images/3.jpg') },
-      { id: 'p6', title: 'Mens Shorts', image: require('../../assets/images/3.jpg') },
-    ],
-    womens: [
-      { id: 'p7', title: 'Womens Dress', image: require('../../assets/images/3.jpg') },
-    ],
-    boys: [
-      { id: 'p8', title: 'Boys T-Shirt', image: require('../../assets/images/3.jpg') },
-    ],
-    girls: [
-      { id: 'p9', title: 'Girls Frock', image: require('../../assets/images/3.jpg') },
-    ],
-    baby: [
-      { id: 'p10', title: 'Baby Clothes', image: require('../../assets/images/3.jpg') },
-    ],
+  const mainCategories = categoriesData.filter(cat => cat.level === 0);
+  const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
+  const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
+
+  const handleMainCategoryChange = (id) => {
+    setSelectedMainId(id);
+    const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
+    if (firstSub) setSelectedSubId(firstSub._id);
   };
+
+  const handleSubCategoryChange = (id) => {
+    setSelectedSubId(id);
+  };
+
+  useEffect(() => {
+    if (mainCategories.length > 0 && !selectedMainId) {
+      handleMainCategoryChange(mainCategories[0]._id);
+    }
+  }, [mainCategories]);
 
   return (
     <>
       <CategoryTitleBar />
 
-      {/* Main Categories Bar */}
+      {/* Top Main Categories Scroll */}
       <View style={styles.categoryBarContainer}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoryScrollContent}
         >
-          {mainCategories.map((cat) => (
+          {mainCategories.map(cat => (
             <TouchableOpacity
-              key={cat.id}
+              key={cat._id}
               style={[
                 styles.mainCategoryButton,
-                selectedMainCategory === cat.id && { borderColor: '#bbdcff' },
+                selectedMainId === cat._id && { borderColor: '#bbdcff' },
               ]}
-              onPress={() => setSelectedMainCategory(cat.id)}
+              onPress={() => handleMainCategoryChange(cat._id)}
             >
-              <Image source={cat.image} style={styles.mainCategoryImage} />
+              <Image
+                source={require('../../assets/images/3.jpg')}
+                style={styles.mainCategoryImage}
+              />
               <Text style={styles.mainCategoryText}>{cat.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Products Only */}
-      <View style={styles.productsOnlyContainer}>
-        <FlatList
-          data={products[selectedMainCategory] || []}
-          keyExtractor={(item) => item.id}
-          numColumns={2}
-          renderItem={({ item }) => (
+      {/* Sidebar + Products in 3:8 flex ratio */}
+      <View style={styles.mainContent}>
+        <ScrollView style={styles.sidebar}>
+          {subCategories.map(sub => (
             <TouchableOpacity
-              style={styles.productCard}
-              onPress={() => navigation.navigate('(stack)/SelectionPage')}
+              key={sub._id}
+              style={[
+                styles.sidebarItem,
+                selectedSubId === sub._id && styles.sidebarItemSelected,
+              ]}
+              onPress={() => handleSubCategoryChange(sub._id)}
             >
-              <Image source={item.image} style={styles.productImage} />
-              <Text style={styles.productTitle} numberOfLines={2}>
-                {item.title}
+              <Text
+                style={[
+                  styles.sidebarText,
+                  selectedSubId === sub._id && styles.sidebarTextSelected,
+                ]}
+              >
+                {sub.name.toUpperCase()}
               </Text>
             </TouchableOpacity>
-          )}
-          showsVerticalScrollIndicator={false}
-        />
+          ))}
+        </ScrollView>
+
+        <View style={styles.productsContainer}>
+          <FlatList
+            data={subSubCategories}
+             keyExtractor={(item) => item._id}
+            numColumns={2}
+              columnWrapperStyle={styles.cardGrid}
+  contentContainerStyle={styles.listContent}
+  showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.productCard}
+                onPress={() => navigation.navigate('(stack)/SelectionPage')}
+              >
+                <Image
+                  source={{ uri: item.image?.url }}
+                  style={styles.productImage}
+                />
+                <Text style={styles.productTitle} numberOfLines={2}>
+                  {item.name}
+                </Text>
+              </TouchableOpacity>
+            )}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120 }}
+          />
+        </View>
       </View>
     </>
   );
@@ -156,6 +189,14 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     paddingBottom: 5,
   },
+    listContent: {
+    backgroundColor: '#fff',
+    padding: 10,
+  },
+  cardGrid: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
   mainCategoryImage: {
     width: 70,
     height: 70,
@@ -166,31 +207,59 @@ const styles = StyleSheet.create({
   mainCategoryText: {
     fontSize: 12,
     fontWeight: 'bold',
-    fontFamily:'Montserrat'
+    fontFamily: 'Montserrat',
   },
-  productsOnlyContainer: {
+  mainContent: {
     flex: 1,
+    flexDirection: 'row',
     backgroundColor: '#f9f9f9',
-    paddingHorizontal: 8,
-    paddingTop: 12,
   },
-  productCard: {
-    flex: 1,
-    margin: 6,
-    backgroundColor: '#fff',
-    borderRadius: 12,
+sidebar: {
+  width: 100, // Try 140, increase if needed
+  backgroundColor: '#fff',
+  paddingVertical: 8,
+  // borderRightWidth: 1,
+  // borderRightColor: '#eee',
+},
+  productsContainer: {
+    flex: 7,
+  },
+  sidebarItem: {
+    paddingVertical: 20,
+    paddingHorizontal: 4,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    height: 150,
-    overflow: 'hidden',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
+    justifyContent: 'center',
   },
+  sidebarItemSelected: {
+    backgroundColor: '#e6f0ff',
+    // borderLeftWidth: 3,
+    // borderLeftColor: '#3399ff',
+  },
+  sidebarText: {
+    fontSize: 12,
+    color: '#333',
+    fontFamily: 'Montserrat',
+  },
+  sidebarTextSelected: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+productCard: {
+  width: '48%', // Ensures 2 per row with some margin
+  margin: '1%', // Small margin to create spacing between cards
+  backgroundColor: '#fff',
+  borderRadius: 12,
+  alignItems: 'center',
+  justifyContent: 'flex-start',
+  elevation: 2,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  height: 150,
+  paddingVertical: 10,
+  paddingHorizontal: 6,
+},
   productImage: {
     width: '100%',
     height: 110,
@@ -206,8 +275,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     lineHeight: 16,
     textTransform: 'capitalize',
-        fontFamily:'Montserrat'
-  
+    fontFamily: 'Montserrat',
   },
 });
 
