@@ -1,0 +1,29 @@
+{
+    "project_info": {
+      "project_number": "941890403581",
+      "project_id": "flashfits-58153",
+      "storage_bucket": "flashfits-58153.firebasestorage.app"
+    },
+    "client": [
+      {
+        "client_info": {
+          "mobilesdk_app_id": "1:941890403581:android:aa38db9082a35401c11294",
+          "android_client_info": {
+            "package_name": "com.flashfits.app"
+          }
+        },
+        "oauth_client": [],
+        "api_key": [
+          {
+            "current_key": "AIzaSyBSF61Bd8dJKGk9QaUjgwQH43CBydJxY7U"
+          }
+        ],
+        "services": {
+          "appinvite_service": {
+            "other_platform_oauth_client": []
+          }
+        }
+      }
+    ],
+    "configuration_version": "1"
+  }
