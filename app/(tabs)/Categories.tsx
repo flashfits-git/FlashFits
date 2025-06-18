@@ -69,6 +69,7 @@ const Categories = () => {
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
 
+  
   const handleMainCategoryChange = (id) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);

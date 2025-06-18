@@ -69,23 +69,6 @@ export default function Home() {
     };
   }, []);
 
-  // Load fonts once
-  // useEffect(() => {
-  //   async function loadFonts() {
-  //     await Font.loadAsync({
-  //       'YourFont': require('../../assets/fonts/Montserrat-VariableFont_wght.ttf'),
-  //       'Oswald-Regular': require('../../assets/fonts/Oswald-VariableFont_wght.ttf'),
-  //     });
-  //     setFontsLoaded(true);
-  //     await SplashScreen.hideAsync();
-  //   }
-  //   loadFonts();
-  // }, []);
-
-  // if (!fontsLoaded) {
-  //   return <ActivityIndicator size="large" />;
-  // }
-
   return (
     <View style={styles.container}>
       <Banner />
