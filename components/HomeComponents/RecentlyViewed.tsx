@@ -98,9 +98,11 @@ const styles = StyleSheet.create({
   image: {
     height: 200,
     width: '100%',
-    borderRadius: 10,
+        borderTopRightRadius: 10,
+    borderTopLeftRadius: 10,
     resizeMode: 'cover',
   },
+
   ratingContainer: {
     position: 'absolute',
     bottom: 8,

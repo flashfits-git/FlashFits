@@ -105,23 +105,25 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    // backgroundColor: 'rgba(0, 0, 0, 0.45)',
     padding: 16,
   },
   title: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+        fontFamily: 'Montserrat',
   },
   subtitle: {
-    color: '#ddd',
+    color: '#000',
     fontSize: 13,
     marginBottom: 10,
+    fontFamily: 'Oswald-Regular',
   },
   detailsButton: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FF6A3D',
+    backgroundColor: '#000',
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: 12,
@@ -130,6 +132,7 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 13,
+    fontFamily: 'Montserrat',
   },
 });
 

@@ -4,77 +4,101 @@ import { useNavigation } from '@react-navigation/native';
 // import jfrnfr from '../../../assets/images/2.jpg';
 // import fmg from '../../../assets/images/3.jpg';
 
-const dummyData = [
-  {
-    id: 1,
-    image: require('../../../assets/images/1.jpg'),
-    title: 'Yellow Quirky Fit Flare Maxi Dress',
-    price: '1299',
-    oldPrice: '1379',
-    discount: '6%',
-    rating: '4.7',
-    delivery: '5 - 6 Days',
-    offerPrice: '1174',
-    image1: '../../../assets/images/1.jpg'
-  },
-  {
-    id: 2,
-    image: require('../../../assets/images/3.jpg'),
-    title: 'Pastel Pink Tiered Summer Dress',
-    price: '999',
-    oldPrice: '1149',
-    discount: '13%',
-    rating: '4.5',
-    delivery: '4 - 5 Days',
-    offerPrice: '869',
-    image1: '../../../assets/images/3.jpg'
-  },
-  {
-    id: 3,
-    image: require('../../../assets/images/4.jpg'),
-    title: 'Boho Floral Ankle Length Gown',
-    price: '1899',
-    oldPrice: '2099',
-    discount: '9%',
-    rating: '4.8',
-    delivery: '2 - 4 Days',
-    offerPrice: '1729',
-    image1: '../../../assets/images/4.jpg'
-  },
-];
+// const dummyData = [
+//   {
+//     id: 1,
+//     image: require('../../../assets/images/1.jpg'),
+//     title: 'Yellow Quirky Fit Flare Maxi Dress',
+//     price: '1299',
+//     oldPrice: '1379',
+//     discount: '6%',
+//     rating: '4.7',
+//     delivery: '5 - 6 Days',
+//     offerPrice: '1174',
+//     image1: '../../../assets/images/1.jpg'
+//   },
+//   {
+//     id: 2,
+//     image: require('../../../assets/images/3.jpg'),
+//     title: 'Pastel Pink Tiered Summer Dress',
+//     price: '999',
+//     oldPrice: '1149',
+//     discount: '13%',
+//     rating: '4.5',
+//     delivery: '4 - 5 Days',
+//     offerPrice: '869',
+//     image1: '../../../assets/images/3.jpg'
+//   },
+//   {
+//     id: 3,
+//     image: require('../../../assets/images/4.jpg'),
+//     title: 'Boho Floral Ankle Length Gown',
+//     price: '1899',
+//     oldPrice: '2099',
+//     discount: '9%',
+//     rating: '4.8',
+//     delivery: '2 - 4 Days',
+//     offerPrice: '1729',
+//     image1: '../../../assets/images/4.jpg'
+//   },
+// ];
 
 const DressCard = ({ item, onPress }) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={styles.imageWrapper}>
-      <Image source={item.image} style={styles.image} />
+      <Image source={item.selectedVariant.mainImage.url} style={styles.image} />
       <View style={styles.ratingContainer}>
         <Text style={styles.star}>★</Text>
-        <Text style={styles.rating}>{item.rating}</Text>
+        <Text style={styles.rating}>4.5</Text>
       </View>
     </View>
     <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-      {item.title}
+      {item.name}
     </Text>
     <View style={styles.priceRow}>
       <Text style={styles.price}>₹{item.price}</Text>
-      <Text style={styles.oldPrice}>₹{item.oldPrice}</Text>
+      <Text style={styles.oldPrice}>₹{item.mrp}</Text>
       {/* <Text style={styles.discount}>{item.discount} off</Text> */}
     </View>
   </TouchableOpacity>
 );
 
-export default function ImageCardHome() {
+export default function ImageCardHome({products}) {
+
+const availableVariants = products
+  .map(product => {
+    // Find the first variant with at least one size in stock
+    const inStockVariant = product.variants.find(variant =>
+      variant.sizes.some(size => size.stock > 0)
+    );
+
+    // If a valid variant is found, return the product along with that variant
+    if (inStockVariant) {
+      return {
+        ...product,
+        selectedVariant: inStockVariant,
+      };
+    }
+
+    return null;
+  })
+  .filter(item => item !== null);
+  // console.log(availableVariants);
+  
+
   const navigation = useNavigation();
 
-  const handleCardPress = (item) => {
-    navigation.navigate('(stack)/ProductDetail/productdetailpage', item);
-  };
+const handleCardPress = (item) => {
+  navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+    item: JSON.stringify(item)
+  });
+};
 
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {dummyData.map((item) => (
-          <DressCard key={item.id} item={item} onPress={() => handleCardPress(item)} />
+        {availableVariants.map((item) => (
+          <DressCard key={`${item.name}-${item.selectedVariant.color.name}`} item={item} onPress={() => handleCardPress(item)} />
         ))}
       </ScrollView>
     </View>

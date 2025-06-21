@@ -25,7 +25,9 @@ const NearbyStores = () => {
           {/* TouchableOpacity ONLY on header */}
 <TouchableOpacity
   style={styles.header}
-  onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
+  onPress={() =>{
+    console.log('ghhg');
+   navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}}
 >
   <View style={styles.leftBlock}>
     <Text style={styles.storeName}>{item.name}</Text>
@@ -33,7 +35,6 @@ const NearbyStores = () => {
   </View>
   <Text style={styles.ratingText}>{item.rating}</Text>
 </TouchableOpacity>
-
           <CardinStores />
         </View>
       )}

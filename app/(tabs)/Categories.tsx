@@ -8,17 +8,20 @@ import {
   ScrollView,
   Animated,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
 import { useNavigation } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { fetchCategories } from '../api/categories.js';
+import Loader from '@/components/Loader/Loader';
 
 const Categories = () => {
   const navigation = useNavigation();
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
@@ -55,11 +58,14 @@ const Categories = () => {
 
   useEffect(() => {
     const loadCategories = async () => {
+      setLoading(true);
       try {
         const data = await fetchCategories();
         setCategoriesData(data);
       } catch (err) {
-        // Handle error
+        console.error("Error loading categories", err);
+      } finally {
+        setLoading(false);
       }
     };
     loadCategories();
@@ -69,7 +75,6 @@ const Categories = () => {
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
 
-  
   const handleMainCategoryChange = (id) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
@@ -86,10 +91,16 @@ const Categories = () => {
     }
   }, [mainCategories]);
 
+  if (loading) {
+    return (
+     <Loader/>
+    );
+  }
+
   return (
     <>
       <CategoryTitleBar />
-
+      
       {/* Top Main Categories Scroll */}
       <View style={styles.categoryBarContainer}>
         <ScrollView
@@ -102,7 +113,7 @@ const Categories = () => {
               key={cat._id}
               style={[
                 styles.mainCategoryButton,
-                selectedMainId === cat._id && { borderColor: '#bbdcff' },
+                selectedMainId === cat._id && { borderColor: '#eee' },
               ]}
               onPress={() => handleMainCategoryChange(cat._id)}
             >
@@ -116,7 +127,7 @@ const Categories = () => {
         </ScrollView>
       </View>
 
-      {/* Sidebar + Products in 3:8 flex ratio */}
+      {/* Sidebar + Products */}
       <View style={styles.mainContent}>
         <ScrollView style={styles.sidebar}>
           {subCategories.map(sub => (
@@ -143,11 +154,11 @@ const Categories = () => {
         <View style={styles.productsContainer}>
           <FlatList
             data={subSubCategories}
-             keyExtractor={(item) => item._id}
+            keyExtractor={(item) => item._id}
             numColumns={2}
-              columnWrapperStyle={styles.cardGrid}
-  contentContainerStyle={styles.listContent}
-  showsVerticalScrollIndicator={false}
+            columnWrapperStyle={styles.cardGrid}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.productCard}
@@ -162,8 +173,6 @@ const Categories = () => {
                 </Text>
               </TouchableOpacity>
             )}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
           />
         </View>
       </View>
@@ -172,6 +181,11 @@ const Categories = () => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   categoryBarContainer: {
     height: 110,
     backgroundColor: '#ffffff',
@@ -190,18 +204,10 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     paddingBottom: 5,
   },
-    listContent: {
-    backgroundColor: '#fff',
-    padding: 10,
-  },
-  cardGrid: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
   mainCategoryImage: {
     width: 70,
     height: 70,
-    borderRadius: 10,
+    borderRadius: 20,
     marginBottom: 5,
     resizeMode: 'cover',
   },
@@ -215,15 +221,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#f9f9f9',
   },
-sidebar: {
-  width: 100, // Try 140, increase if needed
-  backgroundColor: '#fff',
-  paddingVertical: 8,
-  // borderRightWidth: 1,
-  // borderRightColor: '#eee',
-},
-  productsContainer: {
-    flex: 7,
+  sidebar: {
+    width: 100,
+    backgroundColor: '#fff',
+    paddingVertical: 8,
   },
   sidebarItem: {
     paddingVertical: 20,
@@ -232,9 +233,7 @@ sidebar: {
     justifyContent: 'center',
   },
   sidebarItemSelected: {
-    backgroundColor: '#e6f0ff',
-    // borderLeftWidth: 3,
-    // borderLeftColor: '#3399ff',
+    backgroundColor: '#eee',
   },
   sidebarText: {
     fontSize: 12,
@@ -245,22 +244,35 @@ sidebar: {
     fontWeight: 'bold',
     color: '#000',
   },
-productCard: {
-  width: '48%', // Ensures 2 per row with some margin
-  margin: '1%', // Small margin to create spacing between cards
-  backgroundColor: '#fff',
-  borderRadius: 12,
-  alignItems: 'center',
-  justifyContent: 'flex-start',
-  elevation: 2,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
-  shadowRadius: 3,
-  height: 150,
-  paddingVertical: 10,
-  paddingHorizontal: 6,
-},
+  productsContainer: {
+    flex: 7,
+    backgroundColor:'#fff'
+  },
+  listContent: {
+    backgroundColor: '#fff',
+    padding: 10,
+    paddingBottom: 120,
+  },
+  cardGrid: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  productCard: {
+    width: '48%',
+    margin: '1%',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    height: 150,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
   productImage: {
     width: '100%',
     height: 110,

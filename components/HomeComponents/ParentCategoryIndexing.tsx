@@ -9,34 +9,22 @@ import React, { useState, useEffect } from 'react';
 import TitleCard from './CategoryIndexing/TitleCard';
 import ImageCardHome from './CategoryIndexing/ImageCardHome';
 import { useNavigation } from '@react-navigation/native';
-import { fetchProductsData } from '../../app/api/productApis/products'; // Ensure the function name matches
 
-const Categories = () => {
+const Categories = ({products}) => {
   const navigation = useNavigation();
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  
+
+  const [loading, setLoading] = useState(false); // Since we're not fetching, no need to simulate loading
 
   const handleTitlePress = () => {
     navigation.navigate('(stack)/SelectionPage');
+    // console.log('gfgFHFJFgvgv');
+
   };
 
   const handleViewAll = () => {
     navigation.navigate('(stack)/SelectionPage');
   };
-
-  useEffect(() => {
-    const getProducts = async () => {
-      try {
-        const data = await fetchProductsData(); // Removed '/products' assuming the service already points to it
-        setProducts(data);
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    getProducts();
-  }, []);
 
   return (
     <>
@@ -44,11 +32,12 @@ const Categories = () => {
         <TitleCard />
       </TouchableOpacity>
 
-      {loading ? (
+      {/* {loading ? (
         <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />
       ) : (
         <ImageCardHome products={products} />
-      )}
+      )} */}
+        <ImageCardHome products={products} />
 
       <TouchableOpacity style={styles.button} onPress={handleViewAll}>
         <Text style={styles.text}>View All</Text>

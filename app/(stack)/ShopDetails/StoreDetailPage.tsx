@@ -10,32 +10,27 @@ import {
   TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import { LinearGradient } from 'expo-linear-gradient';
 import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
-import jfnefn from '../../../assets/images/2.jpg'
+import jfnefn from '../../../assets/images/2.jpg';
 
 const StoreDetailPage = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Header */}
       <View style={styles.headerContainer}>
         <View style={styles.header}>
-          <Image
-            source={jfnefn}
-            style={styles.avatar}
-          />
+          <Image source={jfnefn} style={styles.avatar} />
           <View>
             <Text style={styles.userName}>Max</Text>
             <Text style={styles.welcomeText}>Vytila | 30 min</Text>
           </View>
-          {/* <TouchableOpacity style={styles.iconContainer}>
-            <Icon name="sliders" size={22} color="#000" />
-          </TouchableOpacity> */}
         </View>
 
         {/* Search Bar */}
+        {/* 
         <View style={styles.searchContainer}>
           <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
           <TextInput
@@ -43,15 +38,14 @@ const StoreDetailPage = () => {
             placeholderTextColor="#888"
             style={styles.searchInput}
           />
-        <TouchableOpacity style={styles.iconContainer}>
+          <TouchableOpacity style={styles.iconContainer}>
             <Icon name="sliders" size={22} color="#000" />
           </TouchableOpacity>
         </View>
-
+        */}
       </View>
 
-      {/* Body */}
-      <View style={styles.body}>
+      <LinearGradient colors={['#fff', '#fff']} style={styles.body}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
@@ -60,17 +54,23 @@ const StoreDetailPage = () => {
           <View style={styles.sectionContainer}>
             <ShopOffersCarousel />
           </View>
+
+          <Text style={styles.sectionTitle}>Products in Store</Text>
+
           <View style={styles.sectionContainer}>
             <RecentlyViewed />
           </View>
           <View style={styles.sectionContainer}>
-            <TrendingStyles />
+            <RecentlyViewed />
           </View>
           <View style={styles.sectionContainer}>
+            <RecentlyViewed />
+          </View>
+          <View style={styles.sectionContainer1}>
             <FeaturedDress />
           </View>
         </ScrollView>
-      </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 };
@@ -78,26 +78,32 @@ const StoreDetailPage = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#EFEDE2',
+    backgroundColor: '#fff',
   },
   headerContainer: {
-    backgroundColor: '#EFEDE2',
+    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
+  },
+    sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    // marginBottom: 12,
+    marginTop: 16,
+    fontFamily: 'Montserrat',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
   },
-avatar: {
-  width: 60,
-  height: 60,
-  borderRadius: 30,
-  marginRight: 20,
-  
-},
+  avatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    marginRight: 20,
+  },
   userName: {
     fontSize: 30,
     fontWeight: '600',
@@ -130,10 +136,10 @@ avatar: {
   },
   body: {
     flex: 1,
-    backgroundColor: '#FFF',
     borderTopLeftRadius: 40,
     borderTopRightRadius: 40,
     paddingTop: 12,
+    overflow: 'hidden', // to handle radius clipping
   },
   scrollView: {
     flex: 1,
@@ -149,6 +155,14 @@ avatar: {
     width: '100%',
     maxWidth: 500,
     alignSelf: 'center',
+
+  },
+    sectionContainer1: {
+    width: '100%',
+    maxWidth: 500,
+    alignSelf: 'center',
+    borderTopWidth:1,
+    
   },
 });
 

@@ -13,7 +13,7 @@ import ennc from '../../assets/images/3.jpg'
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
 const CARD_HEIGHT = 140;
-
+ 
 const plans = [
   {
     id: '1',
@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 12,
     marginLeft: 16,
+    fontFamily: 'Montserrat',
   },
   card: {
     width: CARD_WIDTH,

@@ -10,3 +10,4 @@ export const fetchCategories = async () => {
     throw error;
   }
 };
+
