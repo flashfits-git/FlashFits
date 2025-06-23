@@ -60,11 +60,11 @@ const ProductDetailPage = () => {
     extrapolate: 'clamp',
   });
 
-  const headerBorderColor = scrollY.interpolate({
-    inputRange: [0, 400],
-    outputRange: ['transparent', '#ccc'],
-    extrapolate: 'clamp',
-  });
+  // const headerBorderColor = scrollY.interpolate({
+  //   inputRange: [0, 400],
+  //   outputRange: ['transparent', '#ccc'],
+  //   extrapolate: 'clamp',
+  // });
 
   return (
     <>
@@ -74,8 +74,11 @@ const ProductDetailPage = () => {
             styles.topBarContainer,
             {
               backgroundColor: headerBackgroundColor,
-              borderBottomWidth: 1,
-              borderBottomColor: headerBorderColor,
+              borderBottomLeftRadius:20,
+              borderBottomRightRadius:20,
+              // borderBottomWidth: 1,
+              // borderBottomColor: headerBorderColor,
+
             },
           ]}
         >
@@ -324,7 +327,7 @@ const styles = StyleSheet.create({
 
   carouselWrapper: { position: 'relative' },
 
-  productImage: { width, height:540, resizeMode: 'cover' },
+  productImage: { width, height:540, resizeMode: 'cover', borderBottomRightRadius:20, borderBottomLeftRadius:20 },
 
   cartButton: {
     position: 'absolute',
@@ -399,13 +402,13 @@ badgeText: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    // marginBottom: 10,
   },
 
   title: {
     fontSize: 20,
     fontWeight: '600',
-    width: 330,
+    width: 360,
     fontFamily: 'Montserrat',
   },
 
@@ -518,6 +521,11 @@ fixedButtonRow: {
   backgroundColor: '#fff',
   borderTopRightRadius: 40,
   borderTopLeftRadius: 40, // ✅
+  borderTopWidth:2,
+  borderRightWidth:1,
+  borderLeftWidth:1,
+  borderColor:'#eee',
+
 },
 
   slideToPayContainer: {
