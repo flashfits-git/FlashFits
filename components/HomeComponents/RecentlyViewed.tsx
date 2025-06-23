@@ -1,62 +1,71 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  TouchableOpacity,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-
-import jfrnfr from '../../assets/images/2.jpg';
-import fmg from '../../assets/images/3.jpg';
-import erv from '../../assets/images/54tg.jpeg';
-import fg from '../../assets/images/33e.avif';
 
 const { width } = Dimensions.get('window');
 
-// Dummy data array
-const dressData = [
-  { id: 1, image: jfrnfr, title: "Quirky Fit Flare Dress", price: "1299", oldPrice: "1379", discount: "6%", rating: "4.7" },
-  { id: 2, image: erv, title: "Bodycon Maxi Dress", price: "1349", oldPrice: "1459", discount: "8%", rating: "4.6" },
-  { id: 3, image: fg, title: "Ruched Bodycon Dress", price: "1199", oldPrice: "1399", discount: "14%", rating: "4.5" },
-  { id: 4, image: fmg, title: "Wrap Midi Dress", price: "1499", oldPrice: "1599", discount: "6%", rating: "4.8" },
-];
+const DressCard = ({ product, onPress }) => {
+  const mainImageUrl = product?.variants?.[0]?.mainImage?.url;
 
-const DressCard = ({ item, onPress }) => {
+  if (!mainImageUrl) return null; // skip rendering if no image available
+
+  const discountPercent = Math.round(
+    ((product.mrp - product.price) / product.mrp) * 100
+  );
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageWrapper}>
-        <Image source={item.image} style={styles.image} />
+        <Image source={{ uri: mainImageUrl }} style={styles.image} />
         <View style={styles.ratingContainer}>
           <Text style={styles.star}>★</Text>
-          <Text style={styles.rating}>{item.rating}</Text>
+          <Text style={styles.rating}>{product.ratings}</Text>
         </View>
       </View>
-      <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+
+      <Text style={styles.title} numberOfLines={1}>
+        {product.name}
+      </Text>
+
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{item.price}</Text>
-        {/* <Text style={styles.oldPrice}>₹{item.oldPrice}</Text> */}
-        {/* <Text style={styles.discount}>{item.discount} off</Text> */}
+        <Text style={styles.price}>₹{product.price}</Text>
+        <Text style={styles.oldPrice}>₹{product.mrp}</Text>
+        <Text style={styles.discount}>{discountPercent}% off</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default function ImageCardHome(){
+export default function ImageCardHome({ product = [] }) {
   const scrollRef = useRef(null);
   const [scrollX, setScrollX] = useState(0);
   const [direction, setDirection] = useState(1);
   const navigation = useNavigation();
 
   useEffect(() => {
+    if (product.length < 2) return; // skip auto-scroll for single item
+
     const interval = setInterval(() => {
       if (scrollRef.current) {
         const newX = scrollX + direction * 170;
         scrollRef.current.scrollTo({ x: newX, animated: true });
         setScrollX(newX);
 
-        if (newX >= 170 * (dressData.length - 1)) setDirection(-1);
+        if (newX >= 170 * (product.length - 1)) setDirection(-1);
         if (newX <= 0) setDirection(1);
       }
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [scrollX, direction]);
+  }, [scrollX, direction, product.length]);
 
   return (
     <View style={styles.container}>
@@ -67,11 +76,15 @@ export default function ImageCardHome(){
         scrollEventThrottle={16}
         onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
       >
-        {dressData.map((item) => (
+        {product.map((p) => (
           <DressCard
-            key={item.id}
-            item={item}
-            onPress={() => navigation.navigate('(stack)/ProductDetail/productdetailpage', { dress: item })}
+            key={p.id}
+            product={p}
+            onPress={() =>
+              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+                item: JSON.stringify(p),
+              })
+            }
           />
         ))}
       </ScrollView>
@@ -79,11 +92,8 @@ export default function ImageCardHome(){
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'column',
-    // paddingBottom: 2,
     paddingTop: 15,
   },
   card: {
@@ -91,6 +101,8 @@ const styles = StyleSheet.create({
     width: 160,
     backgroundColor: '#fff',
     borderRadius: 10,
+    overflow: 'hidden',
+    elevation: 3,
   },
   imageWrapper: {
     position: 'relative',
@@ -98,11 +110,8 @@ const styles = StyleSheet.create({
   image: {
     height: 200,
     width: '100%',
-        borderTopRightRadius: 10,
-    borderTopLeftRadius: 10,
     resizeMode: 'cover',
   },
-
   ratingContainer: {
     position: 'absolute',
     bottom: 8,
@@ -132,7 +141,6 @@ const styles = StyleSheet.create({
     color: '#333',
     paddingHorizontal: 6,
     fontFamily: 'Montserrat',
-
   },
   priceRow: {
     flexDirection: 'row',
@@ -144,18 +152,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     color: '#000',
-            fontFamily: 'Montserrat',
-
+    fontFamily: 'Montserrat',
   },
   oldPrice: {
     fontSize: 12,
     color: '#777',
     textDecorationLine: 'line-through',
     marginLeft: 6,
+    fontFamily: 'Montserrat',
   },
   discount: {
     fontSize: 12,
     color: 'red',
     marginLeft: 6,
+    fontFamily: 'Montserrat',
   },
 });

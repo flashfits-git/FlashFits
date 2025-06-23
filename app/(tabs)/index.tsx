@@ -44,7 +44,7 @@ export default function Home() {
       subCategoryId: { _id: "4", name: "Shirts" },
       subSubCategoryId: { _id: "5", name: "Formal Shirts" },
       gender: "men",
-      description: "A classic white shirt made from premium cotton.",
+      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
       mrp: 1499,
       price: 999,
       features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
@@ -53,10 +53,10 @@ export default function Home() {
         {
           color: { name: "White", hex: "#fff" },
           sizes: [
-            { size: "S", stock: 0 },
-            { size: "M", stock: 0 },
-            { size: "L", stock: 0 },
-            { size: "XL", stock: 0 },
+            { size: "S", stock: 3 },
+            { size: "M", stock: 5 },
+            { size: "L", stock: 4 },
+            { size: "XL", stock: 2 },
           ],
           images: [
             {
@@ -77,9 +77,9 @@ export default function Home() {
         {
           color: { name: "Off white", hex: "#000" },
           sizes: [
-            { size: "S", stock: 0 },
-            { size: "M", stock: 0 },
-            { size: "L", stock: 0 },
+            { size: "S", stock: 6 },
+            { size: "M", stock: 42 },
+            { size: "L", stock: 4 },
             { size: "XL", stock: 8 },
           ],
           images: [
@@ -112,7 +112,7 @@ export default function Home() {
       subCategoryId: { _id: "4", name: "Jackets" },
       subSubCategoryId: { _id: "5", name: "Denim Jackets" },
       gender: "women",
-      description: "Trendy denim jacket with distressed details.",
+            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
       mrp: 2999,
       price: 1999,
       features: { material: "Denim", pockets: "4", wash: "Medium" },
@@ -122,8 +122,8 @@ export default function Home() {
           color: { name: "Blue", hex: "#1E3A8A" },
           sizes: [
             { size: "S", stock: 1},
-            { size: "M", stock: 0 },
-            { size: "L", stock: 0 },
+            { size: "M", stock: 5 },
+            { size: "L", stock: 3 },
           ],
           images: [
             {
@@ -214,7 +214,7 @@ export default function Home() {
         ListHeaderComponent={
           <>
             <Carousel />
-            <RecentlyViewed />
+            <RecentlyViewed product={products} />
             <ParentCategoryIndexing products={products}/>
             {/* <ParentCategoryIndexing products={products}/> */}
           </>

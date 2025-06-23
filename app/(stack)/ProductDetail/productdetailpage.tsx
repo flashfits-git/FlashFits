@@ -33,12 +33,26 @@ const ProductDetailPage = () => {
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(product.variants?.[0]?.color?.hex || null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
-  const modalizeRef = useRef<Modalize>(null);
+  const modalizeRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const slideAnimation = useRef(new Animated.Value(0)).current;
   const maxSlide = width * 0.7;
+
+  const selectedVariant = product.variants.find(
+    (variant) => variant.color.hex === selectedColor
+
+
+  );
+
+  const selectedStock = selectedVariant?.sizes.find(
+    (s) => s.size === selectedSize
+  )?.stock || 0;
+
+  useEffect(() => {
+    setIsSlideDisabled(!selectedSize || selectedStock === 0);
+  }, [selectedSize, selectedColor]);
 
   const headerBackgroundColor = scrollY.interpolate({
     inputRange: [0, 300],
@@ -51,10 +65,6 @@ const ProductDetailPage = () => {
     outputRange: ['transparent', '#ccc'],
     extrapolate: 'clamp',
   });
-
-  useEffect(() => {
-    setIsSlideDisabled(!selectedSize);
-  }, [selectedSize]);
 
   return (
     <>
@@ -76,8 +86,18 @@ const ProductDetailPage = () => {
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            (STORE NAME)
+            {product.brandId?.name}
           </Text>
+
+          <TouchableOpacity style={styles.iconButton}>
+            <View style={styles.iconWithBadge}>
+              <Ionicons name="bag-handle-outline" size={24} color="#000" />
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>7</Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+
         </Animated.View>
 
         <Animated.ScrollView
@@ -127,66 +147,74 @@ const ProductDetailPage = () => {
                 <Text style={styles.title} numberOfLines={1}>
                   {product.name}
                 </Text>
-                <Text style={styles.price}>
-                  ₹{product.price}{' '}
-                  <Text style={styles.strike}>₹{product.mrp}</Text>
-                </Text>
+
+
+                <View style={styles.rowBetweenContainer}>
+
+                <View style={styles.priceRatingContainer}>
+                  <Text style={styles.price}>
+                    ₹{product.price}{' '}
+                    <Text style={styles.strike}>₹{product.mrp}</Text>
+                  </Text>
+
+                  <View style={styles.ratingContainer}>
+                    <Ionicons name="star" size={16} color="#FFD700" />
+                    <Text style={styles.ratingText}>{product.ratings} Stars</Text>
+                  </View>
+                      {product?.variants?.length > 1 && (
+                        <View style={styles.optionsRow1}>
+                          {product.variants.map((variant, idx) => {
+                            const colorHex = variant.color.hex;
+                            const isSelected = selectedColor === colorHex;
+
+                            return (
+                              <TouchableOpacity
+                                key={idx}
+                                style={[
+                                  styles.colorCircle,
+                                  {
+                                    backgroundColor: colorHex,
+                                    opacity: isSelected ? 1 : 0.5,
+                                    borderColor: isSelected ? '#000' : '#ccc',
+                                    borderWidth: isSelected ? 2 : 1,
+                                    borderRadius: isSelected ? 12 : 15,
+                                  },
+                                ]}
+                                onPress={() => setSelectedColor(colorHex)}
+                              />
+                            );
+                          })}
+                        </View>
+                      )}
+                </View>
+
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
+                      style={styles.circleButton}
+                    >
+                      <Text style={styles.buttonText}>−</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.quantityText}>{quantity}</Text>
+                    <TouchableOpacity
+                      onPress={() => setQuantity((prev) => prev + 1)}
+                      style={styles.circleButton}
+                    >
+                      <Text style={styles.buttonText}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+
+
               </View>
             </View>
 
-            <View style={styles.ratingContainer}>
-              <Ionicons name="star" size={16} color="#FFD700" />
-              <Text style={styles.ratingText}>{product.ratings} Stars</Text>
-            </View>
+                        <Text style={styles.description}>
+                          {product.description}
+                          <Text style={styles.readMore}> Read More...</Text>
+                        </Text>                    
 
-            <View style={styles.flexRowSpaceBetween}>
-              <Text style={styles.description}>
-                {product.description}
-                <Text style={styles.readMore}> Read More...</Text>
-              </Text>
-
-              <View>
-                <View style={styles.quantityContainer}>
-                  <TouchableOpacity
-                    onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                    style={styles.circleButton}
-                  >
-                    <Text style={styles.buttonText}>−</Text>
-                  </TouchableOpacity>
-                  <Text style={styles.quantityText}>{quantity}</Text>
-                  <TouchableOpacity
-                    onPress={() => setQuantity((prev) => prev + 1)}
-                    style={styles.circleButton}
-                  >
-                    <Text style={styles.buttonText}>+</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.optionsRow1}>
-                  {product?.variants.map((variant, idx) => {
-                    const colorHex = variant.color.hex;
-                    const isSelected = selectedColor === colorHex;
-
-                    return (
-                      <TouchableOpacity
-                        key={idx}
-                        style={[
-                          styles.colorCircle,
-                          {
-                            backgroundColor: colorHex,
-                            opacity: isSelected ? 1 : 0.5,
-                            borderColor: isSelected ? '#000' : '#ccc',
-                            borderWidth: isSelected ? 2 : 1,
-                            borderRadius: isSelected ? 12 : 15,
-                          },
-                        ]}
-                        onPress={() => setSelectedColor(colorHex)}
-                      />
-                    );
-                  })}
-                </View>
-              </View>
-            </View>
           </View>
 
           <ReviewScroreSection />
@@ -207,7 +235,7 @@ const ProductDetailPage = () => {
 
       <Modalize
         ref={modalizeRef}
-        modalHeight={height * 0.25}
+        modalHeight={height * 0.3}
         handleStyle={styles.handle}
         modalStyle={styles.modal}
         scrollViewProps={{ contentContainerStyle: { flexGrow: 1 } }}
@@ -216,30 +244,37 @@ const ProductDetailPage = () => {
           <Text style={styles.sectionTitle}>Select Size</Text>
 
           <View style={styles.optionsRow}>
-            {['S', 'M', 'L', 'XL'].map((size) => (
+            {selectedVariant?.sizes.map((s) => (
               <TouchableOpacity
-                key={size}
+                key={s.size}
                 style={[
                   styles.sizeOption,
                   {
-                    borderColor: selectedSize === size ? '#000' : '#ccc',
-                    borderWidth: selectedSize === size ? 2 : 1,
-                    backgroundColor: selectedSize === size ? '#eee' : '#fff',
+                    borderColor: selectedSize === s.size ? '#000' : '#ccc',
+                    borderWidth: selectedSize === s.size ? 2 : 1,
+                    backgroundColor: selectedSize === s.size ? '#eee' : '#fff',
+                    opacity: s.stock === 0 ? 0.4 : 1,
                   },
                 ]}
-                onPress={() => setSelectedSize(size)}
+                onPress={() => s.stock > 0 && setSelectedSize(s.size)}
               >
                 <Text
                   style={{
                     textAlign: 'center',
-                    fontWeight: selectedSize === size ? 'bold' : 'normal',
+                    fontWeight: selectedSize === s.size ? 'bold' : 'normal',
                   }}
                 >
-                  {size}
+                  {s.size}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
+{/* 
+          {selectedSize && (
+            <Text style={{ marginLeft: 15, fontSize: 14, color: selectedStock > 0 ? 'green' : 'red' }}>
+              {selectedStock > 0 ? `${selectedStock} in stock` : 'Out of stock'}
+            </Text>
+          )} */}
         </View>
 
         <View style={styles.selectButtonContainer}>
@@ -289,7 +324,7 @@ const styles = StyleSheet.create({
 
   carouselWrapper: { position: 'relative' },
 
-  productImage: { width, height: 400, resizeMode: 'cover' },
+  productImage: { width, height:540, resizeMode: 'cover' },
 
   cartButton: {
     position: 'absolute',
@@ -300,6 +335,30 @@ const styles = StyleSheet.create({
     padding: 8,
     zIndex: 10,
   },
+  
+  iconWithBadge: {
+  position: 'relative',
+},
+
+badge: {
+  position: 'absolute',
+  top: -6,
+  right: -6,
+  backgroundColor: 'red',
+  borderRadius: 8,
+  width: 16,
+  height: 16,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+badgeText: {
+  color: '#fff',
+  fontSize: 10,
+  fontWeight: 'bold',
+},
+
+
 
   dotsContainer: {
     position: 'absolute',
@@ -319,8 +378,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 
+  rowBetweenContainer: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width: '100%', // or a fixed width if needed
+  // paddingHorizontal: 16, // optional for inner spacing
+},
+
   activeDot: {
-    backgroundColor: '#000',
+    backgroundColor: '#eee',
     width: 14,
     height: 14,
     borderRadius: 7,
@@ -342,12 +409,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat',
   },
 
-  price: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    fontFamily: 'Montserrat',
-  },
-
+price: {
+  fontSize: 18,
+  fontWeight: 'bold',
+  fontFamily: 'Montserrat',
+  alignSelf: 'flex-start', // 🔥 aligns it to the top-left of the parent
+},
   strike: {
     textDecorationLine: 'line-through',
     fontSize: 14,
@@ -361,6 +428,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginVertical: 4,
   },
+  priceRatingContainer: {
+  flexDirection: 'column',
+  alignItems: 'flex-start', // or 'center' as needed
+  gap: 4, // optional, use if using newer React Native versions
+},
 
   ratingText: {
     marginLeft: 5,
@@ -373,7 +445,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginVertical: 10,
     color: '#444',
-    width: 200,
+    width: '100%',
     fontFamily: 'Montserrat',
   },
 
@@ -383,11 +455,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat',
   },
 
-  quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
+quantityContainer: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  // alignSelf: 'flex-start', // Aligns the container to the top/left of parent
+  marginTop: 10,
+},
 
   circleButton: {
     width: 50,
@@ -419,13 +492,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
 
-  optionsRow1: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginTop: 10,
-  },
+optionsRow1: {
+  flexDirection: 'row',
+  justifyContent: 'flex-start', // ✅ use this instead of 'start'
+  alignItems: 'flex-start',
+  flexWrap: 'wrap',
+  // marginTop: 10,
+  // marginBottom:5
+},
 
   colorCircle: {
     width: 30,
@@ -436,20 +510,22 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
   },
 
-  fixedButtonRow: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ccc',
-  },
+fixedButtonRow: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  borderTopRightRadius: 40,
+  borderTopLeftRadius: 40, // ✅
+},
 
   slideToPayContainer: {
     width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 10,
+        borderTopRightRadius:20,
+    borderTopLeftRadius:20
   },
 
   slideTrack: {
@@ -458,6 +534,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    
   },
 
   slideText: {
