@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+
 import {
   View,
   Text,
@@ -9,6 +10,7 @@ import {
   ScrollView,
   TextInput,
 } from 'react-native';
+
 import Icon from 'react-native-vector-icons/Feather';
 import { LinearGradient } from 'expo-linear-gradient';
 import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
@@ -18,6 +20,117 @@ import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import jfnefn from '../../../assets/images/2.jpg';
 
 const StoreDetailPage = () => {
+    const [products, setProducts] = useState([
+    {
+      id:3e23,
+      name: "Classic White Shirt",
+      merchantId: { _id: "1", name: "Trendify Merchants" },
+      brandId: { _id: "2", name: "UrbanClassics" },
+      categoryId: { _id: "3", name: "Topwear" },
+      subCategoryId: { _id: "4", name: "Shirts" },
+      subSubCategoryId: { _id: "5", name: "Formal Shirts" },
+      gender: "men",
+      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
+      mrp: 1499,
+      price: 999,
+      features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
+      tags: ["white", "shirt", "formal", "slim fit"],
+      variants: [
+        {
+          color: { name: "White", hex: "#fff" },
+          sizes: [
+            { size: "S", stock: 3 },
+            { size: "M", stock: 5 },
+            { size: "L", stock: 4 },
+            { size: "XL", stock: 2 },
+          ],
+          images: [
+            {
+              public_id: "white_shirt_1",
+              url: "https://example.com/images/white-shirt-1.jpg",
+            },
+            {
+              public_id: "white_shirt_2",
+              url: "https://example.com/images/white-shirt-2.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "white_shirt_main",
+            url: "https://example.com/images/white-shirt-main.jpg",
+          },
+          discount: 33,
+        },
+        {
+          color: { name: "Off white", hex: "#000" },
+          sizes: [
+            { size: "S", stock: 6 },
+            { size: "M", stock: 42 },
+            { size: "L", stock: 4 },
+            { size: "XL", stock: 8 },
+          ],
+          images: [
+            {
+              public_id: "white_shirt_1",
+              url: "https://example.com/images/white-shirt-1.jpg",
+            },
+            {
+              public_id: "white_shirt_2",
+              url: "https://example.com/images/white-shirt-2.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "white_shirt_main",
+            url: "https://example.com/images/white-shirt-main.jpg",
+          },
+          discount: 33,
+        },
+      ],
+      ratings: 4.5,
+      numReviews: 27,
+      isActive: true,
+    },
+    {
+      id:3234,
+      name: "Denim Jacket Denim Jacket Denim Jacket",
+      merchantId: { _id: "1", name: "Trendify Merchants" },
+      brandId: { _id: "2", name: "UrbanClassics" },
+      categoryId: { _id: "3", name: "Topwear" },
+      subCategoryId: { _id: "4", name: "Jackets" },
+      subSubCategoryId: { _id: "5", name: "Denim Jackets" },
+      gender: "women",
+            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
+      mrp: 2999,
+      price: 1999,
+      features: { material: "Denim", pockets: "4", wash: "Medium" },
+      tags: ["denim", "jacket", "casual"],
+      variants: [
+        {
+          color: { name: "Blue", hex: "#1E3A8A" },
+          sizes: [
+            { size: "S", stock: 1},
+            { size: "M", stock: 5 },
+            { size: "L", stock: 3 },
+          ],
+          images: [
+            {
+              public_id: "denim_jacket_1",
+              url: "https://example.com/images/denim-jacket-1.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "denim_jacket_main",
+            url: "https://unsplash.com/photos/boy-in-white-crew-neck-t-shirt-wearing-black-sunglasses-PDZAMYvduVk",
+          },
+          discount: 25,
+        },
+      ],
+      ratings: 4.8,
+      numReviews: 54,
+      isActive: true,
+    },
+  ]);
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
@@ -58,13 +171,13 @@ const StoreDetailPage = () => {
           <Text style={styles.sectionTitle}>Products in Store</Text>
 
           <View style={styles.sectionContainer}>
-            <RecentlyViewed />
+            <RecentlyViewed product={products}/>
           </View>
           <View style={styles.sectionContainer}>
-            <RecentlyViewed />
+            <RecentlyViewed product={products}/>
           </View>
           <View style={styles.sectionContainer}>
-            <RecentlyViewed />
+            <RecentlyViewed product={products}/>
           </View>
           <View style={styles.sectionContainer1}>
             <FeaturedDress />
