@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
 import ReviewScroreSection from '../../../components/DetailPageComponents/ReviewScroreSection';
 import vrvv from '../../../assets/images/4.jpg';
+import YouMayLike from '../../../components/DetailPageComponents/YouMayLike'
 
 const { width, height } = Dimensions.get('window');
 
@@ -35,10 +36,158 @@ const ProductDetailPage = () => {
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
   const modalizeRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [cartCount, setCartCount] = useState(0);
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const slideAnimation = useRef(new Animated.Value(0)).current;
   const maxSlide = width * 0.7;
+
+  const [showToast, setShowToast] = useState(false);
+const toastOpacity = useRef(new Animated.Value(0)).current;
+const toastTranslateY = useRef(new Animated.Value(30)).current; // Start slightly lower
+
+    const [pro, setProducts] = useState([
+    {
+      id:3e23,
+      name: "Classic White Shirt",
+      merchantId: { _id: "1", name: "Trendify Merchants" },
+      brandId: { _id: "2", name: "UrbanClassics" },
+      categoryId: { _id: "3", name: "Topwear" },
+      subCategoryId: { _id: "4", name: "Shirts" },
+      subSubCategoryId: { _id: "5", name: "Formal Shirts" },
+      gender: "men",
+      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
+      mrp: 1499,
+      price: 999,
+      features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
+      tags: ["white", "shirt", "formal", "slim fit"],
+      variants: [
+        {
+          color: { name: "White", hex: "#fff" },
+          sizes: [
+            { size: "S", stock: 3 },
+            { size: "M", stock: 5 },
+            { size: "L", stock: 4 },
+            { size: "XL", stock: 2 },
+          ],
+          images: [
+            {
+              public_id: "white_shirt_1",
+              url: "https://example.com/images/white-shirt-1.jpg",
+            },
+            {
+              public_id: "white_shirt_2",
+              url: "https://example.com/images/white-shirt-2.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "white_shirt_main",
+            url: "https://example.com/images/white-shirt-main.jpg",
+          },
+          discount: 33,
+        },
+        {
+          color: { name: "Off white", hex: "#000" },
+          sizes: [
+            { size: "S", stock: 6 },
+            { size: "M", stock: 42 },
+            { size: "L", stock: 4 },
+            { size: "XL", stock: 8 },
+          ],
+          images: [
+            {
+              public_id: "white_shirt_1",
+              url: "https://example.com/images/white-shirt-1.jpg",
+            },
+            {
+              public_id: "white_shirt_2",
+              url: "https://example.com/images/white-shirt-2.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "white_shirt_main",
+            url: "https://example.com/images/white-shirt-main.jpg",
+          },
+          discount: 33,
+        },
+      ],
+      ratings: 4.5,
+      numReviews: 27,
+      isActive: true,
+    },
+    {
+      id:3234,
+      name: "Denim Jacket Denim Jacket Denim Jacket",
+      merchantId: { _id: "1", name: "Trendify Merchants" },
+      brandId: { _id: "2", name: "UrbanClassics" },
+      categoryId: { _id: "3", name: "Topwear" },
+      subCategoryId: { _id: "4", name: "Jackets" },
+      subSubCategoryId: { _id: "5", name: "Denim Jackets" },
+      gender: "women",
+            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
+      mrp: 2999,
+      price: 1999,
+      features: { material: "Denim", pockets: "4", wash: "Medium" },
+      tags: ["denim", "jacket", "casual"],
+      variants: [
+        {
+          color: { name: "Blue", hex: "#1E3A8A" },
+          sizes: [
+            { size: "S", stock: 1},
+            { size: "M", stock: 5 },
+            { size: "L", stock: 3 },
+          ],
+          images: [
+            {
+              public_id: "denim_jacket_1",
+              url: "https://example.com/images/denim-jacket-1.jpg",
+            },
+          ],
+          mainImage: {
+            public_id: "denim_jacket_main",
+            url: "https://unsplash.com/photos/boy-in-white-crew-neck-t-shirt-wearing-black-sunglasses-PDZAMYvduVk",
+          },
+          discount: 25,
+        },
+      ],
+      ratings: 4.8,
+      numReviews: 54,
+      isActive: true,
+    },
+  ]);
+
+
+const showAddToCartToast = () => {
+  setShowToast(true);
+  Animated.parallel([
+    Animated.timing(toastOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }),
+    Animated.timing(toastTranslateY, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }),
+  ]).start(() => {
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(toastOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toastTranslateY, {
+          toValue: 30,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => setShowToast(false));
+    }, 1500);
+  });
+};
+
 
   const selectedVariant = product.variants.find(
     (variant) => variant.color.hex === selectedColor
@@ -92,14 +241,17 @@ const ProductDetailPage = () => {
             {product.brandId?.name}
           </Text>
 
-          <TouchableOpacity style={styles.iconButton}>
-            <View style={styles.iconWithBadge}>
-              <Ionicons name="bag-handle-outline" size={24} color="#000" />
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>7</Text>
+            <TouchableOpacity style={styles.iconButton}>
+              <View style={styles.iconWithBadge}>
+                <Ionicons name="bag-handle-outline" size={24} color="#000" />
+                {cartCount > 0 && ( // 👈 only show when > 0
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{cartCount}</Text>
+                  </View>
+                )}
               </View>
-            </View>
-          </TouchableOpacity>
+            </TouchableOpacity>
+
 
         </Animated.View>
 
@@ -155,10 +307,10 @@ const ProductDetailPage = () => {
                 <View style={styles.rowBetweenContainer}>
 
                 <View style={styles.priceRatingContainer}>
-                  <Text style={styles.price}>
-                    ₹{product.price}{' '}
-                    <Text style={styles.strike}>₹{product.mrp}</Text>
-                  </Text>
+                <Text style={styles.price}>
+                  ₹{product.price}{' '}
+                  <Text style={styles.strike}>₹{product.mrp}</Text>
+                </Text>
 
                   <View style={styles.ratingContainer}>
                     <Ionicons name="star" size={16} color="#FFD700" />
@@ -169,7 +321,6 @@ const ProductDetailPage = () => {
                           {product.variants.map((variant, idx) => {
                             const colorHex = variant.color.hex;
                             const isSelected = selectedColor === colorHex;
-
                             return (
                               <TouchableOpacity
                                 key={idx}
@@ -220,8 +371,11 @@ const ProductDetailPage = () => {
 
           </View>
 
-          <ReviewScroreSection />
+          {/* <ReviewScroreSection /> */}
+          <YouMayLike products={pro}/>
         </Animated.ScrollView>
+          {/* <ReviewScroreSection /> */}
+
 
         <View style={styles.fixedButtonRow}>
           <View style={styles.slideToPayContainer}>
@@ -288,12 +442,42 @@ const ProductDetailPage = () => {
             ]}
             activeOpacity={0.8}
             disabled={isSlideDisabled}
-            onPress={() => router.push('/ShoppingBag')}
+            onPress={() => {
+                showAddToCartToast();
+                setCartCount(prev => prev + quantity); // 👈 increase by current quantity
+                modalizeRef.current?.close();
+              }}
           >
             <Text style={styles.slideText}>Select</Text>
           </TouchableOpacity>
         </View>
       </Modalize>
+{showToast && (
+  <Animated.View
+    style={[
+      {
+        position: 'absolute',
+        bottom: 110,
+        alignSelf: 'center',
+        backgroundColor: '#2DBE74',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 20,
+        zIndex: 1000,
+        width: 200,
+        height: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+        transform: [{ translateY: toastTranslateY }],
+        opacity: toastOpacity,
+      },
+    ]}
+  >
+    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', fontFamily: 'Montserrat', }}>
+      ADDED TO CART!
+    </Text>
+  </Animated.View>
+)}
     </>
   );
 };
@@ -417,6 +601,7 @@ price: {
   fontWeight: 'bold',
   fontFamily: 'Montserrat',
   alignSelf: 'flex-start', // 🔥 aligns it to the top-left of the parent
+  paddingLeft:4
 },
   strike: {
     textDecorationLine: 'line-through',
@@ -500,6 +685,8 @@ optionsRow1: {
   justifyContent: 'flex-start', // ✅ use this instead of 'start'
   alignItems: 'flex-start',
   flexWrap: 'wrap',
+  paddingLeft:4,
+  paddingTop:2
   // marginTop: 10,
   // marginBottom:5
 },

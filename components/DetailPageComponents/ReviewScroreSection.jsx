@@ -50,8 +50,8 @@ const ReviewScroreSection = () => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
-    borderRadius: 12,
-    margin: 16,
+    // borderRadius: 12,
+    // margin: 16,
   },
   title: {
     fontSize: 18,
