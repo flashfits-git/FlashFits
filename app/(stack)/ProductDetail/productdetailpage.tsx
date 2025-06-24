@@ -154,7 +154,7 @@ const toastTranslateY = useRef(new Animated.Value(30)).current; // Start slightl
       numReviews: 54,
       isActive: true,
     },
-  ]);
+  ]); 
 
 
 const showAddToCartToast = () => {
@@ -241,7 +241,7 @@ const showAddToCartToast = () => {
             {product.brandId?.name}
           </Text>
 
-            <TouchableOpacity style={styles.iconButton}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')} >
               <View style={styles.iconWithBadge}>
                 <Ionicons name="bag-handle-outline" size={24} color="#000" />
                 {cartCount > 0 && ( // 👈 only show when > 0

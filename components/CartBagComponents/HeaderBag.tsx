@@ -10,18 +10,28 @@ const HeaderBag = () => {
     <View style={styles.headerWrapper}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Ionicons name="chevron-back" size={24} color="#333" />
+        {/* <Text style={styles.title}>Shopping Bag</Text> */}
+
       </TouchableOpacity>
-      <View style={styles.container}>
-        <View style={styles.topRow}>
-          <Text style={styles.title}>Shopping Bag</Text>
-        </View>
+
+      <View style={styles.centerContainer}>
+        <Text style={styles.title}>Shopping Bag</Text>
       </View>
+
+      <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
+        <Ionicons name="home" size={24} color="#333" />
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   headerWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 60,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
@@ -30,30 +40,22 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 10,
   },
   backButton: {
-    position: 'absolute',
-    top: 10,
-    left: 16,
-    zIndex: 10,
     padding: 8,
     borderRadius: 20,
-    // backgroundColor: '#f5f5f5',
   },
-  container: {
-    paddingTop: 0,
-    paddingHorizontal: 56, // to leave space for back button
-    height: 60,
-    justifyContent: 'center',
-  },
-  topRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    // justifyContent: 'center',
+  centerContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
     color: '#5c565c',
-    fontFamily:'Montserrat' 
+    fontFamily: 'Montserrat',
+  },
+  homeButton: {
+    padding: 8,
+    borderRadius: 20,
   },
 });
 

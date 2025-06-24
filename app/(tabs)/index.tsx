@@ -21,8 +21,6 @@ import SearchCartProfileButton from '../../components/FlexibleComponents/SearchC
 import Colors from '../../assets/theme/Colors';
 import {fetchnewArrivalsProductsData} from '../api/productApis/products'
 import Footer from '../../components/Footer'
-// import * as Font from 'expo-font';
-// import * as SplashScreen from 'expo-splash-screen';
 
 
 // SplashScreen.preventAutoHideAsync(); // Prevent hiding until fonts are loaded
@@ -240,7 +238,6 @@ header: {
   height: 70,
   borderBottomLeftRadius: 10,
   borderBottomRightRadius: 10,
-
 },
   locationWrapper: {
     flexDirection: 'row',

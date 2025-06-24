@@ -11,15 +11,20 @@ import {
   TextInput,
 } from 'react-native';
 
-import Icon from 'react-native-vector-icons/Feather';
+import { Ionicons } from '@expo/vector-icons';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import jfnefn from '../../../assets/images/2.jpg';
+import { useRouter } from 'expo-router';
 
 const StoreDetailPage = () => {
+
+const router = useRouter();
+
     const [products, setProducts] = useState([
     {
       id:3e23,
@@ -134,6 +139,7 @@ const StoreDetailPage = () => {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
+
         <View style={styles.header}>
           <Image source={jfnefn} style={styles.avatar} />
           <View>
@@ -141,21 +147,13 @@ const StoreDetailPage = () => {
             <Text style={styles.welcomeText}>Vytila | 30 min</Text>
           </View>
         </View>
-
-        {/* Search Bar */}
-        {/* 
-        <View style={styles.searchContainer}>
-          <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
-          <TextInput
-            placeholder="Search for styles or offers"
-            placeholderTextColor="#888"
-            style={styles.searchInput}
-          />
-          <TouchableOpacity style={styles.iconContainer}>
-            <Icon name="sliders" size={22} color="#000" />
+        
+        <View style={styles.iconContainer}>
+          <TouchableOpacity onPress={() => router.push('/FlashfitsStores')} style={styles.iconButton}>
+            <Ionicons name="storefront-outline" size={24} color="#000" />
+            <Text style={styles.iconLabel}>Stores</Text>
           </TouchableOpacity>
         </View>
-        */}
       </View>
 
       <LinearGradient colors={['#fff', '#fff']} style={styles.body}>
@@ -194,10 +192,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   headerContainer: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center', // vertically center the content
+    paddingHorizontal: 16,
+    marginVertical: 12,
   },
     sectionTitle: {
     fontSize: 18,
@@ -229,7 +228,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat',
   },
   iconContainer: {
-    marginLeft: 'auto',
+    marginLeft: 5,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -277,6 +276,17 @@ const styles = StyleSheet.create({
     borderTopWidth:1,
     
   },
+
+iconButton: {
+  alignItems: 'center',  // center icon and text horizontally
+},
+
+iconLabel: {
+  fontSize: 12,
+  marginTop: 2,
+  color: '#000',
+  fontFamily: 'Montserrat',
+}
 });
 
 export default StoreDetailPage;
