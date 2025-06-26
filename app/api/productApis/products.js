@@ -6,7 +6,7 @@ export const fetchnewArrivalsProductsData = async () => {
 //   return response.data.products; // adjust this based on your backend
   try {
   const res = await api.get('user/products/newArrivals');
-  return res.data.categories; // adjust this based on your backend
+  return res.data; // adjust this based on your backend
 
   } catch (error) {
         console.error('Axios error:', error);
@@ -18,7 +18,7 @@ export const CategoryOfProducts = async () => {
 
   try {
   const res = await api.get('user/products/CategoryOfProducts');
-  return res.data.categories; // adjust this based on your backend
+  return res.data; // adjust this based on your backend
 
   } catch (error) {
         console.error('Axios error:', error);

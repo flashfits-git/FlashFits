@@ -46,7 +46,18 @@ import { useNavigation } from '@react-navigation/native';
 const DressCard = ({ item, onPress }) => (
   <TouchableOpacity style={styles.card} onPress={onPress}>
     <View style={styles.imageWrapper}>
-      <Image source={item.selectedVariant.mainImage.url} style={styles.image} />
+    {item?.selectedVariant?.images?.[0]?.url ? (
+  <Image
+    source={{ uri: item.selectedVariant.images[0].url }}
+    style={styles.image}
+  />
+) : (
+  <View style={[styles.image, { backgroundColor: '#ccc', justifyContent: 'center', alignItems: 'center' }]}>
+    <Text>No Image</Text>
+  </View>
+)}
+
+
       <View style={styles.ratingContainer}>
         <Text style={styles.star}>★</Text>
         <Text style={styles.rating}>4.5</Text>
@@ -97,9 +108,14 @@ const handleCardPress = (item) => {
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {availableVariants.map((item) => (
-          <DressCard key={`${item.name}-${item.selectedVariant.color.name}`} item={item} onPress={() => handleCardPress(item)} />
-        ))}
+      {availableVariants.map((item) => (
+  <DressCard
+    key={`${item._id}-${item.selectedVariant._id}`}
+    item={item}
+    onPress={() => handleCardPress(item)}
+  />
+))}
+
       </ScrollView>
     </View>
   );

@@ -32,115 +32,21 @@ export default function Home() {
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   // const [fontsLoaded, setFontsLoaded] = useState(false);
-    const [products, setProducts] = useState([
-    {
-      id:3e23,
-      name: "Classic White Shirt",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Shirts" },
-      subSubCategoryId: { _id: "5", name: "Formal Shirts" },
-      gender: "men",
-      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 1499,
-      price: 999,
-      features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
-      tags: ["white", "shirt", "formal", "slim fit"],
-      variants: [
-        {
-          color: { name: "White", hex: "#fff" },
-          sizes: [
-            { size: "S", stock: 3 },
-            { size: "M", stock: 5 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 2 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-        {
-          color: { name: "Off white", hex: "#000" },
-          sizes: [
-            { size: "S", stock: 6 },
-            { size: "M", stock: 42 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 8 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-      ],
-      ratings: 4.5,
-      numReviews: 27,
-      isActive: true,
-    },
-    {
-      id:3234,
-      name: "Denim Jacket Denim Jacket Denim Jacket",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Jackets" },
-      subSubCategoryId: { _id: "5", name: "Denim Jackets" },
-      gender: "women",
-            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 2999,
-      price: 1999,
-      features: { material: "Denim", pockets: "4", wash: "Medium" },
-      tags: ["denim", "jacket", "casual"],
-      variants: [
-        {
-          color: { name: "Blue", hex: "#1E3A8A" },
-          sizes: [
-            { size: "S", stock: 1},
-            { size: "M", stock: 5 },
-            { size: "L", stock: 3 },
-          ],
-          images: [
-            {
-              public_id: "denim_jacket_1",
-              url: "https://example.com/images/denim-jacket-1.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "denim_jacket_main",
-            url: "https://unsplash.com/photos/boy-in-white-crew-neck-t-shirt-wearing-black-sunglasses-PDZAMYvduVk",
-          },
-          discount: 25,
-        },
-      ],
-      ratings: 4.8,
-      numReviews: 54,
-      isActive: true,
-    },
-  ]);
+  const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
+
+  useEffect(() => {
+    getNewArrivalsProducts()
+  }, [])
+  const getNewArrivalsProducts = async () => {
+    try {
+      const response = await fetchnewArrivalsProductsData()
+      console.log(response);
+      
+      setNewArrivalsProducts(response)
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
 
   // Scroll listener to toggle tab bar
   useEffect(() => {
@@ -178,6 +84,10 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    getNewArrivalsProducts()
+  }, [])
+
   return (
     <View style={styles.container}>
       <Banner />
@@ -212,8 +122,12 @@ export default function Home() {
         ListHeaderComponent={
           <>
             <Carousel />
-            <RecentlyViewed product={products} />
-            <ParentCategoryIndexing products={products}/>
+            {newArrivalsProducts.length > 0 && (
+  <>
+    <RecentlyViewed product={newArrivalsProducts} />
+    <ParentCategoryIndexing products={newArrivalsProducts} />
+  </>
+)}
             {/* <ParentCategoryIndexing products={products}/> */}
           </>
         }
