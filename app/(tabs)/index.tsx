@@ -40,7 +40,7 @@ export default function Home() {
   const getNewArrivalsProducts = async () => {
     try {
       const response = await fetchnewArrivalsProductsData()
-      console.log(response);
+      // console.log(response);
       
       setNewArrivalsProducts(response)
     } catch (error) {
@@ -124,7 +124,7 @@ export default function Home() {
             <Carousel />
             {newArrivalsProducts.length > 0 && (
   <>
-    <RecentlyViewed product={newArrivalsProducts} />
+    {/* <RecentlyViewed product={newArrivalsProducts} /> */}
     <ParentCategoryIndexing products={newArrivalsProducts} />
   </>
 )}

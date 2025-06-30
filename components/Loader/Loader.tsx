@@ -1,11 +1,17 @@
 import React from 'react';
-import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import LottieView from 'lottie-react-native';
+import loader1 from '../../assets/loaders/loader1.json'; // ✅ lowercase 'loader1', not a component
 
 function Loader() {
   return ( 
     <View style={styles.loadingContainer}>
-      <ActivityIndicator size="large" color="#3399ff" />
-      <Text>Loading categories...</Text>
+      <LottieView
+        source={loader1}       // ✅ use as source
+        autoPlay
+        loop
+        style={{ width: 400, height: 400 }}
+      />
     </View>
   );
 }
@@ -15,6 +21,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff', // optional
   },
 });
 

@@ -31,7 +31,7 @@ export default function BagProduct() {
 
         <Text style={styles.deliveryText}>Est. Delivery in <Text style={styles.greenText}>2 hour</Text></Text> 
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.deliveryText1}>Instant return</Text>
+            <Text style={styles.deliveryText1}>Instant return (Try then Buy)</Text>
             <Image
               source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
               style={styles.googlePayImage}

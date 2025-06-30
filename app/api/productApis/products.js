@@ -27,6 +27,17 @@ export const CategoryOfProducts = async () => {
 
 }
 
+export const productDetailPage = async (id) => {
+  // console.log(id);
+        try {
+        const response = await api.get(`user/products/${id}`);
+        console.log(response.data, 'feedd');
+        return response.data
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      }
+};
+
 
 
 

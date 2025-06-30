@@ -133,7 +133,7 @@ const CartBag = () => {
               </TouchableOpacity>
         {/* create a section that having bg light grey in color and having a horizontal scroll view of RecentlyViewed in it  */}
           <View style={{ backgroundColor: '#fff', borderRadius: 10 , width:'100%'}}>
-          <Text style={{ fontWeight: 'bold', fontSize: 16, paddingHorizontal: 10, paddingTop: 15, fontFamily:'Montserrat'  }}>Related Products in Store</Text>
+          <Text style={{ fontWeight: 'bold', fontSize: 16, paddingHorizontal: 10, paddingTop: 15, fontFamily:'Montserrat'  }}>Matching Accessories in Store</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 10 }}>
             <RecentlyViewed product={products} />
           </ScrollView>

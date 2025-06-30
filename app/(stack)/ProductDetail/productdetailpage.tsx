@@ -1,265 +1,156 @@
 import React, { useRef, useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  Dimensions,
-  FlatList,
-  ScrollView,
+  View, Text, Image, StyleSheet, TouchableOpacity, Animated,
+  Dimensions, FlatList, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
-import ReviewScroreSection from '../../../components/DetailPageComponents/ReviewScroreSection';
+import { productDetailPage } from '../../api/productApis/products';
 import vrvv from '../../../assets/images/4.jpg';
-import YouMayLike from '../../../components/DetailPageComponents/YouMayLike'
+import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
+import Loader from '@/components/Loader/Loader';
 
 const { width, height } = Dimensions.get('window');
 
-const productImages = [
+const fallbackImages = [
   vrvv,
   require('../../../assets/images/1.jpg'),
   require('../../../assets/images/2.jpg'),
 ];
 
 const ProductDetailPage = () => {
-  const router = useRouter();
-  const { item } = useLocalSearchParams();
-  const product = typeof item === 'string' ? JSON.parse(item) : item;
-
+  const [products, setProduct] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(product.variants?.[0]?.color?.hex || null);
+  const [selectedColor, setSelectedColor] = useState(null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
-  const modalizeRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const [cartCount, setCartCount] = useState(0);
-
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const slideAnimation = useRef(new Animated.Value(0)).current;
-  const maxSlide = width * 0.7;
-
   const [showToast, setShowToast] = useState(false);
-const toastOpacity = useRef(new Animated.Value(0)).current;
-const toastTranslateY = useRef(new Animated.Value(30)).current; // Start slightly lower
 
-    const [pro, setProducts] = useState([
-    {
-      id:3e23,
-      name: "Classic White Shirt",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Shirts" },
-      subSubCategoryId: { _id: "5", name: "Formal Shirts" },
-      gender: "men",
-      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 1499,
-      price: 999,
-      features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
-      tags: ["white", "shirt", "formal", "slim fit"],
-      variants: [
-        {
-          color: { name: "White", hex: "#fff" },
-          sizes: [
-            { size: "S", stock: 3 },
-            { size: "M", stock: 5 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 2 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-        {
-          color: { name: "Off white", hex: "#000" },
-          sizes: [
-            { size: "S", stock: 6 },
-            { size: "M", stock: 42 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 8 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-      ],
-      ratings: 4.5,
-      numReviews: 27,
-      isActive: true,
-    },
-    {
-      id:3234,
-      name: "Denim Jacket Denim Jacket Denim Jacket",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Jackets" },
-      subSubCategoryId: { _id: "5", name: "Denim Jackets" },
-      gender: "women",
-            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 2999,
-      price: 1999,
-      features: { material: "Denim", pockets: "4", wash: "Medium" },
-      tags: ["denim", "jacket", "casual"],
-      variants: [
-        {
-          color: { name: "Blue", hex: "#1E3A8A" },
-          sizes: [
-            { size: "S", stock: 1},
-            { size: "M", stock: 5 },
-            { size: "L", stock: 3 },
-          ],
-          images: [
-            {
-              public_id: "denim_jacket_1",
-              url: "https://example.com/images/denim-jacket-1.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "denim_jacket_main",
-            url: "https://unsplash.com/photos/boy-in-white-crew-neck-t-shirt-wearing-black-sunglasses-PDZAMYvduVk",
-          },
-          discount: 25,
-        },
-      ],
-      ratings: 4.8,
-      numReviews: 54,
-      isActive: true,
-    },
-  ]); 
+  const router = useRouter();
+  const { id } = useLocalSearchParams();
+  const modalizeRef = useRef(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const toastTranslateY = useRef(new Animated.Value(30)).current;
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await productDetailPage(id);
+        setProduct(data);
+        
+        if (data?.variants?.length > 0) {
+          setSelectedColor(data.variants[0].color.name);
+          const firstVariant = data.variants[0];
+          const availableSize = firstVariant.sizes.find(s => s.stock > 0);
+          if (availableSize) setSelectedSize(availableSize.size);
+        }
+      } catch (err) {
+        console.error('Error fetching product:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const showAddToCartToast = () => {
-  setShowToast(true);
-  Animated.parallel([
-    Animated.timing(toastOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }),
-    Animated.timing(toastTranslateY, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }),
-  ]).start(() => {
-    setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(toastOpacity, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(toastTranslateY, {
-          toValue: 30,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start(() => setShowToast(false));
-    }, 1500);
-  });
-};
-
-
-  const selectedVariant = product.variants.find(
-    (variant) => variant.color.hex === selectedColor
-
-
-  );
-
-  const selectedStock = selectedVariant?.sizes.find(
-    (s) => s.size === selectedSize
-  )?.stock || 0;
+    if (id) fetchData();
+  }, [id]);
 
   useEffect(() => {
     setIsSlideDisabled(!selectedSize || selectedStock === 0);
   }, [selectedSize, selectedColor]);
 
+  const selectedVariant = products?.variants?.find(
+    (variant) => variant.color.name === selectedColor
+  ) || products?.variants?.[0];
+
+  const selectedStock = selectedVariant?.sizes?.find(
+    (s) => s.size === selectedSize
+  )?.stock || 0;
+
+  const productImages = React.useMemo(() => {
+    if (selectedVariant?.images?.length > 0) {
+      return selectedVariant.images.map(img => ({ uri: img.url }));
+    }
+    return fallbackImages;
+  }, [selectedVariant]);
+
+  const discountPercentage = React.useMemo(() => {
+    if (selectedVariant?.mrp && selectedVariant?.price) {
+      return Math.round(((selectedVariant.mrp - selectedVariant.price) / selectedVariant.mrp) * 100);
+    }
+    return 0;
+  }, [selectedVariant]);
+
   const headerBackgroundColor = scrollY.interpolate({
-    inputRange: [0, 300],
-    outputRange: ['transparent', '#fff'],
-    extrapolate: 'clamp',
+    inputRange: [0, 300], outputRange: ['transparent', '#fff'], extrapolate: 'clamp',
   });
 
-  // const headerBorderColor = scrollY.interpolate({
-  //   inputRange: [0, 400],
-  //   outputRange: ['transparent', '#ccc'],
-  //   extrapolate: 'clamp',
-  // });
+  const showAddToCartToast = () => {
+    setShowToast(true);
+    Animated.parallel([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      Animated.timing(toastTranslateY, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => {
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+          Animated.timing(toastTranslateY, { toValue: 30, duration: 300, useNativeDriver: true }),
+        ]).start(() => setShowToast(false));
+      }, 1500);
+    });
+  };
+
+  const handleAddToCart = () => {
+    showAddToCartToast();
+    setCartCount(prev => prev + quantity);
+    modalizeRef.current?.close();
+  };
+
+  if (loading) return <Loader />;
+
+  if (error || !products || Object.keys(products).length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error || 'Product not found'}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => router.back()}>
+          <Text style={styles.retryButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <>
       <View style={styles.container}>
-        <Animated.View
-          style={[
-            styles.topBarContainer,
-            {
-              backgroundColor: headerBackgroundColor,
-              borderBottomLeftRadius:20,
-              borderBottomRightRadius:20,
-              // borderBottomWidth: 1,
-              // borderBottomColor: headerBorderColor,
-
-            },
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.iconButton}
-            onPress={() => router.back()}
-          >
+        <Animated.View style={[styles.topBar, { backgroundColor: headerBackgroundColor }]}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {product.brandId?.name}
+            {products?.brandId?.name || 'Product Details'}
           </Text>
-
-            <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')} >
-              <View style={styles.iconWithBadge}>
-                <Ionicons name="bag-handle-outline" size={24} color="#000" />
-                {cartCount > 0 && ( // 👈 only show when > 0
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{cartCount}</Text>
-                  </View>
-                )}
-              </View>
-            </TouchableOpacity>
-
-
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
+            <View style={styles.iconWithBadge}>
+              <Ionicons name="bag-handle-outline" size={24} color="#000" />
+              {cartCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
         </Animated.View>
 
         <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
           scrollEventThrottle={16}
           contentContainerStyle={{ paddingBottom: 240 }}
         >
@@ -271,528 +162,289 @@ const showAddToCartToast = () => {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(_, index) => index.toString()}
               onMomentumScrollEnd={(e) => {
-                const index = Math.round(
-                  e.nativeEvent.contentOffset.x / width
-                );
+                const index = Math.round(e.nativeEvent.contentOffset.x / width);
                 setActiveIndex(index);
               }}
               renderItem={({ item }) => (
-                <Image source={item} style={styles.productImage} />
+                <Image source={item} style={styles.productImage} defaultSource={fallbackImages[0]} />
               )}
             />
             <View style={styles.dotsContainer}>
               {productImages.map((_, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.dot,
-                    index === activeIndex && styles.activeDot,
-                  ]}
-                />
+                <View key={index} style={[styles.dot, index === activeIndex && styles.activeDot]} />
               ))}
             </View>
-            <TouchableOpacity style={styles.cartButton}>
+            <TouchableOpacity style={styles.heartButton}>
               <Ionicons name="heart-outline" size={20} color="#fff" />
             </TouchableOpacity>
+            {discountPercentage > 0 && (
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountText}>{discountPercentage}% OFF</Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.infoContainer}>
-            <View style={styles.infoHeaderRow}>
-              <View>
-                <Text style={styles.title} numberOfLines={1}>
-                  {product.name}
-                </Text>
+            <Text style={styles.title} numberOfLines={1}>
+              {products?.name || 'Product Name'}
+            </Text>
 
-
-                <View style={styles.rowBetweenContainer}>
-
-                <View style={styles.priceRatingContainer}>
+            <View style={styles.rowBetween}>
+              <View style={styles.priceSection}>
                 <Text style={styles.price}>
-                  ₹{product.price}{' '}
-                  <Text style={styles.strike}>₹{product.mrp}</Text>
+                  ₹{selectedVariant?.price || 0}{' '}
+                  {selectedVariant?.mrp && selectedVariant.mrp > selectedVariant.price && (
+                    <Text style={styles.strike}>₹{selectedVariant.mrp}</Text>
+                  )}
                 </Text>
 
-                  <View style={styles.ratingContainer}>
-                    <Ionicons name="star" size={16} color="#FFD700" />
-                    <Text style={styles.ratingText}>{product.ratings} Stars</Text>
-                  </View>
-                      {product?.variants?.length > 1 && (
-                        <View style={styles.optionsRow1}>
-                          {product.variants.map((variant, idx) => {
-                            const colorHex = variant.color.hex;
-                            const isSelected = selectedColor === colorHex;
-                            return (
-                              <TouchableOpacity
-                                key={idx}
-                                style={[
-                                  styles.colorCircle,
-                                  {
-                                    backgroundColor: colorHex,
-                                    opacity: isSelected ? 1 : 0.5,
-                                    borderColor: isSelected ? '#000' : '#ccc',
-                                    borderWidth: isSelected ? 2 : 1,
-                                    borderRadius: isSelected ? 12 : 15,
-                                  },
-                                ]}
-                                onPress={() => setSelectedColor(colorHex)}
-                              />
-                            );
-                          })}
-                        </View>
-                      )}
+                <View style={styles.ratingContainer}>
+                  <Ionicons name="star" size={16} color="#FFD700" />
+                  <Text style={styles.ratingText}>{products?.ratings || 0} Stars</Text>
                 </View>
 
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                      onPress={() => setQuantity((prev) => Math.max(1, prev - 1))}
-                      style={styles.circleButton}
-                    >
-                      <Text style={styles.buttonText}>−</Text>
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{quantity}</Text>
-                    <TouchableOpacity
-                      onPress={() => setQuantity((prev) => prev + 1)}
-                      style={styles.circleButton}
-                    >
-                      <Text style={styles.buttonText}>+</Text>
-                    </TouchableOpacity>
+                {products?.variants?.length > 1 && (
+                  <View>
+                    <View style={styles.colorRow}>
+                      {products.variants.map((variant, idx) => {
+                        const colorName = variant.color.name;
+                        const colorHex = variant.color.hex || '#CCCCCC';
+                        const isSelected = selectedColor === colorName;
+                        return (
+                          <TouchableOpacity
+                            key={idx}
+                            style={[
+                              styles.colorCircle,
+                              {
+                                backgroundColor: colorHex,
+                                borderColor: isSelected ? '#000' : '#ccc',
+                                borderWidth: isSelected ? 2 : 1,
+                                shadowColor: isSelected ? '#000' : 'transparent',
+                                shadowOffset: isSelected ? { width: 0, height: 2 } : { width: 0, height: 0 },
+                                shadowOpacity: isSelected ? 0.25 : 0,
+                                shadowRadius: isSelected ? 6 : 0,
+                                elevation: isSelected ? 6 : 0, // Android
+                              },
+                            ]}
+                            onPress={() => {
+                              setSelectedColor(colorName);
+                              setSelectedSize(null);
+                            }}
+                          />
+                        );
+                      })}
+                    </View>
+                    <Text style={styles.optionLabel}>Color: {selectedColor}</Text>
                   </View>
+                )}
+              </View>
 
-                </View>
-
-
+              <View style={styles.quantityContainer}>
+                <TouchableOpacity
+                  style={styles.circleButton}
+                  onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
+                >
+                  <Text style={styles.buttonText}>−</Text>
+                </TouchableOpacity>
+                <Text style={styles.quantityText}>{quantity}</Text>
+                <TouchableOpacity
+                  style={styles.circleButton}
+                  onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
+                  disabled={quantity >= selectedStock}
+                >
+                  <Text style={styles.buttonText}>+</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
-                        <Text style={styles.description}>
-                          {product.description}
-                          <Text style={styles.readMore}> Read More...</Text>
-                        </Text>                    
+            {products?.features && Object.keys(products.features).length > 0 && (
+              <View style={styles.featuresContainer}>
+                <Text style={styles.optionLabel}>Features:</Text>
+                {Object.entries(products.features).map(([key, value]) => (
+                  <Text key={key} style={styles.featureText}>• {key}: {value}</Text>
+                ))}
+              </View>
+            )}
 
+            <Text style={styles.description}>
+              {products?.description || 'No description available.'}
+              <Text style={styles.readMore}> Read More...</Text>
+            </Text>
           </View>
 
-          {/* <ReviewScroreSection /> */}
-          <YouMayLike products={pro}/>
+          <YouMayLike />
         </Animated.ScrollView>
-          {/* <ReviewScroreSection /> */}
 
-
-        <View style={styles.fixedButtonRow}>
-          <View style={styles.slideToPayContainer}>
-            <TouchableOpacity
-              style={styles.slideTrack}
-              activeOpacity={0.8}
-              onPress={() => modalizeRef.current?.open()}
-            >
-              <Text style={styles.slideText}>ADD TO BAG</Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.fixedButton}>
+          <TouchableOpacity style={styles.addToBagButton} onPress={() => modalizeRef.current?.open()}>
+            <Text style={styles.addToBagText}>ADD TO BAG</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
       <Modalize
         ref={modalizeRef}
-        modalHeight={height * 0.3}
-        handleStyle={styles.handle}
+        modalHeight={height * 0.33}
+        handleStyle={styles.modalHandle}
         modalStyle={styles.modal}
         scrollViewProps={{ contentContainerStyle: { flexGrow: 1 } }}
       >
-        <View style={styles.fixedSelectorsRow}>
+        <View style={styles.modalContent}>
           <Text style={styles.sectionTitle}>Select Size</Text>
-
-          <View style={styles.optionsRow}>
-            {selectedVariant?.sizes.map((s) => (
+          <View style={styles.sizeRow}>
+            {selectedVariant?.sizes?.map((s) => (
               <TouchableOpacity
-                key={s.size}
-                style={[
-                  styles.sizeOption,
-                  {
-                    borderColor: selectedSize === s.size ? '#000' : '#ccc',
-                    borderWidth: selectedSize === s.size ? 2 : 1,
-                    backgroundColor: selectedSize === s.size ? '#eee' : '#fff',
-                    opacity: s.stock === 0 ? 0.4 : 1,
-                  },
-                ]}
+                key={s._id}
+                style={[styles.sizeOption, {
+                  borderColor: selectedSize === s.size ? '#000' : '#ccc',
+                  borderWidth: selectedSize === s.size ? 2 : 1,
+                  backgroundColor: selectedSize === s.size ? '#eee' : '#fff',
+                  opacity: s.stock === 0 ? 0.4 : 1,
+                }]}
                 onPress={() => s.stock > 0 && setSelectedSize(s.size)}
               >
-                <Text
-                  style={{
-                    textAlign: 'center',
-                    fontWeight: selectedSize === s.size ? 'bold' : 'normal',
-                  }}
-                >
+                <Text style={[styles.sizeText, { fontWeight: selectedSize === s.size ? 'bold' : 'normal' }]}>
                   {s.size}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
-{/* 
+
           {selectedSize && (
-            <Text style={{ marginLeft: 15, fontSize: 14, color: selectedStock > 0 ? 'green' : 'red' }}>
+            <Text style={[styles.stockText, { color: selectedStock > 0 ? 'green' : 'red' }]}>
               {selectedStock > 0 ? `${selectedStock} in stock` : 'Out of stock'}
             </Text>
-          )} */}
+          )}
         </View>
 
-        <View style={styles.selectButtonContainer}>
+        <View style={styles.modalButton}>
           <TouchableOpacity
-            style={[
-              styles.slideTrack,
-              { backgroundColor: isSlideDisabled ? '#ccc' : '#000' },
-            ]}
-            activeOpacity={0.8}
+            style={[styles.selectButton, { backgroundColor: isSlideDisabled ? '#ccc' : '#000' }]}
             disabled={isSlideDisabled}
-            onPress={() => {
-                showAddToCartToast();
-                setCartCount(prev => prev + quantity); // 👈 increase by current quantity
-                modalizeRef.current?.close();
-              }}
+            onPress={handleAddToCart}
           >
-            <Text style={styles.slideText}>Select</Text>
+            <Text style={styles.selectButtonText}>
+              {isSlideDisabled ? 'Select Size' : 'SELECT'}
+            </Text>
           </TouchableOpacity>
         </View>
       </Modalize>
-{showToast && (
-  <Animated.View
-    style={[
-      {
-        position: 'absolute',
-        bottom: 110,
-        alignSelf: 'center',
-        backgroundColor: '#2DBE74',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 20,
-        zIndex: 1000,
-        width: 200,
-        height: 50,
-        justifyContent: 'center',
-        alignItems: 'center',
-        transform: [{ translateY: toastTranslateY }],
-        opacity: toastOpacity,
-      },
-    ]}
-  >
-    <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', fontFamily: 'Montserrat', }}>
-      ADDED TO CART!
-    </Text>
-  </Animated.View>
-)}
+
+      {showToast && (
+        <Animated.View style={[styles.toast, {
+          transform: [{ translateY: toastTranslateY }],
+          opacity: toastOpacity,
+        }]}>
+          <Text style={styles.toastText}>ADDED TO CART</Text>
+        </Animated.View>
+      )}
     </>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-
-  topBarContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    height: 70,
-    zIndex: 20,
-    elevation: 4,
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  
+  topBar: {
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, elevation: 4,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, height: 70, borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
   },
-
   iconButton: { padding: 8 },
-
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'Montserrat',
+  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat' },
+  iconWithBadge: { position: 'relative' },
+  badge: {
+    position: 'absolute', top: -6, right: -6, backgroundColor: 'red', borderRadius: 8,
+    width: 16, height: 16, justifyContent: 'center', alignItems: 'center',
   },
+  badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
 
   carouselWrapper: { position: 'relative' },
-
-  productImage: { width, height:540, resizeMode: 'cover', borderBottomRightRadius:20, borderBottomLeftRadius:20 },
-
-  cartButton: {
-    position: 'absolute',
-    bottom: 16,
-    right: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    borderRadius: 20,
-    padding: 8,
-    zIndex: 10,
-  },
-  
-  iconWithBadge: {
-  position: 'relative',
-},
-
-badge: {
-  position: 'absolute',
-  top: -6,
-  right: -6,
-  backgroundColor: 'red',
-  borderRadius: 8,
-  width: 16,
-  height: 16,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-
-badgeText: {
-  color: '#fff',
-  fontSize: 10,
-  fontWeight: 'bold',
-},
-
-
-
+  productImage: { width, height: 540, resizeMode: 'cover', borderBottomRightRadius: 20, borderBottomLeftRadius: 20 },
   dotsContainer: {
-    position: 'absolute',
-    bottom: 10,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+    position: 'absolute', bottom: 10, left: 0, right: 0,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center',
   },
-
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginHorizontal: 4,
-    backgroundColor: '#fff',
+  dot: { width: 8, height: 8, borderRadius: 4, marginHorizontal: 4, backgroundColor: '#fff' },
+  activeDot: { backgroundColor: '#eee', width: 14, height: 14, borderRadius: 7 },
+  heartButton: {
+    position: 'absolute', bottom: 16, right: 20, zIndex: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20, padding: 8,
   },
-
-  rowBetweenContainer: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  width: '100%', // or a fixed width if needed
-  // paddingHorizontal: 16, // optional for inner spacing
-},
-
-  activeDot: {
-    backgroundColor: '#eee',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+  discountBadge: {
+    position: 'absolute', bottom: 16, left: 20, zIndex: 10,
+    backgroundColor: '#FF4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
   },
+  discountText: { color: '#fff', fontSize: 12, fontWeight: 'bold', fontFamily: 'Montserrat' },
 
-  infoContainer: { padding: 16 },
+  infoContainer: { padding: 10 },
+  title: { fontSize: 20, fontWeight: '600', fontFamily: 'Montserrat', marginLeft: 5,},
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
+  priceSection: { flex: 1, gap: 4 },
+  price: { fontSize: 20, fontWeight: 'bold', fontFamily: 'Montserrat', paddingLeft: 4 },
+  strike: { textDecorationLine: 'line-through', fontSize: 14, color: '#888', marginLeft: 5, fontFamily: 'Montserrat' },
+  ratingContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
+  ratingText: { marginLeft: 5, fontSize: 12, color: '#888', fontFamily: 'Montserrat' },
+  
+  colorRow: { flexDirection: 'row', paddingLeft: 4, paddingTop: 2, flexWrap: 'wrap' },
+  colorCircle: { width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1 },
+  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat' },
 
-  infoHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    // marginBottom: 10,
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    width: 360,
-    fontFamily: 'Montserrat',
-  },
-
-price: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  fontFamily: 'Montserrat',
-  alignSelf: 'flex-start', // 🔥 aligns it to the top-left of the parent
-  paddingLeft:4
-},
-  strike: {
-    textDecorationLine: 'line-through',
-    fontSize: 14,
-    color: '#888',
-    marginLeft: 5,
-    fontFamily: 'Montserrat',
-  },
-
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  priceRatingContainer: {
-  flexDirection: 'column',
-  alignItems: 'flex-start', // or 'center' as needed
-  gap: 4, // optional, use if using newer React Native versions
-},
-
-  ratingText: {
-    marginLeft: 5,
-    fontSize: 14,
-    color: '#888',
-    fontFamily: 'Montserrat',
-  },
-
-  description: {
-    fontSize: 14,
-    marginVertical: 10,
-    color: '#444',
-    width: '100%',
-    fontFamily: 'Montserrat',
-  },
-
-  readMore: {
-    color: '#007BFF',
-    fontWeight: '500',
-    fontFamily: 'Montserrat',
-  },
-
-quantityContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  // alignSelf: 'flex-start', // Aligns the container to the top/left of parent
-  marginTop: 10,
-},
-
+  quantityContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   circleButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 5,
+    width: 50, height: 50, borderRadius: 16, borderWidth: 1, borderColor: '#ccc',
+    justifyContent: 'center', alignItems: 'center', marginHorizontal: 5,
   },
+  buttonText: { fontSize: 18, fontFamily: 'Montserrat' },
+  quantityText: { fontSize: 16, minWidth: 20, textAlign: 'center', fontFamily: 'Montserrat' },
 
-  buttonText: {
-    fontSize: 18,
-    fontFamily: 'Montserrat',
+  featuresContainer: { marginTop: 10 },
+  featureText: { fontSize: 12, color: '#666', fontFamily: 'Montserrat', marginLeft: 10 },
+  description: { fontSize: 14, marginVertical: 10, color: '#444', fontFamily: 'Montserrat' },
+  readMore: { color: '#007BFF', fontWeight: '500', fontFamily: 'Montserrat' },
+
+  fixedButton: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
+    borderTopRightRadius: 40, borderTopLeftRadius: 40, borderTopWidth: 2,
+    borderRightWidth: 1, borderLeftWidth: 1, borderColor: '#eee',
+    paddingHorizontal: 16, paddingVertical: 10,
   },
-
-  quantityText: {
-    fontSize: 16,
-    minWidth: 20,
-    textAlign: 'center',
-    fontFamily: 'Montserrat',
+  addToBagButton: {
+    height: 70, backgroundColor: '#000', borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center',
   },
+  addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
 
-  flexRowSpaceBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 8,
-  },
-
-optionsRow1: {
-  flexDirection: 'row',
-  justifyContent: 'flex-start', // ✅ use this instead of 'start'
-  alignItems: 'flex-start',
-  flexWrap: 'wrap',
-  paddingLeft:4,
-  paddingTop:2
-  // marginTop: 10,
-  // marginBottom:5
-},
-
-  colorCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#ccc',
-  },
-
-fixedButtonRow: {
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  borderTopRightRadius: 40,
-  borderTopLeftRadius: 40, // ✅
-  borderTopWidth:2,
-  borderRightWidth:1,
-  borderLeftWidth:1,
-  borderColor:'#eee',
-
-},
-
-  slideToPayContainer: {
-    width: '100%',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-        borderTopRightRadius:20,
-    borderTopLeftRadius:20
-  },
-
-  slideTrack: {
-    height: 70,
-    backgroundColor: '#000',
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    
-  },
-
-  slideText: {
-    color: '#fff',
-    fontSize: 23,
-    fontWeight: 'bold',
-    fontFamily: 'Montserrat',
-  },
-
-  fixedSelectorsRow: {
-    alignItems: 'flex-start',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    marginTop: 12,
-    fontFamily: 'Montserrat',
-  },
-
-  optionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 12,
-    marginLeft: 15,
-  },
-
+  modal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 10 },
+  modalHandle: { backgroundColor: '#ccc', width: 60, height: 6, borderRadius: 3, alignSelf: 'center', marginVertical: 10 },
+  modalContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, marginTop: 12, fontFamily: 'Montserrat' },
+  sizeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10, marginTop: 12, marginLeft: 15 },
   sizeOption: {
-    borderRadius: 30,
-    width: 50,
-    height: 50,
-    marginRight: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderRadius: 30, width: 50, height: 50, marginRight: 10, marginBottom: 10,
+    justifyContent: 'center', alignItems: 'center',
   },
+  sizeText: { textAlign: 'center' },
+  stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Montserrat' },
+  
+  modalButton: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
+    paddingHorizontal: 16, paddingBottom: 24,
+  },
+  selectButton: { height: 70, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
+  selectButtonText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
 
-  selectButtonContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    position: 'relative',
+  toast: {
+    position: 'absolute', bottom: 110, alignSelf: 'center', zIndex: 1000,
+    backgroundColor: '#2DBE74', paddingHorizontal: 20, paddingVertical: 12,
+    borderRadius: 20, width: 200, height: 50, justifyContent: 'center', alignItems: 'center',
   },
+  toastText: { color: '#fff', fontSize: 14, fontWeight: '600', fontFamily: 'Montserrat' },
 
-  handle: {
-    backgroundColor: '#ccc',
-    width: 60,
-    height: 6,
-    borderRadius: 3,
-    alignSelf: 'center',
-    marginVertical: 10,
-  },
-
-  modal: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: 10,
-    paddingHorizontal: 16,
-  },
+  errorText: { fontSize: 16, fontFamily: 'Montserrat', color: '#FF4444', textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#000', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  retryButtonText: { color: '#fff', fontFamily: 'Montserrat', fontWeight: '600' },
 });
 
 export default ProductDetailPage;
