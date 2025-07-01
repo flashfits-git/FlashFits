@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store'; // or AsyncStorage
 // import { getCurrentUser } from '../lib/auth'; <-- If using Firebase or custom API
+import Loader from '@/components/Loader/Loader';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -21,10 +22,8 @@ export default function Index() {
   }, []);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
+    return (   
+        <Loader/>
     );
   }
 

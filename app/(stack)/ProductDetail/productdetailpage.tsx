@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
   badgeText: { color: '#fff', fontSize: 10, fontWeight: 'bold' },
 
   carouselWrapper: { position: 'relative' },
-  productImage: { width, height: 540, resizeMode: 'cover', borderBottomRightRadius: 20, borderBottomLeftRadius: 20 },
+  productImage: { width, height: 540, resizeMode: 'cover', borderBottomRightRadius: 50, borderBottomLeftRadius: 50 },
   dotsContainer: {
     position: 'absolute', bottom: 10, left: 0, right: 0,
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center',

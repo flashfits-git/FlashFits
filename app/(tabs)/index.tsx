@@ -21,6 +21,7 @@ import SearchCartProfileButton from '../../components/FlexibleComponents/SearchC
 import Colors from '../../assets/theme/Colors';
 import {fetchnewArrivalsProductsData} from '../api/productApis/products'
 import Footer from '../../components/Footer'
+import Loader from '@/components/Loader/Loader';
 
 
 // SplashScreen.preventAutoHideAsync(); // Prevent hiding until fonts are loaded
@@ -33,9 +34,12 @@ export default function Home() {
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   // const [fontsLoaded, setFontsLoaded] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
+    const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     getNewArrivalsProducts()
+    setLoading(false)
   }, [])
   const getNewArrivalsProducts = async () => {
     try {
@@ -84,9 +88,7 @@ export default function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    getNewArrivalsProducts()
-  }, [])
+  if (loading) return <Loader />;
 
   return (
     <View style={styles.container}>
