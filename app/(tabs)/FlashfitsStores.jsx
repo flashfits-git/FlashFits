@@ -15,7 +15,6 @@ import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
-import hgfgfh from '../(stack)/ShopDetails/StoreDetailPage'
 
 export default function FlashfitsStores() {
   const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
@@ -24,11 +23,14 @@ export default function FlashfitsStores() {
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
-
+  const [showStickySearch, setShowStickySearch] = useState(false);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
+
+      // Show sticky search bar after scroll passes 60px
+      setShowStickySearch(clampedValue > 60);
 
       if (clampedValue < currentOffset.current - 5) {
         setIsTabBarVisible(true);
@@ -49,9 +51,7 @@ export default function FlashfitsStores() {
         });
       } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
         setIsTabBarVisible(false);
-        navigation.setOptions({
-          tabBarStyle: { display: 'none' },
-        });
+        navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
 
       currentOffset.current = clampedValue;
@@ -65,6 +65,21 @@ export default function FlashfitsStores() {
   return (
     <View style={styles.container}>
       <NearbyHeaderBar />
+
+      {/* Sticky search bar appears only when scrolled past original */}
+      {showStickySearch && (
+        <View style={styles.stickySearchContainer}>
+          <View style={styles.searchContainer}>
+            <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
+            <TextInput
+              placeholder="Search FlashFits Enabled Stores"
+              placeholderTextColor="#888"
+              style={styles.searchInput}
+            />
+          </View>
+        </View>
+      )}
+
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
@@ -74,20 +89,18 @@ export default function FlashfitsStores() {
         )}
         scrollEventThrottle={16}
       >
-                <View style={styles.searchContainer}>
-                  <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
-                  <TextInput
-                    placeholder="Search FlashFit Enabled Stores"
-                    placeholderTextColor="#888"
-                    style={styles.searchInput}
-                  />
-                  {/* <TouchableOpacity style={styles.iconContainer}>
-                    <Icon name="sliders" size={22} color="#000" />
-                  </TouchableOpacity> */}
-                </View>
+        {/* Normal search bar (scrolls with content) */}
+        <View style={styles.searchContainer}>
+          <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
+          <TextInput
+            placeholder="Search FlashFits Enabled Stores"
+            placeholderTextColor="#888"
+            style={styles.searchInput}
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>Stores Near You</Text>
         <NearbyStores />
-        
 
         <Text style={styles.sectionTitle}>Popular Stores</Text>
         <PopularStores />
@@ -114,23 +127,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginLeft: 20,
     marginBottom: 12,
-    fontFamily:'Montserrat'
-
+    fontFamily: 'Montserrat',
   },
-    iconContainer: {
+  iconContainer: {
     marginLeft: 'auto',
   },
-searchContainer: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  backgroundColor: '#f0f0f0',
-  borderRadius: 12,
-  paddingHorizontal: 14,
-  height: 44,
-  width: '90%',
-  alignSelf: 'center', // center the bar in parent
-  marginVertical: 12,  // optional spacing around the bar
-},
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    width: '90%',
+    alignSelf: 'center',
+    marginVertical: 12,
+  },
   searchIcon: {
     marginRight: 10,
   },
@@ -138,5 +150,20 @@ searchContainer: {
     flex: 1,
     fontSize: 14,
     color: '#000',
+    fontFamily: 'Montserrat',
+  },
+  stickySearchContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 60 : 70, // adjust based on NearbyHeaderBar height
+    left: 0,
+    right: 0,
+    zIndex: 999,
+    backgroundColor: '#fff',
+    paddingVertical: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 4,
+    elevation: 3,
   },
 });
