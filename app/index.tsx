@@ -26,7 +26,6 @@ export default function Index() {
         <Loader/>
     );
   }
-
   // return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)'} />;
   return <Redirect href={'/(tabs)'} />;
 

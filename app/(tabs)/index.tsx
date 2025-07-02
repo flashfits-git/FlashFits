@@ -22,9 +22,8 @@ import Colors from '../../assets/theme/Colors';
 import {fetchnewArrivalsProductsData} from '../api/productApis/products'
 import Footer from '../../components/Footer'
 import Loader from '@/components/Loader/Loader';
+import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
 
-
-// SplashScreen.preventAutoHideAsync(); // Prevent hiding until fonts are loaded
 
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,6 +31,7 @@ export default function Home() {
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
   // const [fontsLoaded, setFontsLoaded] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
     const [loading, setLoading] = useState(true);
@@ -88,6 +88,21 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+  const loadRecentlyViewed = async () => {
+    try {
+      const data = await getPreviouslyViewed();
+      setRecentlyViewed(data);
+      // console.log(data);
+      
+    } catch (error) {
+      console.error('Error loading previously viewed:', error);
+    }
+  };
+
+  loadRecentlyViewed();
+}, []);
+
   if (loading) return <Loader />;
 
   return (
@@ -126,7 +141,7 @@ export default function Home() {
             <Carousel />
             {newArrivalsProducts.length > 0 && (
   <>
-    {/* <RecentlyViewed product={newArrivalsProducts} /> */}
+    <RecentlyViewed product={recentlyViewed}/>
     <ParentCategoryIndexing products={newArrivalsProducts} />
   </>
 )}

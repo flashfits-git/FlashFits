@@ -10,6 +10,7 @@ import { productDetailPage } from '../../api/productApis/products';
 import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
+import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 
 const { width, height } = Dimensions.get('window');
 
@@ -20,6 +21,9 @@ const fallbackImages = [
 ];
 
 const ProductDetailPage = () => {
+   
+
+
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,7 +36,7 @@ const ProductDetailPage = () => {
   const [showToast, setShowToast] = useState(false);
 
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id ,variantId} = useLocalSearchParams();
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -45,10 +49,11 @@ const ProductDetailPage = () => {
         setError(null);
         const data = await productDetailPage(id);
         setProduct(data);
-        
         if (data?.variants?.length > 0) {
-          setSelectedColor(data.variants[0].color.name);
-          const firstVariant = data.variants[0];
+         const firstVariant = data.variants.find(x => x._id === variantId);
+         setSelectedColor(firstVariant.color.name)
+          // console.log(firstVariant);
+          
           const availableSize = firstVariant.sizes.find(s => s.stock > 0);
           if (availableSize) setSelectedSize(availableSize.size);
         }
@@ -70,6 +75,18 @@ const ProductDetailPage = () => {
   const selectedVariant = products?.variants?.find(
     (variant) => variant.color.name === selectedColor
   ) || products?.variants?.[0];
+
+useEffect(() => {
+  if (products && selectedVariant) {
+    addToPreviouslyViewed({
+      id: products._id,
+      rating: products.ratings,
+      name: products.name,
+      variant: selectedVariant,
+    });
+  }
+}, [products, selectedVariant]);
+
 
   const selectedStock = selectedVariant?.sizes?.find(
     (s) => s.size === selectedSize

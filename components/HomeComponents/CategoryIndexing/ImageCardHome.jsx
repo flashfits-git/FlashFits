@@ -57,8 +57,11 @@ export default function ImageCardHome({ products }) {
   const navigation = useNavigation();
 
   const handleCardPress = (item) => {
+    // console.log(item);
+    
     navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-      id: item._id
+      id: item._id,
+      variantId: item.selectedVariant._id
     });
   };
 

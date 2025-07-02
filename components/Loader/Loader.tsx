@@ -17,7 +17,7 @@ function Loader() {
   useEffect(() => {
     const timeout = setTimeout(() => {
       Animated.timing(lineWidth, {
-        toValue: 300,
+        toValue: 250,
         duration: 800,
         useNativeDriver: false,
       }).start();
@@ -72,8 +72,6 @@ function Loader() {
       >
         Fashion in a Flash !
       </Animated.Text>
-
-
     </View>
   );
 }
@@ -103,6 +101,7 @@ const styles = StyleSheet.create({
     height: 2,
     marginTop: 10,
     overflow: 'hidden',
+    // color:'#eee'
   },
   line: {
     flex: 1,

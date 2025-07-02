@@ -10,12 +10,21 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
+
 const { width } = Dimensions.get('window');
 
 const DressCard = ({ product, onPress }) => {
-  const mainImageUrl = product?.variants?.[0]?.mainImage?.url;
+  // const mainImageUrl = product?.variants?.image[0]?.url;
 
-  if (!mainImageUrl) return null; // skip rendering if no image available
+  // if (!mainImageUrl) return null; // skip rendering if no image available
+
+  const imageUrl = product?.variant?.images?.[0]?.url;
+
+if (!imageUrl) {
+  console.warn('Image URL missing for product:', product);
+  return null;
+}
+
 
   const discountPercent = Math.round(
     ((product.mrp - product.price) / product.mrp) * 100
@@ -24,10 +33,10 @@ const DressCard = ({ product, onPress }) => {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.imageWrapper}>
-        <Image source={{ uri: mainImageUrl }} style={styles.image} />
+        <Image source={{ uri: imageUrl }} style={styles.image} />
         <View style={styles.ratingContainer}>
-          <Text style={styles.star}>★</Text>
-          <Text style={styles.rating}>{product.ratings}</Text>
+          {/* <Text style={styles.star}>★</Text> */}
+          {/* <Text style={styles.rating}>{product.ratings}</Text> */}
         </View>
       </View>
 
@@ -36,7 +45,7 @@ const DressCard = ({ product, onPress }) => {
       </Text>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{product.price}</Text>
+        {/* <Text style={styles.price}>₹{product.price}</Text> */}
         <Text style={styles.oldPrice}>₹{product.mrp}</Text>
         <Text style={styles.discount}>{discountPercent}% off</Text>
       </View>
@@ -44,7 +53,8 @@ const DressCard = ({ product, onPress }) => {
   );
 };
 
-export default function ImageCardHome({ product = [] }) {
+export default function ImageCardHome({product=[]}) {
+  // console.log(product[0].variant.images[0].url); 
   const scrollRef = useRef(null);
   const [scrollX, setScrollX] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -76,6 +86,7 @@ export default function ImageCardHome({ product = [] }) {
         scrollEventThrottle={16}
         onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
       >
+        {/* <Text>jfjdjdj</Text> */}
         {product.map((p) => (
           <DressCard
             key={p.id}

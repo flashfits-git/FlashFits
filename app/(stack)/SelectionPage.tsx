@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, ScrollView, StyleSheet, FlatList  } from 
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import Card from '@/components/HomeComponents/Card';
-// import 
 
 
 export default function SelectionPage() {
