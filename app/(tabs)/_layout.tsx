@@ -7,6 +7,7 @@ import { GetCart } from '../api/productApis/cartProduct';
 import { storeCartLocally } from '../utilities/cartItemsData';
 import { CartProvider, useCart } from './Context'; // adjust path accordingly
 
+
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
@@ -83,7 +84,7 @@ function TabsWithCart() {
       try {
         const cartData = await GetCart();
         const items = cartData.items || [];
-        console.log('Number of items in cart:', items.length);
+        // console.log('Number of items in cart:', items.length);
 
         setCartItems(items);
         setCartCount(items.length);

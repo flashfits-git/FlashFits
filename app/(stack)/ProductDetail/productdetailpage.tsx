@@ -43,12 +43,6 @@ const ProductDetailPage = () => {
   // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
 
-  
-useEffect(() => {
-  console.log('Product ID:', id);
-  console.log('Variant ID:', variantId);
-}, []);
-  
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;

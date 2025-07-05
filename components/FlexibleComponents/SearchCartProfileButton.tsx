@@ -22,9 +22,11 @@ function SearchCartProfileButton({cartCount}) {
       <TouchableOpacity onPress={() => router.push('/ShoppingBag')} style={{ paddingHorizontal: 4 }}>
   <View style={styles.iconWithBadge}>
     <Ionicons name="bag-handle-outline" size={24} color="#000" />
-    <View style={styles.badge}>
-      <Text style={styles.badgeText}>{cartCount}</Text>
-    </View>
+        {cartCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{cartCount}</Text>
+          </View>
+        )}
   </View>
       </TouchableOpacity>
       <TouchableOpacity  onPress={() => router.push('/(profile)')}>

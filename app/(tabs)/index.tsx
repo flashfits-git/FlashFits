@@ -45,7 +45,6 @@ export default function Home() {
     setLoading(false)
   }, [])
 
-  
   const getNewArrivalsProducts = async () => {
     try {
       const response = await fetchnewArrivalsProductsData()
@@ -56,7 +55,6 @@ export default function Home() {
       console.error('Error fetching products:', error);
     }
   };
-
   // Scroll listener to toggle tab bar
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {

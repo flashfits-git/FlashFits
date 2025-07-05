@@ -1,7 +1,33 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import {deleteCartItem} from '../../app/api/productApis/cartProduct'
 
-export default function BagProduct({ productData }) {
+export default function BagProduct({ productData, onDelete }) {
+      const [cartItems, setCartItems ] = useState([]);
+
+// console.log(productData,'REEEFC');
+
+  // useEffect(() => {
+  //   // Set initial cart items from props when component mounts or props update
+  //   if (productData && productData.length > 0) {
+  //     setCartItems(productData);
+  //   }
+  // }, [productData]);
+
+  // const handleDelete = async (itemId) => {
+  //   try {
+  //     await deleteCartItem(itemId);
+
+  //     // Filter out deleted item using _id (not .id)
+  //     const updatedCart = cartItems.filter(item => item._id !== itemId);
+  //     setCartItems(updatedCart); // Update local state to re-render UI
+  //   } catch (error) {
+  //     console.error("Failed to delete cart item:", error);
+  //   }
+  // };
+
+
   return (
     <>
       {productData?.map((item, index) => {
@@ -30,15 +56,16 @@ export default function BagProduct({ productData }) {
               </Text>
 
               <TouchableOpacity style={styles.sizeBox}>
-                <Text style={styles.sizeText}>Size: {item.sizes?.[0] || 'N/A'}</Text>
+                <Text style={styles.sizeText}>Size: {item.size || 'N/A'}</Text>
               </TouchableOpacity>
 
               <Text style={styles.deliveryText}>
                 Est. Delivery in <Text style={styles.greenText}>2 hour</Text>
               </Text>
-
               <View style={styles.returnRow}>
-                <Text style={styles.deliveryText1}>Instant return (Try then Buy)</Text>
+                <Text style={styles.deliveryText1}>
+                  Instant Return (Try then Buy)
+                </Text>
                 <Image
                   source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
                   style={styles.tickIcon}
@@ -46,9 +73,9 @@ export default function BagProduct({ productData }) {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.deleteButton}>
-              <Ionicons name="trash-outline" size={18} color="black" />
-            </TouchableOpacity>
+              <TouchableOpacity onPress={() => onDelete(item.id)}>
+                <Ionicons name="trash-outline" size={18} color="black" />
+              </TouchableOpacity>
           </View>
         );
       })}
@@ -106,7 +133,7 @@ const styles = StyleSheet.create({
 tickIcon: {
   width: 14,
   height: 14,
-  marginLeft: 6,
+  marginLeft: 4,
   resizeMode: 'contain',
 },
   detailsContainer: {
@@ -174,6 +201,7 @@ tickIcon: {
     fontFamily: 'Montserrat',
     fontWeight: '300',
     flex: 1,
+  //  width:20,
   },
   greenText: {
     color: 'green',
