@@ -1,17 +1,11 @@
-import { Tabs , } from 'expo-router';
+import React, { useState, useEffect, useRef } from 'react';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState, useRef, useEffect } from 'react';
-import {
-  Text,
-  Platform,
-  StyleSheet,
-  Animated,
-  Easing,
-  ActivityIndicator
-} from 'react-native';
-// import * as Font from 'expo-font';
-// import * as SplashScreen from 'expo-splash-screen';
+import { Text, Platform, StyleSheet, Animated, Easing } from 'react-native';
 import Colors from '../../assets/theme/Colors';
+import { GetCart } from '../api/productApis/cartProduct';
+import { storeCartLocally } from '../utilities/cartItemsData';
+import { CartProvider, useCart } from './Context'; // adjust path accordingly
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -21,31 +15,15 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10, // slightly deeper shadow
-    },
-    // borderColor:'#000',
-    shadowOpacity: 0.15, // more visible
-    shadowRadius: 12,    // softer blur
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
     elevation: 18,
     paddingTop: Platform.OS === 'ios' ? 18 : 10,
   },
 });
 
-const AnimatedIconWrapper = ({
-  focused,
-  iconName,
-  size,
-  color,
-  label,
-}: {
-  focused: boolean;
-  iconName: string;
-  size: number;
-  color: string;
-  label: string;
-}) => {
+const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
 
@@ -69,26 +47,6 @@ const AnimatedIconWrapper = ({
     outputRange: ['transparent', Colors.accent],
   });
 
-  // FONTS
-
-    const [fontsLoaded, setFontsLoaded] = useState(false);
-  
-  // useEffect(() => {
-  //   async function loadFonts() {
-  //     await Font.loadAsync({
-  //       'YourFont': require('../../assets/fonts/Montserrat-VariableFont_wght.ttf'),
-  //       'Oswald-Regular': require('../../assets/fonts/Oswald-VariableFont_wght.ttf'),
-  //     });
-  //     setFontsLoaded(true);
-  //     await SplashScreen.hideAsync();
-  //   }
-  //   loadFonts();
-  // }, []);
-
-  // if (!fontsLoaded) {
-  //   return <ActivityIndicator size="large" />;
-  // }
-
   return (
     <Animated.View
       style={{
@@ -104,11 +62,11 @@ const AnimatedIconWrapper = ({
       <Ionicons name={iconName} size={focused ? 28 : 21} color={color} />
       <Text
         style={{
-          fontSize: focused ? 6:10,
+          fontSize: focused ? 6 : 10,
           marginTop: 2,
           color: focused ? Colors.dark1 : Colors.dark1,
           fontWeight: focused ? 'bold' : 'normal',
-          fontFamily:'Oswald-Regular'
+          fontFamily: 'Oswald-Regular',
         }}
       >
         {label}
@@ -117,7 +75,27 @@ const AnimatedIconWrapper = ({
   );
 };
 
-export default function TabLayout() {
+function TabsWithCart() {
+  const { setCartItems, setCartCount } = useCart();
+
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const cartData = await GetCart();
+        const items = cartData.items || [];
+        console.log('Number of items in cart:', items.length);
+
+        setCartItems(items);
+        setCartCount(items.length);
+        await storeCartLocally(items);
+      } catch (err) {
+        console.error('Failed to load cart:', err);
+      }
+    };
+
+    fetchCart();
+  }, []);
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -143,21 +121,16 @@ export default function TabLayout() {
           } else if (route.name === 'Wishlist') {
             iconName = focused ? 'heart' : 'heart-outline';
             label = 'Wishlist';
-          } 
-          
-          // else if (route.name === 'CartBag') {
-          //   iconName = focused ? 'bag-handle' : 'bag-handle-outline';
-          //   label = 'Cart';
-          // }
+          }
 
           return (
             <AnimatedIconWrapper
-            focused={focused}
-            iconName={iconName}
-            size={size}
-            color={color}
-            label={label}
-          />
+              focused={focused}
+              iconName={iconName}
+              size={size}
+              color={color}
+              label={label}
+            />
           );
         },
       })}
@@ -166,7 +139,14 @@ export default function TabLayout() {
       <Tabs.Screen name="Categories" options={{ title: 'Categories' }} />
       <Tabs.Screen name="FlashfitsStores" options={{ title: 'FlashfitsStores' }} />
       <Tabs.Screen name="Wishlist" options={{ title: 'Wishlist' }} />
-      {/* <Tabs.Screen name="CartBag" options={{ title: 'CartBag' }} /> */}
     </Tabs>
+  );
+}
+
+export default function TabLayout() {
+  return (
+    <CartProvider>
+      <TabsWithCart />
+    </CartProvider>
   );
 }

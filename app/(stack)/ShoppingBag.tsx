@@ -5,10 +5,15 @@ import HeaderBag from '@/components/CartBagComponents/HeaderBag';
 import BillSection from '@/components/CartBagComponents/BillSection';
 import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectAddressBottomSheet'
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed'
+import {fetchnewArrivalsProductsData } from '../api/productApis/products'
 import { useRouter } from 'expo-router';
+import Loader from '@/components/Loader/Loader';
+
 
 const CartBag = () => {
   const router = useRouter();
+      const [loading, setLoading] = useState(true);
+
     const [products, setProducts] = useState([
     {
       id:3e23,
@@ -119,23 +124,70 @@ const CartBag = () => {
     },
   ]);
 
+    const [newArrivals, setNewArrivals] = useState([]);
+        // console.log(newArrivals, '✅ API respojjjjnse');
+
+
+      useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetchnewArrivalsProductsData();
+        setNewArrivals(response); // assuming it returns an array
+        setLoading(false)
+        
+      } catch (error) {
+        console.error('Failed to fetch new arrivals:', error);
+      }
+    };
+
+    fetchData();
+        console.log(newArrivals,'gfgh');
+    // console.log();
+    
+  }, []);
+
+  const productData = newArrivals.map((item) => {
+  const firstVariant = item.variants?.[0] || {};
+  return {
+    name: item.name,
+    price: firstVariant.price || null,
+    mrp: firstVariant.mrp || null,
+    // sizes: firstVariant.sizes?.map(s => s.size) || []c
+  };
+});
+// console.log(productData);
+  if (loading) return <Loader />;
+  
+
   return (
     <>
     <View style={styles.container}>
       <HeaderBag />
+      
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <BagProduct />
+        <BagProduct productData={productData} />
               <TouchableOpacity style={styles.confirmButton} onPress={() => router.push('/(stack)/ShopDetails/StoreDetailPage')}>
                 <Text style={styles.confirmButtonText}>EXPLORE STORE MORE</Text>
               </TouchableOpacity>
         {/* create a section that having bg light grey in color and having a horizontal scroll view of RecentlyViewed in it  */}
           <View style={{ backgroundColor: '#fff', borderRadius: 10 , width:'100%'}}>
-          <Text style={{ fontWeight: 'bold', fontSize: 16, paddingHorizontal: 10, paddingTop: 15, fontFamily:'Montserrat'  }}>Matching Accessories in Store</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 10 }}>
-            <RecentlyViewed product={products} />
+            <Text
+  style={{
+                fontWeight: 'bold',
+                fontSize: 16,
+                paddingHorizontal: 10,
+                paddingTop: 15,
+                fontFamily: 'Montserrat',
+                textAlign: 'center',
+              }}
+            >
+              Matching Accessories in Store
+            </Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} >
+            <RecentlyViewed accecories={newArrivals} />
           </ScrollView>
         </View>
         <BillSection />
@@ -199,7 +251,9 @@ const styles = StyleSheet.create({
     // bottom: 20,
     // left: 16,
     // right: 16,
-    backgroundColor: '#000',
+    borderWidth: 2,
+    borderColor: '#000',
+    borderRadius: 12,
     padding:20,
     borderRadius: 20,
     alignItems: 'center',
@@ -207,7 +261,7 @@ const styles = StyleSheet.create({
     marginHorizontal:25
   },
   confirmButtonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: 'bold',
     fontSize: 15,
     fontFamily:'Montserrat'

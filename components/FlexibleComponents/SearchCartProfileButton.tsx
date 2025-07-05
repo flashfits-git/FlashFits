@@ -8,7 +8,7 @@ import Colors from '../../assets/theme/Colors';
 
 
 
-function SearchCartProfileButton() {
+function SearchCartProfileButton({cartCount}) {
   const router = useRouter();
 
   return (
@@ -23,7 +23,7 @@ function SearchCartProfileButton() {
   <View style={styles.iconWithBadge}>
     <Ionicons name="bag-handle-outline" size={24} color="#000" />
     <View style={styles.badge}>
-      <Text style={styles.badgeText}>2</Text>
+      <Text style={styles.badgeText}>{cartCount}</Text>
     </View>
   </View>
       </TouchableOpacity>

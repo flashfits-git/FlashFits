@@ -23,6 +23,8 @@ import {fetchnewArrivalsProductsData} from '../api/productApis/products'
 import Footer from '../../components/Footer'
 import Loader from '@/components/Loader/Loader';
 import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
+import { useCart } from './Context';
+
 
 
 export default function Home() {
@@ -35,16 +37,19 @@ export default function Home() {
   // const [fontsLoaded, setFontsLoaded] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
     const [loading, setLoading] = useState(true);
-  
+     const { cartCount } = useCart();
+
 
   useEffect(() => {
     getNewArrivalsProducts()
     setLoading(false)
   }, [])
+
+  
   const getNewArrivalsProducts = async () => {
     try {
       const response = await fetchnewArrivalsProductsData()
-      // console.log(response);
+      // console.log(response,'HYGG');
       
       setNewArrivalsProducts(response)
     } catch (error) {
@@ -92,6 +97,7 @@ export default function Home() {
   const loadRecentlyViewed = async () => {
     try {
       const data = await getPreviouslyViewed();
+      
       setRecentlyViewed(data);
       // console.log(data);
       
@@ -126,7 +132,7 @@ export default function Home() {
           </View>
         </View>
         <View style={styles.notificationIcon}>
-          <SearchCartProfileButton />
+          <SearchCartProfileButton cartCount={cartCount}/>
         </View>
       </View>
 

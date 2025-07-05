@@ -16,7 +16,7 @@ export const addToPreviouslyViewed = async (product) => {
     if (viewed.length > 20) viewed.pop(); // limit history size
 
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(viewed));
-    console.log('✅ Saved successfully to AsyncStorage');
+    // console.log('✅ Saved successfully to AsyncStorage');
   } catch (e) {
     console.log('❌ Error saving previously viewed', e);
   }

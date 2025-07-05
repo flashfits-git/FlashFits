@@ -32,7 +32,7 @@ const Carousel = () => {
   };
 
   return (
-    <View style={{ height: height * 0.8 }}>
+    <View style={{ height: height * 0.15 }}>
       <FlatList
         ref={flatListRef}
         data={images}

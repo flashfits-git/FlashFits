@@ -6,6 +6,8 @@ export const fetchnewArrivalsProductsData = async () => {
 //   return response.data.products; // adjust this based on your backend
   try {
   const res = await api.get('user/products/newArrivals');
+  // console.log('jfjf');
+  
   return res.data; // adjust this based on your backend
 
   } catch (error) {

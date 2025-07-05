@@ -1,166 +1,196 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function BagProduct() {
+export default function BagProduct({ productData }) {
   return (
-    <View style={styles.container}>
-      <View style={styles.imageContainer}>
-        <Image
-          source={require('../../assets/images/3.jpg')} // Update path if needed
-          style={styles.image}
-        />
-        {/* <TouchableOpacity style={styles.checkbox}>
-          <Ionicons name="checkmark" size={20} color="white" />
-        </TouchableOpacity> */}
-      </View>
+    <>
+      {productData?.map((item, index) => {
+        const saved = item.mrp - item.price;
+        return (
+          <View key={index} style={styles.container}>
+            <View style={styles.imageContainer}>
+              <Image
+                source={require('../../assets/images/3.jpg')}
+                style={styles.image}
+              />
+            </View>
 
-      <View style={styles.detailsContainer}>
-        <View style={{paddingRight:16}}>
-        <Text style={styles.title}>Red Solid Strapless Mini Dress</Text>
-        </View>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>₹663</Text>
-          <Text style={styles.strikePrice}>₹779</Text>
-        </View>
+            <View style={styles.detailsContainer}>
+              <View style={styles.titleContainer}>
+                <Text style={styles.title} numberOfLines={2}>{item.name}</Text>
+              </View>
 
-        <Text style={styles.discount}>You Saved:  <Text style={styles.greenText}>₹116</Text> </Text>
+              <View style={styles.priceRow}>
+                <Text style={styles.price}>₹{item.price}</Text>
+                <Text style={styles.strikePrice}>₹{item.mrp}</Text>
+              </View>
 
-        <TouchableOpacity style={styles.sizeBox}>
-          <Text style={styles.sizeText}>Size: M</Text>
-        </TouchableOpacity>
+              <Text style={styles.discount}>
+                You Saved: <Text style={styles.greenText}>₹{saved}</Text>
+              </Text>
 
-        <Text style={styles.deliveryText}>Est. Delivery in <Text style={styles.greenText}>2 hour</Text></Text> 
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.deliveryText1}>Instant return (Try then Buy)</Text>
-            <Image
-              source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
-              style={styles.googlePayImage}
-            />
+              <TouchableOpacity style={styles.sizeBox}>
+                <Text style={styles.sizeText}>Size: {item.sizes?.[0] || 'N/A'}</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.deliveryText}>
+                Est. Delivery in <Text style={styles.greenText}>2 hour</Text>
+              </Text>
+
+              <View style={styles.returnRow}>
+                <Text style={styles.deliveryText1}>Instant return (Try then Buy)</Text>
+                <Image
+                  source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
+                  style={styles.tickIcon}
+                />
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={18} color="black" />
+            </TouchableOpacity>
           </View>
-        {/* <View style={styles.returnRow}>
-          <Ionicons name="reload" size={16} color="black" />
-          <Text style={styles.returnText}> 7 Days - Returns/Exchanges</Text>
-        </View> */}
-      </View>
-
-      <TouchableOpacity style={styles.deleteButton}>
-        <Ionicons name="trash-outline" size={18} color="black" />
-      </TouchableOpacity>
-    </View>
+        );
+      })}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    // padding: 12,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: 'white',
     borderRadius: 12,
-    margin: 12,
-    // shadowColor: '#000',
-    // shadowOpacity: 0.1,
-    // shadowRadius: 6,
-    // elevation: 3,
+    borderTopRightRadius:15,
+    margin: 8,
     position: 'relative',
+    minHeight: 130,
+    padding: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    overflow: 'hidden',
+    // opacity:.5
   },
+  // innerLeftShadow: {
+  //   position: 'absolute',
+  //   left: 0,
+  //   top: 0,
+  //   bottom: 0,
+  //   width: 12,
+  //   backgroundColor: 'rgba(0,0,0,0.06)',
+  //   borderTopLeftRadius: 12,
+  //   borderBottomLeftRadius: 12,
+  //   zIndex: 1,
+  // },
   imageContainer: {
     position: 'relative',
+    zIndex: 2,
   },
   image: {
     width: 120,
-    height: 180,
+    height: 130,
     borderRadius: 12,
   },
-    googlePayImage: { width: 20, height: 15, paddingLeft:6},
-  checkbox: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'black',
-    alignItems: 'center',
-    justifyContent: 'center',
+  googlePayImage: {
+    width: 20,
+    height: 15,
+    marginLeft: 4
   },
+  returnRow: {
+    // width:,
+  flexDirection: 'row',
+  alignItems: 'center',
+  marginTop: 4,
+},
+tickIcon: {
+  width: 14,
+  height: 14,
+  marginLeft: 6,
+  resizeMode: 'contain',
+},
   detailsContainer: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 8,
+    paddingRight: 8,
+    paddingVertical: 4,
+    height: 130,
+    justifyContent: 'space-between',
+    zIndex: 2,
+  },
+  titleContainer: {
+    marginBottom: 2,
   },
   title: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    marginBottom: 4,
-    fontFamily:'Montserrat'
+    fontFamily: 'Montserrat',
+    lineHeight: 16,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 2,
   },
   price: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '500',
     color: 'black',
-    marginRight: 8,
-    fontFamily:'Montserrat'
+    marginRight: 6,
+    fontFamily: 'Montserrat'
   },
   strikePrice: {
     fontSize: 10,
     color: 'gray',
     textDecorationLine: 'line-through',
-    fontFamily:'Montserrat'
+    fontFamily: 'Montserrat'
   },
   discount: {
     color: 'green',
-    fontSize: 12,
-    marginVertical: 4,
-    fontFamily:'Montserrat',
-    // fontWeight:300
+    fontSize: 11,
+    marginBottom: 2,
+    fontFamily: 'Montserrat',
   },
   sizeBox: {
-    marginTop: 8,
-    padding: 8,
+    padding: 4,
     backgroundColor: '#f1f1f1',
-    borderRadius: 8,
+    borderRadius: 6,
     alignSelf: 'flex-start',
-    fontFamily:'Montserrat'
+    marginBottom: 2,
   },
   sizeText: {
-    fontSize: 14,
+    fontSize: 11,
     color: 'gray',
+    fontFamily: 'Montserrat'
   },
   deliveryText: {
-    marginTop: 8,
-    fontSize: 14,
-    fontFamily:'Montserrat',
-    fontWeight:300
+    fontSize: 11,
+    fontFamily: 'Montserrat',
+    fontWeight: '300',
+    marginBottom: 2,
   },
-    deliveryText1: {
-    marginTop: 4,
-    fontSize: 10,
-    fontFamily:'Montserrat',
-    fontWeight:300
+  deliveryText1: {
+    fontSize: 9,
+    fontFamily: 'Montserrat',
+    fontWeight: '300',
+    flex: 1,
   },
   greenText: {
     color: 'green',
-    fontFamily:'Montserrat',
-    fontWeight:500
+    fontFamily: 'Montserrat',
+    fontWeight: '500'
   },
   returnRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-  },
-  returnText: {
-    fontSize: 14,
   },
   deleteButton: {
     position: 'absolute',
-    top: 1,
-    right: 1,
+    top: 4,
+    right: 4,
     backgroundColor: '#f1f1f1',
     borderRadius: 20,
     padding: 6,
+    zIndex: 3,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,33 +10,31 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-
 const { width } = Dimensions.get('window');
 
 const DressCard = ({ product, onPress }) => {
-  // const mainImageUrl = product?.variants?.image[0]?.url;
+  // Handle both object and array cases for variants
+  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
 
-  // if (!mainImageUrl) return null; // skip rendering if no image available
+  const imageUrl = variant?.images?.[0]?.url;
 
-  const imageUrl = product?.variant?.images?.[0]?.url;
+  // useEffect(() => {
+  //   console.log('Rendering:', product?.name, '| Image:', imageUrl);
+  // }, [product]);
 
-if (!imageUrl) {
-  console.warn('Image URL missing for product:', product);
-  return null;
-}
-
-
-  const discountPercent = Math.round(
-    ((product.mrp - product.price) / product.mrp) * 100
-  );
+  // if (!imageUrl) {
+  //   console.warn('Missing image URL for product:', product?.name);
+  //   return null;
+  // }
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.imageWrapper}>
-        <Image source={{ uri: imageUrl }} style={styles.image} />
-        <View style={styles.ratingContainer}>
-          {/* <Text style={styles.star}>★</Text> */}
-          {/* <Text style={styles.rating}>{product.ratings}</Text> */}
+      <View style={styles.shadowWrapper}>
+        <View style={styles.imageWrapper}>
+          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <View style={styles.ratingContainer}>
+            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
+          </View>
         </View>
       </View>
 
@@ -45,55 +43,30 @@ if (!imageUrl) {
       </Text>
 
       <View style={styles.priceRow}>
-        {/* <Text style={styles.price}>₹{product.price}</Text> */}
-        <Text style={styles.oldPrice}>₹{product.mrp}</Text>
-        <Text style={styles.discount}>{discountPercent}% off</Text>
+        <Text style={styles.price}>₹{variant?.price}</Text>
+        <Text style={styles.oldPrice}>₹{variant?.mrp}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default function ImageCardHome({product=[]}) {
-  // console.log(product[0].variant.images[0].url); 
+export default function ImageCardHome({ product = [], accecories = [] }) {
   const scrollRef = useRef(null);
-  const [scrollX, setScrollX] = useState(0);
-  const [direction, setDirection] = useState(1);
   const navigation = useNavigation();
 
-  useEffect(() => {
-    if (product.length < 2) return; // skip auto-scroll for single item
-
-    const interval = setInterval(() => {
-      if (scrollRef.current) {
-        const newX = scrollX + direction * 170;
-        scrollRef.current.scrollTo({ x: newX, animated: true });
-        setScrollX(newX);
-
-        if (newX >= 170 * (product.length - 1)) setDirection(-1);
-        if (newX <= 0) setDirection(1);
-      }
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [scrollX, direction, product.length]);
+  const dataToRender = product.length ? product : accecories;
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        ref={scrollRef}
-        scrollEventThrottle={16}
-        onScroll={(e) => setScrollX(e.nativeEvent.contentOffset.x)}
-      >
-        {/* <Text>jfjdjdj</Text> */}
-        {product.map((p) => (
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} ref={scrollRef}>
+        {dataToRender.map((p, index) => (
           <DressCard
-            key={p.id}
+            key={p._id || p.id || index}
             product={p}
             onPress={() =>
               navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                item: JSON.stringify(p),
+                id: p._id || p.id,
+                variantId: Array.isArray(p.variants) ? p.variants[0]?._id : p.variants?._id,
               })
             }
           />
@@ -103,9 +76,11 @@ export default function ImageCardHome({product=[]}) {
   );
 }
 
+// Styles remain unchanged...
 const styles = StyleSheet.create({
   container: {
     paddingTop: 15,
+    paddingLeft: 10,
   },
   card: {
     margin: 5,
@@ -115,13 +90,25 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     elevation: 3,
   },
+  shadowWrapper: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+    borderRadius: 15,
+    marginBottom: 10,
+  },
   imageWrapper: {
     position: 'relative',
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   image: {
     height: 200,
     width: '100%',
     resizeMode: 'cover',
+    borderRadius: 15,
   },
   ratingContainer: {
     position: 'absolute',
@@ -136,14 +123,11 @@ const styles = StyleSheet.create({
     elevation: 2,
     opacity: 0.8,
   },
-  star: {
-    fontSize: 10,
-    color: '#90d5ff',
-  },
-  rating: {
-    fontSize: 12,
-    marginLeft: 4,
-    fontWeight: '600',
+  ratingText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#000',
+    fontFamily: 'Montserrat',
   },
   title: {
     fontSize: 13,
@@ -169,12 +153,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#777',
     textDecorationLine: 'line-through',
-    marginLeft: 6,
-    fontFamily: 'Montserrat',
-  },
-  discount: {
-    fontSize: 12,
-    color: 'red',
     marginLeft: 6,
     fontFamily: 'Montserrat',
   },

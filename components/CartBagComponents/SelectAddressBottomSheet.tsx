@@ -130,16 +130,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderTopWidth: 1,
+    // borderTopWidth: 1,
     borderColor: '#ddd',
     zIndex: 999,
     elevation: 10,
     height: 90,
+    borderTopRightRadius:30,
+    borderTopLeftRadius:30,
+
   },
   slideToPayContainer: {
     width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 10,
+    
   },
   slideTrack: {
     height: 70,

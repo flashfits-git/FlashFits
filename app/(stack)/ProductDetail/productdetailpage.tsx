@@ -11,6 +11,10 @@ import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
+import { useRoute } from '@react-navigation/native';
+import { AddProducttoCart } from '../../api/productApis/cartProduct';
+
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,8 +26,6 @@ const fallbackImages = [
 
 const ProductDetailPage = () => {
    
-
-
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -36,7 +38,17 @@ const ProductDetailPage = () => {
   const [showToast, setShowToast] = useState(false);
 
   const router = useRouter();
-  const { id ,variantId} = useLocalSearchParams();
+  const route = useRoute();
+
+  // const { id ,variantId} = useLocalSearchParams();
+  const { id, variantId } = route.params || {};
+
+  
+useEffect(() => {
+  console.log('Product ID:', id);
+  console.log('Variant ID:', variantId);
+}, []);
+  
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -49,11 +61,10 @@ const ProductDetailPage = () => {
         setError(null);
         const data = await productDetailPage(id);
         setProduct(data);
+        // console.log(data,'DDDDDDDD');
         if (data?.variants?.length > 0) {
          const firstVariant = data.variants.find(x => x._id === variantId);
          setSelectedColor(firstVariant.color.name)
-          // console.log(firstVariant);
-          
           const availableSize = firstVariant.sizes.find(s => s.stock > 0);
           if (availableSize) setSelectedSize(availableSize.size);
         }
@@ -75,6 +86,8 @@ const ProductDetailPage = () => {
   const selectedVariant = products?.variants?.find(
     (variant) => variant.color.name === selectedColor
   ) || products?.variants?.[0];
+  // console.log(selectedVariant?._id,'SSDDDDR');
+  
 
 useEffect(() => {
   if (products && selectedVariant) {
@@ -82,7 +95,7 @@ useEffect(() => {
       id: products._id,
       rating: products.ratings,
       name: products.name,
-      variant: selectedVariant,
+      variants: selectedVariant,
     });
   }
 }, [products, selectedVariant]);
@@ -125,10 +138,32 @@ useEffect(() => {
     });
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async ()  => {
+
+        const productData = {
+          productId: products._id, // Product ID from main object
+          variantId: selectedVariant?._id, // First variant's ID
+          name: products.name, // Product name
+          size: selectedSize, // Passed/selected from UI
+          quantity: quantity, // Passed/selected from UI
+          merchantId: products.merchantId._id, // Extracted merchant ID
+        };
+  // console.log(productData,'QWRY');
+
+  try {
+    const response = await AddProducttoCart(productData);
+    console.log('Added to cart:', response);
+    // Optionally show toast or navigate
+  } catch (error) {
+    console.error('Failed to add to cart', error);
+  }
+
+
     showAddToCartToast();
     setCartCount(prev => prev + quantity);
+    setTimeout(() => {
     modalizeRef.current?.close();
+  }, 0);
   };
 
   if (loading) return <Loader />;
@@ -336,14 +371,21 @@ useEffect(() => {
 
         <View style={styles.modalButton}>
           <TouchableOpacity
-            style={[styles.selectButton, { backgroundColor: isSlideDisabled ? '#ccc' : '#000' }]}
+            style={[
+              styles.selectButton,
+              { backgroundColor: isSlideDisabled ? '#ccc' : '#000' },
+            ]}
             disabled={isSlideDisabled}
-            onPress={handleAddToCart}
+            onPress={() => {
+              // console.log('Button Pressed'); // test log
+              handleAddToCart();
+            }}
           >
             <Text style={styles.selectButtonText}>
               {isSlideDisabled ? 'Select Size' : 'SELECT'}
             </Text>
           </TouchableOpacity>
+
         </View>
       </Modalize>
 

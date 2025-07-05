@@ -4,14 +4,14 @@ import { Ionicons } from '@expo/vector-icons';
 import SearchCartProfileButton  from '../../components/FlexibleComponents/SearchCartProfileButton';
 
 
-const NearbyHeaderBar = () => {
+const NearbyHeaderBar = ({cartCount}) => {
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
 
         <Text style={styles.title}>FlashFits Stores</Text>
 
-      <SearchCartProfileButton/>
+      <SearchCartProfileButton cartCount={cartCount}/>
       </View>
     </View>
   );
