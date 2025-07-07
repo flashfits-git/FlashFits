@@ -23,7 +23,8 @@ import {fetchnewArrivalsProductsData} from '../api/productApis/products'
 import Footer from '../../components/Footer'
 import Loader from '@/components/Loader/Loader';
 import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
-import { useCart } from './Context';
+import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops'
+// import { useCart } from './Context';
 
 
 
@@ -37,9 +38,7 @@ export default function Home() {
   // const [fontsLoaded, setFontsLoaded] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
     const [loading, setLoading] = useState(true);
-     const { cartCount } = useCart();
-
-
+    
   useEffect(() => {
     getNewArrivalsProducts()
     setLoading(false)
@@ -130,7 +129,7 @@ export default function Home() {
           </View>
         </View>
         <View style={styles.notificationIcon}>
-          <SearchCartProfileButton cartCount={cartCount}/>
+          <SearchCartProfileButton/>
         </View>
       </View>
 
@@ -143,6 +142,7 @@ export default function Home() {
         ListHeaderComponent={
           <>
             <Carousel />
+            <HomeCategorySwitcherShops/>
             {newArrivalsProducts.length > 0 && (
   <>
     <RecentlyViewed product={recentlyViewed}/>

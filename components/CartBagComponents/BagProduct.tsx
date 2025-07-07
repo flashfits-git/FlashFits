@@ -84,21 +84,24 @@ export default function BagProduct({ productData, onDelete }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    borderTopRightRadius:15,
-    margin: 8,
-    position: 'relative',
-    minHeight: 130,
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    overflow: 'hidden',
-    // opacity:.5
-  },
+container: {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  backgroundColor: 'white',
+  borderRadius: 12,
+  borderTopRightRadius: 15,
+  margin: 8,
+  position: 'relative',
+  minHeight: 130,
+  padding: 8,
+  // Shadow for iOS
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.15,
+  shadowRadius: 6,
+  // Shadow for Android
+  elevation: 4,
+}, 
   // innerLeftShadow: {
   //   position: 'absolute',
   //   left: 0,

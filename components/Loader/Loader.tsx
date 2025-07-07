@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
 import { useFonts } from 'expo-font';
 import Logo from '../../assets/loaders/logo.png';
+import FlashFitsLogo from '../../assets/loaders/FlashFitsLogo'
 
 function Loader() {
   const lineWidth = useRef(new Animated.Value(0)).current;
@@ -51,6 +52,7 @@ function Loader() {
 
 
       <Image source={Logo} style={styles.logo} resizeMode="contain" />
+      {/* <FlashFitsLogo/> */}
 
       <Animated.View style={[styles.lineContainer, { width: lineWidth }]}>
         <LinearGradient

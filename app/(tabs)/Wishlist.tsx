@@ -10,16 +10,16 @@ import { useNavigation } from '@react-navigation/native';
 import WhishlistCard from '../../components/WhishlistComponents/WhishlistCard'
 import HeaderWishlist from '../../components/WhishlistComponents/HeaderWishlist'
 // import PopupCart from '../../components/HomeComponents/PopupCart';
-import { useCart } from './Context';
+// import { useCart } from './Context';
 
 export default function WishlistScreen() {
   const navigation = useNavigation();
-  const { cartCount } = useCart();
+  // const { cartCount } = useCart();
 
   return (
 
      <View style={styles.container}>
-      <HeaderWishlist cartCount={cartCount}/>
+      <HeaderWishlist />
       <WhishlistCard/>
      </View>
   );

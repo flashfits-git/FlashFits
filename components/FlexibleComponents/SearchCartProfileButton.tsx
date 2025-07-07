@@ -5,11 +5,13 @@ import { useRouter } from 'expo-router';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Colors from '../../assets/theme/Colors';
+import { useCart } from '../../app/ContextParent';
 
 
 
-function SearchCartProfileButton({cartCount}) {
+function SearchCartProfileButton() {
   const router = useRouter();
+  const { cartItems, cartCount } = useCart();
 
   return (
     <View style={styles.flx}>
@@ -27,6 +29,7 @@ function SearchCartProfileButton({cartCount}) {
             <Text style={styles.badgeText}>{cartCount}</Text>
           </View>
         )}
+
   </View>
       </TouchableOpacity>
       <TouchableOpacity  onPress={() => router.push('/(profile)')}>

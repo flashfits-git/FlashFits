@@ -6,8 +6,8 @@ const { width, height } = Dimensions.get('window');
 const images = [
   require('../../assets/images/carousal/poster1.jpg'),
   require('../../assets/images/carousal/poster2.jpg'),
-  require('../../assets/images/dvv.jpg'),
-  require('../../assets/images/45g.jpg'),
+  require('../../assets/images/carousal/poster3.jpg'),
+  require('../../assets/images/carousal/poster4.jpg'),
 ];
 
 const Carousel = () => {
@@ -32,7 +32,7 @@ const Carousel = () => {
   };
 
   return (
-    <View style={{ height: height * 0.15 }}>
+    <View style={{ height: height * 0.15, backgroundColor: '#000' }}>
       <FlatList
         ref={flatListRef}
         data={images}
@@ -41,10 +41,23 @@ const Carousel = () => {
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item }) => (
-          <Image
-            source={item}
-            style={{ width: width, height: height * 0.8, resizeMode: 'cover' }}
-          />
+          <View
+            style={{
+              width: width,
+              height: height * 0.15,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Image
+              source={item}
+              style={{
+                width: '100%',
+                height: '100%',
+                resizeMode: 'cover', // Important!
+              }}
+            />
+          </View>
         )}
         onMomentumScrollEnd={handleScrollEnd}
         onScroll={Animated.event(

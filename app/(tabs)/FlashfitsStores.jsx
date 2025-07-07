@@ -15,7 +15,7 @@ import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
-import { useCart } from './Context';
+// import { useCart } from './Context';
 
 export default function FlashfitsStores() {
   const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
@@ -25,7 +25,7 @@ export default function FlashfitsStores() {
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [showStickySearch, setShowStickySearch] = useState(false);
-  const { cartCount } = useCart();
+  // const { cartCount } = useCart();
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
@@ -66,7 +66,7 @@ export default function FlashfitsStores() {
 
   return (
     <View style={styles.container}>
-      <NearbyHeaderBar cartCount={cartCount} />
+      <NearbyHeaderBar  />
 
       {/* Sticky search bar appears only when scrolled past original */}
       {showStickySearch && (

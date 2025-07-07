@@ -17,7 +17,6 @@ export default function Index() {
       setIsAuthenticated(!!token); // or check session validity
       setIsLoading(false);
     };
-
     checkAuth();
   }, []);
 

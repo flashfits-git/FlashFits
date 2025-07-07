@@ -3,9 +3,9 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Platform, StyleSheet, Animated, Easing } from 'react-native';
 import Colors from '../../assets/theme/Colors';
-import { GetCart } from '../api/productApis/cartProduct';
-import { storeCartLocally } from '../utilities/cartItemsData';
-import { CartProvider, useCart } from './Context'; // adjust path accordingly
+// import { GetCart } from '../api/productApis/cartProduct';
+// import { storeCartLocally } from '../utilities/cartItemsData';
+// import { CartProvider, useCart } from './Context'; // adjust path accordingly
 
 
 const styles = StyleSheet.create({
@@ -77,25 +77,25 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
 };
 
 function TabsWithCart() {
-  const { setCartItems, setCartCount } = useCart();
+  // const { setCartItems, setCartCount } = useCart();
 
-  useEffect(() => {
-    const fetchCart = async () => {
-      try {
-        const cartData = await GetCart();
-        const items = cartData.items || [];
-        // console.log('Number of items in cart:', items.length);
+  // useEffect(() => {
+  //   const fetchCart = async () => {
+  //     try {
+  //       const cartData = await GetCart();
+  //       const items = cartData.items || [];
+  //       // console.log('Number of items in cart:', items.length);
 
-        setCartItems(items);
-        setCartCount(items.length);
-        await storeCartLocally(items);
-      } catch (err) {
-        console.error('Failed to load cart:', err);
-      }
-    };
+  //       setCartItems(items);
+  //       setCartCount(items.length);
+  //       // await storeCartLocally(items);
+  //     } catch (err) {
+  //       console.error('Failed to load cart:', err);
+  //     }
+  //   };
 
-    fetchCart();
-  }, []);
+  //   fetchCart();
+  // }, []);
 
   return (
     <Tabs
@@ -146,8 +146,6 @@ function TabsWithCart() {
 
 export default function TabLayout() {
   return (
-    <CartProvider>
       <TabsWithCart />
-    </CartProvider>
   );
 }

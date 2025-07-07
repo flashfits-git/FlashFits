@@ -15,7 +15,7 @@ import { useNavigation } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { fetchCategories } from '../api/categories.js';
 import Loader from '@/components/Loader/Loader';
-import { useCart } from './Context';
+// import { useCart } from './Context';
 
 const Categories = () => {
   const navigation = useNavigation();
@@ -23,7 +23,7 @@ const Categories = () => {
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { cartCount } = useCart();
+  // const { cartCount } = useCart();
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
@@ -101,7 +101,7 @@ const Categories = () => {
 
   return (
     <>
-      <CategoryTitleBar cartCount={cartCount} />
+      <CategoryTitleBar  />
       
       {/* Top Main Categories Scroll */}
       <View style={styles.categoryBarContainer}>

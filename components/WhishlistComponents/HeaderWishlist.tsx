@@ -4,13 +4,13 @@ import { Ionicons } from '@expo/vector-icons';
 import SearchCartProfileButton  from '../../components/FlexibleComponents/SearchCartProfileButton';
 
 
-const HeaderWishlist = ({cartCount}) => {
+const HeaderWishlist = () => {
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
 
         <Text style={styles.title}>Wishlist</Text>
-      <SearchCartProfileButton cartCount={cartCount}/>
+      <SearchCartProfileButton />
       </View>
     </View>
   );

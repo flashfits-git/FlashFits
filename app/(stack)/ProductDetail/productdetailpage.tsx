@@ -13,6 +13,8 @@ import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
 import { AddProducttoCart } from '../../api/productApis/cartProduct';
+import { useCart } from '../../ContextParent';
+
 
 
 
@@ -25,6 +27,8 @@ const fallbackImages = [
 ];
 
 const ProductDetailPage = () => {
+    const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
+  
    
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
@@ -34,7 +38,7 @@ const ProductDetailPage = () => {
   const [selectedColor, setSelectedColor] = useState(null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [cartCount, setCartCount] = useState(0);
+  // const [cartCount1, setCartCount1] = useState(0);
   const [showToast, setShowToast] = useState(false);
 
   const router = useRouter();
@@ -132,33 +136,34 @@ useEffect(() => {
     });
   };
 
-  const handleAddToCart = async ()  => {
-
-        const productData = {
-          productId: products._id, // Product ID from main object
-          variantId: selectedVariant?._id, // First variant's ID
-          name: products.name, // Product name
-          size: selectedSize, // Passed/selected from UI
-          quantity: quantity, // Passed/selected from UI
-          merchantId: products.merchantId._id, // Extracted merchant ID
-        };
-  // console.log(productData,'QWRY');
+const handleAddToCart = async () => {
+  const productData = {
+    productId: products._id,
+    variantId: selectedVariant?._id,
+    name: products.name,
+    size: selectedSize,
+    quantity: quantity,
+    merchantId: products.merchantId._id,
+  };
 
   try {
     const response = await AddProducttoCart(productData);
+
+    // ✅ Update cartItems and cartCount safely
+    setCartItems(prevItems => [...prevItems, productData]); // or use response.cart if API returns updated cart
+    setCartCount(cartCount => cartCount + 1);
+
     console.log('Added to cart:', response);
-    // Optionally show toast or navigate
   } catch (error) {
     console.error('Failed to add to cart', error);
   }
 
+  showAddToCartToast();
 
-    showAddToCartToast();
-    setCartCount(prev => prev + quantity);
-    setTimeout(() => {
+  setTimeout(() => {
     modalizeRef.current?.close();
   }, 0);
-  };
+};
 
   if (loading) return <Loader />;
 

@@ -8,17 +8,21 @@ import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
 import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'expo-router'; // assuming you're using expo-router
+import { useCart } from '../ContextParent';
 
 const CartBag = () => {
   const [cartItems, setCartItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+      const { cartCount, setCartCount } = useCart();
+  
 
   const fetchCart = async () => {
     try {
       const cartData = await GetCart();
       const items = cartData.items || [];
       setCartItems(items);
+      setCartCount(items.length)
       setLoading(false);
     } catch (err) {
       console.error('Failed to load cart:', err);
@@ -61,7 +65,7 @@ const CartBag = () => {
       <>
         <HeaderBag />
       <View style={styles.emptyCartContainer}>
-        <Text style={styles.emptyText}>Your cart is empty</Text>
+        <Text style={styles.emptyText}>Your Bag is empty</Text>
         <TouchableOpacity
           onPress={() => router.replace('/(tabs)')}
           style={styles.returnButton}
@@ -81,12 +85,15 @@ const CartBag = () => {
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <BagProduct productData={productData} onDelete={handleDelete} />
 
-          <TouchableOpacity
-            style={styles.confirmButton}
-            onPress={() => router.push('/(stack)/ShopDetails/StoreDetailPage')}
-          >
-            <Text style={styles.confirmButtonText}>EXPLORE STORE MORE</Text>
-          </TouchableOpacity>
+            <View style={{ marginTop: 20, marginBottom: 20 }}>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={() => router.push('/(stack)/ShopDetails/StoreDetailPage')}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.confirmButtonText}>EXPLORE STORE MORE</Text>
+              </TouchableOpacity>
+            </View>
 
           <View style={{ backgroundColor: '#fff', borderRadius: 10, width: '100%' }}>
             <Text style={styles.accessoriesTitle}>Matching Accessories in Store</Text>
@@ -113,22 +120,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 100,
   },
-  confirmButton: {
-    borderWidth: 2,
-    borderColor: '#000',
-    borderRadius: 20,
-    padding: 20,
-    alignItems: 'center',
-    elevation: 5,
-    marginHorizontal: 25,
-    backgroundColor: '#eee',
-  },
-  confirmButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 15,
-    fontFamily: 'Montserrat',
-  },
+confirmButton: {
+  backgroundColor: '#fff',
+  paddingVertical: 16,
+  paddingHorizontal: 32,
+  borderRadius: 30,
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginHorizontal: 25,
+  height: 60,
+
+  // Shadow for iOS
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.2,
+  shadowRadius: 6,
+
+  // Shadow for Android
+  elevation: 6,
+
+  // borderWidth: 1,
+  borderColor: '#ccc', // Optional soft border
+},
+confirmButtonText: {
+  color: '#000',
+  fontSize: 16,
+  fontWeight: 'bold',
+  fontFamily: 'Montserrat',
+  letterSpacing: 0.5,
+},
   accessoriesTitle: {
     fontWeight: 'bold',
     fontSize: 16,
