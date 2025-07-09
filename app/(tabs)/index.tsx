@@ -37,16 +37,19 @@ export default function Home() {
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   // const [fontsLoaded, setFontsLoaded] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
+  // const [merchantData, setMerchnatData] = useState()
     const [loading, setLoading] = useState(true);
     
   useEffect(() => {
     getNewArrivalsProducts()
+    // getMerchantsData()
     setLoading(false)
   }, [])
 
   const getNewArrivalsProducts = async () => {
     try {
       const response = await fetchnewArrivalsProductsData()
+      
       // console.log(response,'HYGG');
       
       setNewArrivalsProducts(response)
@@ -54,6 +57,18 @@ export default function Home() {
       console.error('Error fetching products:', error);
     }
   };
+  // const getMerchantsData = async () => {
+  //     try {
+  //       const res = await getMerchants()
+  //       setMerchnatData(res)
+  //     } catch (error) {
+  //     console.error('Error fetching products:', error);
+  //     }
+  // }
+  // console.log(merchantData);
+  
+
+
   // Scroll listener to toggle tab bar
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
@@ -142,7 +157,7 @@ export default function Home() {
         ListHeaderComponent={
           <>
             <Carousel />
-            <HomeCategorySwitcherShops/>
+            <HomeCategorySwitcherShops />
             {newArrivalsProducts.length > 0 && (
   <>
     <RecentlyViewed product={recentlyViewed}/>

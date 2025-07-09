@@ -38,9 +38,15 @@ const DressCard = ({ product, onPress }) => {
         </View>
       </View>
 
-      <Text style={styles.title} numberOfLines={1}>
-        {product.name}
-      </Text>
+          <View style={styles.titleRow}>
+            <Text style={styles.title} numberOfLines={1}>
+              {product.name}
+            </Text>
+            <Text style={styles.deliveryText}>
+              13 mins
+            </Text>
+          </View>
+
 
       <View style={styles.priceRow}>
         <Text style={styles.price}>₹{variant?.price}</Text>
@@ -137,6 +143,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     fontFamily: 'Montserrat',
   },
+  titleRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingHorizontal: 6,
+  marginVertical: 6,
+},
+
+deliveryText: {
+  fontSize: 11,
+  color: '#888',
+  fontFamily: 'Montserrat',
+  marginLeft: 4,
+  flexShrink: 0,
+},
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import ShopCardsHome from '../HomeComponents/ShopCardsHome'
 import { useNavigation } from '@react-navigation/native';
+import {getMerchants} from '../../app/api/merchatApis/getMerchantHome'
 
 const { width } = Dimensions.get('window');
 
@@ -22,11 +23,30 @@ const categoryData = {
 
 const categories = Object.keys(categoryData);
 
+
 const CategorySwitcher = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
+    const [merchantData, setMerchnatData] = useState()
+  
     const navigation = useNavigation();
+
+      useEffect(() => {
+          const getMerchantsData = async () => {
+              try {
+                const res = await getMerchants()
+                setMerchnatData(res)
+              } catch (error) {
+              console.error('Error fetching products:', error);
+              }
+          }
+        getMerchantsData()
+        // setLoading(false)
+      }, [])
+      console.log(merchantData);
+      
+
   return (
-    <View style={styles.container}>
+    <View style={styles.container}> 
       {/* Main Category Tabs */}
 <View style={styles.topTabs}>
   {categories.map((cat) => (
@@ -52,16 +72,28 @@ const CategorySwitcher = () => {
 </View>
 
       {/* Subcategory Scrollable View */}
-        <FlatList
-          data={categoryData[selectedCategory]}
-          keyExtractor={(item, index) => item + index}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.subCategoryList}
-          renderItem={({ item, index }) => (
-            <ShopCardsHome title={item} index={index} />
-          )}
-        />
+<FlatList
+  data={
+    merchantData?.merchants?.filter((merchant) =>
+      categoryData[selectedCategory]
+        .map((name) => name.toLowerCase())
+        .includes(merchant.shopName?.toLowerCase())
+    ) || []
+  }
+  keyExtractor={(item) => item._id}
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  contentContainerStyle={styles.subCategoryList}
+  renderItem={({ item, index }) => (
+    <ShopCardsHome
+      title={item.shopName}
+      index={index}
+      merchantId={item._id}
+      shopData={item}
+    />
+  )}
+/>
+
     </View>
   );
 };

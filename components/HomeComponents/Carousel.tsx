@@ -32,40 +32,42 @@ const Carousel = () => {
   };
 
   return (
-    <View style={{ height: height * 0.15, backgroundColor: '#000' }}>
-      <FlatList
-        ref={flatListRef}
-        data={images}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        keyExtractor={(_, i) => i.toString()}
-        renderItem={({ item }) => (
-          <View
-            style={{
-              width: width,
-              height: height * 0.15,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Image
-              source={item}
-              style={{
-                width: '100%',
-                height: '100%',
-                resizeMode: 'cover', // Important!
-              }}
-            />
-          </View>
-        )}
-        onMomentumScrollEnd={handleScrollEnd}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: false }
-        )}
-      />
-    </View>
+<View style={{ height: height * 0.17, backgroundColor: '#000' }}>
+  <FlatList
+    ref={flatListRef}
+    data={images}
+    horizontal
+    pagingEnabled
+    showsHorizontalScrollIndicator={false}
+    keyExtractor={(_, i) => i.toString()}
+    renderItem={({ item }) => (
+      <View
+        style={{
+          width: width,
+          height: height * 0.17, // Match container height
+          // justifyContent: 'center',
+          // alignItems: 'center',
+          overflow: 'hidden',
+        }}
+      >
+        <Image
+          source={item}
+          style={{
+            width: '100%',
+            height: '100%',
+            resizeMode: 'cover',
+          }}
+        />
+      </View>
+    )}
+    onMomentumScrollEnd={handleScrollEnd}
+    onScroll={Animated.event(
+      [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+      { useNativeDriver: false }
+    )}
+  />
+</View>
+
   );
 };
 

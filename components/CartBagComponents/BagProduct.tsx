@@ -6,27 +6,6 @@ import {deleteCartItem} from '../../app/api/productApis/cartProduct'
 export default function BagProduct({ productData, onDelete }) {
       const [cartItems, setCartItems ] = useState([]);
 
-// console.log(productData,'REEEFC');
-
-  // useEffect(() => {
-  //   // Set initial cart items from props when component mounts or props update
-  //   if (productData && productData.length > 0) {
-  //     setCartItems(productData);
-  //   }
-  // }, [productData]);
-
-  // const handleDelete = async (itemId) => {
-  //   try {
-  //     await deleteCartItem(itemId);
-
-  //     // Filter out deleted item using _id (not .id)
-  //     const updatedCart = cartItems.filter(item => item._id !== itemId);
-  //     setCartItems(updatedCart); // Update local state to re-render UI
-  //   } catch (error) {
-  //     console.error("Failed to delete cart item:", error);
-  //   }
-  // };
-
 
   return (
     <>
@@ -58,13 +37,20 @@ export default function BagProduct({ productData, onDelete }) {
               <TouchableOpacity style={styles.sizeBox}>
                 <Text style={styles.sizeText}>Size: {item.size || 'N/A'}</Text>
               </TouchableOpacity>
-
-              <Text style={styles.deliveryText}>
-                Est. Delivery in <Text style={styles.greenText}>2 hour</Text>
-              </Text>
               <View style={styles.returnRow}>
-                <Text style={styles.deliveryText1}>
-                  Instant Return (Try then Buy)
+                
+                <Text style={styles.deliveryText}>
+               Try then Buy
+              </Text>
+                  <Image
+                  source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
+                  style={styles.tickIcon}
+                />
+              </View>
+
+              <View style={styles.returnRow}>
+                <Text style={styles.deliveryText}>
+                  Instant Return 
                 </Text>
                 <Image
                   source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
@@ -94,14 +80,19 @@ container: {
   position: 'relative',
   minHeight: 130,
   padding: 8,
+  width: '85%',           // Set fixed width
+  alignSelf: 'center',    // ✅ Center horizontally
+
   // Shadow for iOS
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.15,
   shadowRadius: 6,
+
   // Shadow for Android
   elevation: 4,
-}, 
+},
+
   // innerLeftShadow: {
   //   position: 'absolute',
   //   left: 0,

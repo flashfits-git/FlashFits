@@ -11,36 +11,41 @@ const images = [
   require('../../assets/images/shopshed2.jpg'), // Add your second image here
 ];
 
-const ShopCard = ({ title, shopId, index }) => {
+const ShopCard = ({ title, index, merchantId, shopData }) => {
   const router = useRouter();
 
   const handlePress = () => {
-    router.push('/(stack)/ShopDetails/StoreDetailPage');
+    router.push({
+      pathname: '/(stack)/ShopDetails/StoreDetailPage',
+      params: { id: merchantId }, // ✅ Use correct ID
+    });
   };
 
-  const selectedImage = images[index % images.length]; // Alternate images based on index
+  const selectedImage = images[index % images.length];
 
   return (
     <TouchableOpacity style={styles.cardContainer} onPress={handlePress}>
-      <Image
-        source={selectedImage}
-        style={styles.topImage}
-        resizeMode="cover"
-      />
+      <Image source={selectedImage} style={styles.topImage} resizeMode="cover" />
       <View style={styles.cardContent}>
-        <Text style={styles.shopTitle}>{title}</Text>
+        <Text style={styles.shopTitle}>
+          {title ?? shopData?.shopName ?? 'Shop'}
+        </Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-const CARD_WIDTH = width * 0.4;
+
+const CARD_WIDTH = width * 0.25;
 
 const styles = StyleSheet.create({
   cardContainer: {
     width: CARD_WIDTH,
     marginRight: 12,
-    borderRadius: 12,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 12,
+    borderBottomLeftRadius: 12,
     backgroundColor: '#fff',
     elevation: 6,
     shadowColor: '#000',
@@ -57,8 +62,8 @@ const styles = StyleSheet.create({
   topImage: {
     width: '100%',
     height: 30,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   shopTitle: {
     fontSize: 18,
