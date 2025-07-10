@@ -23,7 +23,9 @@ const Categories = ({products}) => {
   };
 
   const handleViewAll = () => {
-    navigation.navigate('(stack)/SelectionPage');
+    navigation.navigate('(stack)/SelectionPage',{
+     type:"new arrivals",
+    });
   };
 
   return (

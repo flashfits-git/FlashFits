@@ -1,19 +1,54 @@
-import React from 'react';
+import React,{useEffect, useState} from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet, FlatList  } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import {fetchnewArrivalsProductsData, getFilteredProducts} from '../api/productApis/products'
 import Card from '@/components/HomeComponents/Card';
 
 
 export default function SelectionPage() {
   const router = useRouter();
   const router1 = useRouter();
+  const [products, setProducts] = useState([]);
+  // const [loading, setLoading] = useState(true);
+  const { type,merchant, category, subCategory, subSubCategory, tag  } = useLocalSearchParams();
+
+  useEffect(() => {
+    const fetch = async () => {
+      const filters = {
+        merchant,
+        type,
+        category,
+        subCategory,
+        subSubCategory,
+        tag,
+      };
+
+      try {
+        if(type=="new arrivals"){
+          const res = await fetchnewArrivalsProductsData()
+          setProducts(res.products);
+        }else{
+          console.log(filters);
+          const res = await getFilteredProducts(filters);
+          setProducts(res.products);
+        }
+      } catch (err) {
+        console.error("Error fetching:", err);
+      } finally {
+        // setLoading(false);
+      }
+    };
+    fetch();
+  }, [merchant, category, subCategory, subSubCategory, tag]);
 
 
-  const mockData = Array.from({ length: 2 }, (_, i) => ({
-  id: i.toString(),
-  title: `Item ${i + 1}`,
-}));
+
+//   const mockData = Array.from({ length: 2 }, (_, i) => ({
+//   id: i.toString(),
+//   title: `Item ${i + 1}`,
+// }));
 const renderItem = ({ item }: { item: any }) => <Card />;
 
   return (
@@ -49,7 +84,7 @@ const renderItem = ({ item }: { item: any }) => <Card />;
       </ScrollView>
       
       <FlatList
-        data={mockData}
+        data={products}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.cardList}

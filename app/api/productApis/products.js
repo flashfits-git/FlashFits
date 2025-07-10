@@ -40,6 +40,15 @@ export const productDetailPage = async (id) => {
       }
 };
 
+export const getFilteredProducts = async (filters) => {
+  try {
+    const response = await api.get('user/products/filtered', { params: filters });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching filtered products:', error);
+    throw error;
+  }
+};
 
 
 
