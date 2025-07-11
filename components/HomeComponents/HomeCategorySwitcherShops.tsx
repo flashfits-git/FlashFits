@@ -74,10 +74,8 @@ const CategorySwitcher = () => {
       {/* Subcategory Scrollable View */}
 <FlatList
   data={
-    merchantData?.merchants?.filter((merchant) =>
-      categoryData[selectedCategory]
-        .map((name) => name.toLowerCase())
-        .includes(merchant.shopName?.toLowerCase())
+    merchantData?.merchants?.filter(
+      (merchant) => merchant.category?.toLowerCase() === selectedCategory.toLowerCase()
     ) || []
   }
   keyExtractor={(item) => item._id}
@@ -93,7 +91,6 @@ const CategorySwitcher = () => {
     />
   )}
 />
-
     </View>
   );
 };

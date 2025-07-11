@@ -1,222 +1,149 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, FlatList, Animated, Platform} from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
-import frfef from '../../assets/images/3.jpg';
-import { useNavigation } from 'expo-router';
-import PopupCart from '../../components/HomeComponents/PopupCart';
-import Card from '../HomeComponents/Card';
+import React from 'react';
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
+// Card UI Component
+const DressCard = ({ product, onPress }) => {
+  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
+  const imageUrl = variant?.images?.[0]?.url;
 
-
-const DressCard = ({ image, title, price, oldPrice, discount, rating }) => (
-  <View style={styles.card}>
-    <View style={styles.imageWrapper}>
-      <Image source={image} style={styles.image} />
-      <View style={styles.promoTag}>
-        <Text style={styles.promoText}>15% off - FIRST15</Text>
+  return (
+    <TouchableOpacity style={styles.card} onPress={onPress}>
+      <View style={styles.shadowWrapper}>
+        <View style={styles.imageWrapper}>
+          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <View style={styles.ratingContainer}>
+            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
+          </View>
+        </View>
       </View>
-      <View style={styles.ratingTag}>
-        <Text style={styles.ratingText}>{rating} ★</Text>
-      </View>
-    </View>
 
-    <View style={styles.info}>
-      <Text style={styles.title} numberOfLines={1}>{title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={1}>
+          {product.name}
+        </Text>
+        <Text style={styles.deliveryText}>13 mins</Text>
+      </View>
+
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{price}</Text>
-        {oldPrice && <Text style={styles.oldPrice}>₹{oldPrice}</Text>}
-        {discount && <Text style={styles.discount}>{discount} off</Text>}
-        <TouchableOpacity style={styles.trashIcon}>
-          <AntDesign name="delete" size={18} color="#0093d7" />
-        </TouchableOpacity>
+        <Text style={styles.price}>₹{variant?.price || '0'}</Text>
+        <Text style={styles.oldPrice}>₹{variant?.mrp || '0'}</Text>
       </View>
-      <TouchableOpacity style={styles.viewBtn}>
-        <Text style={styles.viewBtnText}>View</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-);
+    </TouchableOpacity>
+  );
+};
 
-export default function WhishlistCard() {
-  const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
-  const [selectedSideCategory, setSelectedSideCategory] = useState('1');
-    const navigation = useNavigation();
-    const scrollOffset = useRef(new Animated.Value(0)).current;
-    const currentOffset = useRef(0);
-    const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+// Wrapper Component with navigation
+export default function WishlistCard({ product = [] }) {
+  const navigation = useNavigation();
 
-  useEffect(() => {
-    const listener = scrollOffset.addListener(({ value }) => {
-      const clampedValue = Math.max(0, value);
-
-      if (clampedValue < currentOffset.current - 5) {
-        setIsTabBarVisible(true);
-        navigation.setOptions({
-          tabBarStyle: {
-            position: 'absolute',
-            // bottom: 3,
-            // marginLeft: 12,
-            // marginRight: 12,
-            height: Platform.OS === 'ios' ? 70 : 70,
-            backgroundColor: '#fff',
-            borderTopLeftRadius: 30,
-            borderTopRightRadius: 30,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            elevation: 5,
-            paddingTop: Platform.OS === 'ios' ? 18 : 10,
-            // margin: 8,
-           
-          },
-        });
-      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
-        setIsTabBarVisible(false);
-        navigation.setOptions({
-          tabBarStyle: { display: 'none' },
-        });
-      }
-      currentOffset.current = clampedValue;
-    });
-
-    return () => {
-      scrollOffset.removeListener(listener);
-    };
-  }, []);
-
-
-
-
-  const products = [
-    { id: '1', image: frfef, title: 'Black T-Shirt', price: '459', oldPrice: '479', discount: '5%', rating: '4.8' },
-    { id: '2', image: frfef, title: 'Red Dress', price: '899', rating: '4.8' },
-    { id: '3', image: frfef, title: 'Blue Hoodie', price: '999', rating: '4.9' },
-    { id: '4', image: frfef, title: 'Green Kurti', price: '599', rating: '4.7' },
-    { id: '5', image: frfef, title: 'Yellow Top', price: '699', rating: '4.6' },
-    { id: '6', image: frfef, title: 'White Shirt', price: '749', rating: '4.5' },
-    { id: '7', image: frfef, title: 'White Shirt', price: '749', rating: '4.5' },
-  ];
   return (
     <View style={styles.container}>
-<FlatList
-  data={products}
-  keyExtractor={(item) => item.id}
-  numColumns={2}
-  columnWrapperStyle={styles.cardGrid}
-  contentContainerStyle={styles.listContent}
-  showsVerticalScrollIndicator={false}
-  renderItem={({ item }) => <DressCard {...item} />}
-  onScroll={Animated.event(
-    [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-    { useNativeDriver: false }
-  )}
-  scrollEventThrottle={16}
-/>
-      <PopupCart isTabBarVisible={isTabBarVisible} />
+      <FlatList
+        data={product}
+        keyExtractor={(item, index) => item._id || item.id || index.toString()}
+        numColumns={2}
+        renderItem={({ item }) => (
+          <DressCard
+            product={item}
+            onPress={() =>
+              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+                id: item._id || item.id,
+                variantId: Array.isArray(item.variants)
+                  ? item.variants[0]?._id
+                  : item.variants?._id,
+              })
+            }
+          />
+        )}
+        contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 10 }}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  listContent: {
     backgroundColor: '#fff',
-    padding: 10,
-  },
-  cardGrid: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
   },
   card: {
     width: '48%',
+    marginBottom: 12,
+    marginHorizontal: '1%',
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    borderColor: '#eee',
-    borderWidth: 1,
   },
   imageWrapper: {
     position: 'relative',
   },
   image: {
+    height: 250,
     width: '100%',
-    height: 200,
     resizeMode: 'cover',
   },
-  promoTag: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: '#fff',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  promoText: {
-    fontSize: 11,
-    color: '#0093d7',
-    fontWeight: '600',
-  },
-  ratingTag: {
+  ratingContainer: {
     position: 'absolute',
     bottom: 8,
-    right: 8,
-    backgroundColor: '#fff',
+    left: 8,
+    backgroundColor: 'white',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
     elevation: 2,
   },
   ratingText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#0093d7',
   },
-  info: {
-    padding: 10,
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+    marginTop: 6,
   },
   title: {
     fontSize: 13,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 6,
+    fontFamily: 'Montserrat',
+    flex: 1,
+    marginRight: 6,
+  },
+  deliveryText: {
+    fontSize: 11,
+    color: '#888',
+    marginTop: 2,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
+    paddingHorizontal: 8,
+    marginBottom: 8,
   },
   price: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: '700',
     color: '#000',
+    fontFamily: 'Montserrat',
   },
   oldPrice: {
     fontSize: 12,
-    color: '#888',
+    color: '#777',
     textDecorationLine: 'line-through',
     marginLeft: 6,
-  },
-  discount: {
-    fontSize: 12,
-    color: 'red',
-    marginLeft: 6,
-  },
-  trashIcon: {
-    marginLeft: 'auto',
-  },
-  viewBtn: {
-    backgroundColor: '#90d5ff',
-    borderRadius: 5,
-    paddingVertical: 8,
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  viewBtnText: {
-    color: '#fff',
-    fontWeight: '600',
+    fontFamily: 'Montserrat',
   },
 });
