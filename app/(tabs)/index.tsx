@@ -57,19 +57,7 @@ export default function Home() {
       console.error('Error fetching products:', error);
     }
   };
-  // const getMerchantsData = async () => {
-  //     try {
-  //       const res = await getMerchants()
-  //       setMerchnatData(res)
-  //     } catch (error) {
-  //     console.error('Error fetching products:', error);
-  //     }
-  // }
-  // console.log(merchantData);
-  
 
-
-  // Scroll listener to toggle tab bar
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
