@@ -18,6 +18,8 @@ const CartBag = () => {
   const [scrollY, setScrollY] = useState(0);
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
+  console.log(cartItems,'ehfjenfeef');
+  
 
   const fetchCart = async () => {
     try {
@@ -44,20 +46,24 @@ const CartBag = () => {
     }
   };
 
-  const productData = cartItems.map((item) => {
-    const product = item.productId || {};
-    const firstVariant = product.variants?.[0] || {};
-    return {
-      name: product.name || '',
-      price: firstVariant.price || null,
-      mrp: firstVariant.mrp || null,
-      size: item.size || null,
-      quantity: item.quantity || 1,
-      merchantName: item.merchantId?.shopName || '',
-      imageURL: 'ddd',
-      id: product._id,
-    };
-  });
+const productData = cartItems.map((item) => {
+  const product = item.productId || {};
+  const firstVariant = product.variants?.[0] || {};
+
+  return {
+    name: product.name || '',
+    price: firstVariant.price || null,
+    mrp: firstVariant.mrp || null,
+    size: item.size || null,
+    quantity: item.quantity || 1,
+    merchantName: item.merchantId?.shopName || '',
+    image: firstVariant.images?.[0] || null, // ✅ Pass clean image
+    id: product._id,
+  };
+});
+
+  // console.log(productData,'3333333333E');
+  
 
   if (loading) return <Loader />;
 
@@ -133,7 +139,7 @@ const CartBag = () => {
     </LinearGradient>
   </View>
 
-  <BagProduct productData={productData} onDelete={handleDelete} />
+  <BagProduct product={productData} onDelete={handleDelete} />
 
   <View style={{ marginTop: 20, marginBottom: 20 }}>
     <TouchableOpacity

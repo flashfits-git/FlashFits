@@ -34,7 +34,7 @@ const ShopCard = ({ title, index, merchantId, shopData }) => {
     <Image
       source={{ uri: shopData.logo.url }}
       style={styles.logoImage}
-      resizeMode="contain"
+      resizeMode="cover"
     />
   ) : (
     <Text style={styles.noImageText}>No Image</Text>
@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cardContent: {
-    padding: 10,
+    padding: 6,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -20,26 +20,27 @@ import { fetchCategories } from '../api/categories';
 import { FontAwesome } from '@expo/vector-icons';
 
 
+
 export default function SelectionPage() {
   const router = useRouter();
     const { cartItems, cartCount } = useCart();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [price, setPrice] = useState([0, 2000]); 
   const [selectedGender, setSelectedGender] = useState("Men");
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [filters, setFilters] = useState({
+  priceRange: [0, 2000],
+  selectedCategoryIds: [],
+  selectedColors: [],
+  selectedStores: [],
+});
 
-  const toggleCategoryCheckbox = (id) => {
-    setSelectedCategoryIds(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
+// useEffect(() => {
+//   console.log("Filters updated:", filters);
+// }, [filters]);
 
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
-  const [selectedColors, setSelectedColors] = useState([]);
-const [selectedStores, setSelectedStores] = useState([]);
 
   const mainCategories = categoriesData.filter(cat => cat.level === 0);
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
@@ -55,22 +56,33 @@ const [selectedStores, setSelectedStores] = useState([]);
     setSelectedSubId(id);
   };
 
-// Function to toggle colors
-const toggleColor = (color) => {
-  setSelectedColors((prev) =>
-    prev.includes(color)
-      ? prev.filter((c) => c !== color)
-      : [...prev, color]
-  );
+
+  const toggleCategoryCheckbox = (id) => {
+  setFilters(prev => ({
+    ...prev,
+    selectedCategoryIds: prev.selectedCategoryIds.includes(id)
+      ? prev.selectedCategoryIds.filter(i => i !== id)
+      : [...prev.selectedCategoryIds, id],
+  }));
 };
 
+// Function to toggle colors
+const toggleColor = (color) => {
+  setFilters(prev => ({
+    ...prev,
+    selectedColors: prev.selectedColors.includes(color)
+      ? prev.selectedColors.filter(c => c !== color)
+      : [...prev.selectedColors, color],
+  }));
+};
 // Function to toggle store selection
 const toggleStore = (store) => {
-  setSelectedStores((prev) =>
-    prev.includes(store)
-      ? prev.filter((s) => s !== store)
-      : [...prev, store]
-  );
+  setFilters(prev => ({
+    ...prev,
+    selectedStores: prev.selectedStores.includes(store)
+      ? prev.selectedStores.filter(s => s !== store)
+      : [...prev.selectedStores, store],
+  }));
 };
 
   // ✅ Only ONE useEffect for loading categories
@@ -121,7 +133,7 @@ useEffect(() => {
       }
     };
     fetch();
-  }, [merchant, type, category, subCategory, subSubCategory, tag]);
+  }, [filters, type, merchant, category, subCategory, subSubCategory, tag ]);
 
 
 
@@ -184,13 +196,17 @@ useEffect(() => {
 
 
         {/* Product List */}
-        <FlatList
-          data={products}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.cardList}
-          showsVerticalScrollIndicator={false}
-        />
+
+<FlatList
+  data={products}
+  renderItem={renderItem}
+  keyExtractor={(item, index) => index.toString()}
+  numColumns={2}
+  showsVerticalScrollIndicator={false}
+  columnWrapperStyle={styles.row} // Ensures 2 per row
+  contentContainerStyle={styles.cardList}
+/>
+
       </View>
 
       {/* FILTER Modal */}
@@ -202,19 +218,21 @@ useEffect(() => {
 <Text style={styles.sectionTitle}>PRICE RANGE</Text>
 <View style={{ alignItems: 'center', marginBottom: 20 }}>
   <MultiSlider
-    values={price}
+    values={filters.priceRange}
     sliderLength={300}
     min={0}
     max={10000}
     step={500}
-    onValuesChange={(values) => setPrice(values)}
+onValuesChange={(values) =>
+  setFilters(prev => ({ ...prev, priceRange: values }))
+}
     selectedStyle={{ backgroundColor: '#000' }}
     unselectedStyle={{ backgroundColor: '#ccc' }}
     markerStyle={{ backgroundColor: '#000' }}
   />
-  <Text style={styles.priceLabel}>
-    ₹{price[0]} - ₹{price[1]}
-  </Text>
+<Text style={styles.priceLabel}>
+  ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
+</Text>
 </View>
 
     {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
@@ -248,9 +266,9 @@ useEffect(() => {
     >
       <View style={[
         styles.checkbox,
-        selectedCategoryIds.includes(item._id) && styles.checkboxSelected
+        filters.selectedCategoryIds.includes(item._id) && styles.checkboxSelected
       ]}>
-        {selectedCategoryIds.includes(item._id) && (
+        {filters.selectedCategoryIds.includes(item._id) && (
           <FontAwesome name="check" size={14} color="#fff" />
         )}
       </View>
@@ -268,13 +286,13 @@ useEffect(() => {
       onPress={() => toggleColor(color)}
       style={[
         styles.colorPill,
-        selectedColors.includes(color) && styles.colorPillSelected,
+        filters.selectedColors.includes(color) && styles.colorPillSelected,
       ]}
     >
       <Text
         style={[
           styles.colorPillText,
-          selectedColors.includes(color) && styles.colorPillTextSelected,
+          filters.selectedColors.includes(color) && styles.colorPillTextSelected,
         ]}
       >
         {color}
@@ -292,12 +310,12 @@ useEffect(() => {
       onPress={() => toggleStore(store)}
       style={[
         styles.storePill,
-        selectedStores.includes(store) && styles.storePillSelected
+        filters.selectedStores.includes(store) && styles.storePillSelected
       ]}
     >
       <Text style={[
         styles.storeText,
-        selectedStores.includes(store) && styles.storeTextSelected
+        filters.selectedStores.includes(store) && styles.storeTextSelected
       ]}>
         {store}
       </Text>
@@ -311,8 +329,6 @@ useEffect(() => {
     </TouchableOpacity>
   </View>
 </Modalize>
-
-
       {/* SORT Modal */}
 <Modalize ref={sortModalRef} adjustToContentHeight>
   <View style={{ paddingVertical: 12 }}>
@@ -448,6 +464,14 @@ genderText: {
   marginLeft: 8,
   fontWeight: '500',
   fontSize: 14,
+},
+row: {
+  justifyContent: 'space-between',
+  marginBottom: 16,
+},
+cardList: {
+  paddingBottom: 100,
+  paddingHorizontal: 4,
 },
 badgeText: {
   color: '#fff',

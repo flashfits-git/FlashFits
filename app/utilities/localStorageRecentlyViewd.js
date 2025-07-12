@@ -4,7 +4,7 @@ const STORAGE_KEY = 'PREVIOUSLY_VIEWED';
 
 export const addToPreviouslyViewed = async (product) => {
   try {
-    console.log('👀 Product to add:', product);
+    // console.log('👀 Product to add:', product);
 
     const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);
     let viewed = jsonValue != null ? JSON.parse(jsonValue) : [];

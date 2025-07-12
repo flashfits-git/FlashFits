@@ -1,78 +1,91 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router'; // ✅ Corrected import
+import { View, Text, Image, StyleSheet, TouchableOpacity, } from 'react-native';
+import { useRouter } from 'expo-router';
 
-// Card UI Component
 const DressCard = ({ product, onPress }) => {
-  const variant = product.variants?.[0];
-  const image = { uri: variant?.mainImage?.url || '' };
-  const discount = variant?.discount || 0;
-  const price = product.price;
-  const oldPrice = product.mrp;
-  const rating = product.ratings;
+  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
+  const imageUrl = variant?.images?.[0]?.url;
 
   return (
-    <TouchableOpacity style={styles.touchable} onPress={onPress}>
-      <View style={styles.card}>
+ <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
+      <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={image} style={styles.image} />
+          <Image source={{ uri: imageUrl }} style={styles.image} />
           <View style={styles.ratingContainer}>
-            <Text style={styles.star}>{'\u2605'}</Text>
-            <Text style={styles.rating}>{rating}</Text>
+            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
           </View>
         </View>
-        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+      </View>
+
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={1}>
           {product.name}
         </Text>
-        <View style={styles.priceRow}>
-          <Text style={styles.price}>₹{price}</Text>
-          <Text style={styles.oldPrice}>₹{oldPrice}</Text>
-          <Text style={styles.discount}>{discount}% off</Text>
-        </View>
+        <Text style={styles.deliveryText}>13 mins</Text>
+      </View>
+
+      <View style={styles.priceRow}>
+        <Text style={styles.price}>₹{variant?.price || '0'}</Text>
+        <Text style={styles.oldPrice}>₹{variant?.mrp || '0'}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-// Wrapper Component with navigation
 export default function Card({ product }) {
-  const router = useRouter(); // ✅ Use expo-router's hook
+  const router = useRouter();
 
-  const handlePress = () => {
-    console.log('Navigating to product:', product.name); // Optional: Debug log
-    router.push({
-      pathname: '(stack)/ProductDetail/productdetailpage',
-      params: { item: JSON.stringify(product) },
-    });
-  };
+const handlePress = () => {
+  const variant = Array.isArray(product.variants)
+    ? product.variants[0]
+    : product.variants;
+
+  router.push({
+    pathname: '(stack)/ProductDetail/productdetailpage',
+    params: {
+      id: product._id || product.id,
+      variantId: variant?._id,
+    },
+  });
+};
 
   return <DressCard product={product} onPress={handlePress} />;
 }
 
-// Styles
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    padding: 10,
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  touchable: {
+  cardContainer: {
     width: '48%',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },  shadowWrapper: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+    borderRadius: 15,
+    marginBottom: 10,
   },
   imageWrapper: {
     position: 'relative',
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   image: {
-    height: 250,
     width: '100%',
+    height: 200,
     resizeMode: 'cover',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
   },
   ratingContainer: {
     position: 'absolute',
@@ -85,47 +98,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
+    opacity: 0.8,
   },
-  star: {
-    fontSize: 10,
-    color: '#90d5ff',
-    padding: 2,
+  ratingText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#000',
+    fontFamily: 'Montserrat',
   },
-  rating: {
-    fontSize: 12,
-    marginLeft: 4,
-    fontWeight: '600',
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingTop: 8,
   },
   title: {
     fontSize: 13,
     fontWeight: '500',
-    marginVertical: 6,
     color: '#333',
-    fontFamily: 'Montserrat',
-    paddingHorizontal: 8,
+    flex: 1,
+    marginRight: 6,
+  },
+  deliveryText: {
+    fontSize: 12,
+    color: '#999',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    paddingTop: 4,
   },
   price: {
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
-    fontFamily: 'Montserrat',
   },
   oldPrice: {
     fontSize: 12,
-    color: '#777',
+    color: '#999',
     textDecorationLine: 'line-through',
-    marginLeft: 6,
-    fontFamily: 'Montserrat',
-  },
-  discount: {
-    fontSize: 12,
-    color: '#ff6666',
-    marginLeft: 6,
+    marginLeft: 8,
   },
 });
+
+

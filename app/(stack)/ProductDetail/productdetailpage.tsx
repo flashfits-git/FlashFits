@@ -136,7 +136,16 @@ useEffect(() => {
     });
   };
 
+  // console.log(products,'eeei339238');
+  
+
 const handleAddToCart = async () => {
+
+    // const image =
+    // selectedVariant?.images?.[0] || products?.variants?.[0]?.images?.[0] || null;
+    // console.log(selectedVariant?.images?.[0] ,'EUFJFRNFN');
+    
+
   const productData = {
     productId: products._id,
     variantId: selectedVariant?._id,
@@ -144,15 +153,12 @@ const handleAddToCart = async () => {
     size: selectedSize,
     quantity: quantity,
     merchantId: products.merchantId._id,
+    image:selectedVariant?.images?.[0].url
   };
-
   try {
     const response = await AddProducttoCart(productData);
-
-    // ✅ Update cartItems and cartCount safely
     setCartItems(prevItems => [...prevItems, productData]); // or use response.cart if API returns updated cart
     setCartCount(cartCount => cartCount + 1);
-
     console.log('Added to cart:', response);
   } catch (error) {
     console.error('Failed to add to cart', error);

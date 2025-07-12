@@ -1,23 +1,24 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import {deleteCartItem} from '../../app/api/productApis/cartProduct'
 
-export default function BagProduct({ productData, onDelete }) {
-      const [cartItems, setCartItems ] = useState([]);
-
-
+export default function BagProduct({ product, onDelete }) {
   return (
     <>
-      {productData?.map((item, index) => {
+      {product?.map((item, index) => {
         const saved = item.mrp - item.price;
+
+        // console.log(item.image,'eeefeed');
+        
+
         return (
           <View key={index} style={styles.container}>
             <View style={styles.imageContainer}>
-              <Image
-                source={require('../../assets/images/3.jpg')}
-                style={styles.image}
-              />
+              {item.image ? (
+                <Image source={{ uri: item.image.url }} style={styles.image} />
+              ) : (
+                <Text>No image</Text>
+              )}
             </View>
 
             <View style={styles.detailsContainer}>
@@ -37,21 +38,17 @@ export default function BagProduct({ productData, onDelete }) {
               <TouchableOpacity style={styles.sizeBox}>
                 <Text style={styles.sizeText}>Size: {item.size || 'N/A'}</Text>
               </TouchableOpacity>
+
               <View style={styles.returnRow}>
-                
-                <Text style={styles.deliveryText}>
-               Try then Buy
-              </Text>
-                  <Image
+                <Text style={styles.deliveryText}>Try then Buy</Text>
+                <Image
                   source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
                   style={styles.tickIcon}
                 />
               </View>
 
               <View style={styles.returnRow}>
-                <Text style={styles.deliveryText}>
-                  Instant Return 
-                </Text>
+                <Text style={styles.deliveryText}>Instant Return</Text>
                 <Image
                   source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
                   style={styles.tickIcon}
@@ -59,9 +56,9 @@ export default function BagProduct({ productData, onDelete }) {
               </View>
             </View>
 
-              <TouchableOpacity onPress={() => onDelete(item.id)}>
-                <Ionicons name="trash-outline" size={18} color="black" />
-              </TouchableOpacity>
+            <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteButton}>
+              <Ionicons name="trash-outline" size={18} color="black" />
+            </TouchableOpacity>
           </View>
         );
       })}
@@ -70,40 +67,23 @@ export default function BagProduct({ productData, onDelete }) {
 }
 
 const styles = StyleSheet.create({
-container: {
-  flexDirection: 'row',
-  alignItems: 'flex-start',
-  backgroundColor: 'white',
-  borderRadius: 12,
-  borderTopRightRadius: 15,
-  margin: 8,
-  position: 'relative',
-  minHeight: 130,
-  padding: 8,
-  width: '85%',           // Set fixed width
-  alignSelf: 'center',    // ✅ Center horizontally
-
-  // Shadow for iOS
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.15,
-  shadowRadius: 6,
-
-  // Shadow for Android
-  elevation: 4,
-},
-
-  // innerLeftShadow: {
-  //   position: 'absolute',
-  //   left: 0,
-  //   top: 0,
-  //   bottom: 0,
-  //   width: 12,
-  //   backgroundColor: 'rgba(0,0,0,0.06)',
-  //   borderTopLeftRadius: 12,
-  //   borderBottomLeftRadius: 12,
-  //   zIndex: 1,
-  // },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    margin: 8,
+    position: 'relative',
+    minHeight: 130,
+    padding: 8,
+    width: '85%',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4,
+  },
   imageContainer: {
     position: 'relative',
     zIndex: 2,
@@ -113,23 +93,6 @@ container: {
     height: 130,
     borderRadius: 12,
   },
-  googlePayImage: {
-    width: 20,
-    height: 15,
-    marginLeft: 4
-  },
-  returnRow: {
-    // width:,
-  flexDirection: 'row',
-  alignItems: 'center',
-  marginTop: 4,
-},
-tickIcon: {
-  width: 14,
-  height: 14,
-  marginLeft: 4,
-  resizeMode: 'contain',
-},
   detailsContainer: {
     flex: 1,
     marginLeft: 8,
@@ -158,13 +121,13 @@ tickIcon: {
     fontWeight: '500',
     color: 'black',
     marginRight: 6,
-    fontFamily: 'Montserrat'
+    fontFamily: 'Montserrat',
   },
   strikePrice: {
     fontSize: 10,
     color: 'gray',
     textDecorationLine: 'line-through',
-    fontFamily: 'Montserrat'
+    fontFamily: 'Montserrat',
   },
   discount: {
     color: 'green',
@@ -182,7 +145,7 @@ tickIcon: {
   sizeText: {
     fontSize: 11,
     color: 'gray',
-    fontFamily: 'Montserrat'
+    fontFamily: 'Montserrat',
   },
   deliveryText: {
     fontSize: 11,
@@ -190,21 +153,20 @@ tickIcon: {
     fontWeight: '300',
     marginBottom: 2,
   },
-  deliveryText1: {
-    fontSize: 9,
-    fontFamily: 'Montserrat',
-    fontWeight: '300',
-    flex: 1,
-  //  width:20,
-  },
-  greenText: {
-    color: 'green',
-    fontFamily: 'Montserrat',
-    fontWeight: '500'
+  tickIcon: {
+    width: 14,
+    height: 14,
+    marginLeft: 4,
+    resizeMode: 'contain',
   },
   returnRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  greenText: {
+    color: 'green',
+    fontFamily: 'Montserrat',
+    fontWeight: '500',
   },
   deleteButton: {
     position: 'absolute',

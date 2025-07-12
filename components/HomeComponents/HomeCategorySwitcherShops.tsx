@@ -48,28 +48,28 @@ const CategorySwitcher = () => {
   return (
     <View style={styles.container}> 
       {/* Main Category Tabs */}
-<View style={styles.topTabs}>
-  {categories.map((cat) => (
-    <TouchableOpacity
-      key={cat}
-      onPress={() => setSelectedCategory(cat)}
-      style={[
-        styles.tabButton,
-        selectedCategory === cat && styles.activeTab,
-      ]}
-    >
-      <Text
-        style={[
-          styles.tabText,
-          selectedCategory === cat && styles.activeTabText,
-        ]}
-      >
-        {cat}
-      </Text>
-      {selectedCategory === cat && <View style={styles.underline} />}
-    </TouchableOpacity>
-  ))}
-</View>
+      <View style={styles.topTabs}>
+        {categories.map((cat) => (
+          <TouchableOpacity
+            key={cat}
+            onPress={() => setSelectedCategory(cat)}
+            style={[
+              styles.tabButton,
+              selectedCategory === cat && styles.activeTab,
+            ]}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedCategory === cat && styles.activeTabText,
+              ]}
+            >
+              {cat}
+            </Text>
+            {selectedCategory === cat && <View style={styles.underline} />}
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* Subcategory Scrollable View */}
 <FlatList

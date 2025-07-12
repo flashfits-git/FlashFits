@@ -42,13 +42,14 @@ export const productDetailPage = async (id) => {
 
 export const getFilteredProducts = async (filters) => {
   try {
-    const response = await api.get('user/products/filtered', { params: filters });
+    const response = await api.post('user/products/filtered', filters); // 🔄 POST and pass filters in body
     return response.data;
   } catch (error) {
     console.error('Error fetching filtered products:', error);
     throw error;
   }
 };
+
 
 
 

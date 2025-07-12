@@ -17,9 +17,9 @@ const Categories = ({products}) => {
   const [loading, setLoading] = useState(false); // Since we're not fetching, no need to simulate loading
 
   const handleTitlePress = () => {
-    navigation.navigate('(stack)/SelectionPage');
-    // console.log('gfgFHFJFgvgv');
-
+    navigation.navigate('(stack)/SelectionPage',{
+     type:"new arrivals",
+    });
   };
 
   const handleViewAll = () => {

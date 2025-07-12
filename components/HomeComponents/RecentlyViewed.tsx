@@ -15,17 +15,8 @@ const { width } = Dimensions.get('window');
 const DressCard = ({ product, onPress }) => {
   // Handle both object and array cases for variants
   const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
-
   const imageUrl = variant?.images?.[0]?.url;
 
-  // useEffect(() => {
-  //   console.log('Rendering:', product?.name, '| Image:', imageUrl);
-  // }, [product]);
-
-  // if (!imageUrl) {
-  //   console.warn('Missing image URL for product:', product?.name);
-  //   return null;
-  // }
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
