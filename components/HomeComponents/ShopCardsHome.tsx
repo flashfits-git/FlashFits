@@ -12,6 +12,8 @@ const images = [
 ];
 
 const ShopCard = ({ title, index, merchantId, shopData }) => {
+  // console.log(shopData.logo.url);
+  
   const router = useRouter();
 
   const handlePress = () => {
@@ -27,9 +29,18 @@ const ShopCard = ({ title, index, merchantId, shopData }) => {
     <TouchableOpacity style={styles.cardContainer} onPress={handlePress}>
       <Image source={selectedImage} style={styles.topImage} resizeMode="cover" />
       <View style={styles.cardContent}>
-        <Text style={styles.shopTitle}>
-          {title ?? shopData?.shopName ?? 'Shop'}
-        </Text>
+      <View style={styles.cardContent}>
+  {shopData?.logo?.url ? (
+    <Image
+      source={{ uri: shopData.logo.url }}
+      style={styles.logoImage}
+      resizeMode="contain"
+    />
+  ) : (
+    <Text style={styles.noImageText}>No Image</Text>
+  )}
+</View>
+
       </View>
     </TouchableOpacity>
   );
@@ -53,6 +64,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 6,
     overflow: 'visible',
+  },
+  logoImage: {
+    width: CARD_WIDTH * 0.6,   // ~60 % of card width
+    height: CARD_WIDTH * 0.35, // adjust to taste
+  },
+  noImageText: {
+    fontSize: 14,
+    color: '#888',
+    fontStyle: 'italic',
+    marginTop: 10,
+    textAlign: 'center',
   },
   cardContent: {
     padding: 10,
