@@ -1,18 +1,29 @@
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 export default function BagProduct({ product, onDelete }) {
+  const navigation = useNavigation();
+
+  //  console.log(product,'HU#EHIFI');
+   
   return (
     <>
       {product?.map((item, index) => {
         const saved = item.mrp - item.price;
 
-        // console.log(item.image,'eeefeed');
-        
-
         return (
-          <View key={index} style={styles.container}>
+              <TouchableOpacity
+                key={index}
+                style={styles.container}
+                onPress={() =>
+                  navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+                    id: item.id, // ✅ Correct based on your data
+                  })
+                }
+                activeOpacity={0.9}
+              >
             <View style={styles.imageContainer}>
               {item.image ? (
                 <Image source={{ uri: item.image.url }} style={styles.image} />
@@ -35,7 +46,7 @@ export default function BagProduct({ product, onDelete }) {
                 You Saved: <Text style={styles.greenText}>₹{saved}</Text>
               </Text>
 
-              <TouchableOpacity style={styles.sizeBox}>
+              <TouchableOpacity style={styles.sizeBox} disabled>
                 <Text style={styles.sizeText}>Size: {item.size || 'N/A'}</Text>
               </TouchableOpacity>
 
@@ -56,10 +67,13 @@ export default function BagProduct({ product, onDelete }) {
               </View>
             </View>
 
-            <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteButton}>
+            <TouchableOpacity
+              onPress={() => onDelete(item.id)}
+              style={styles.deleteButton}
+            >
               <Ionicons name="trash-outline" size={18} color="black" />
             </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         );
       })}
     </>

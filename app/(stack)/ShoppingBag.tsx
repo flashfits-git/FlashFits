@@ -18,7 +18,7 @@ const CartBag = () => {
   const [scrollY, setScrollY] = useState(0);
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
-  console.log(cartItems,'ehfjenfeef');
+  // console.log(cartItems,'ehfjenfeef');
   
 
   const fetchCart = async () => {
@@ -26,6 +26,8 @@ const CartBag = () => {
       const cartData = await GetCart();
       const items = cartData.items || [];
       setCartItems(items);
+    //       console.log('🛒 Cart Item IDs:', cartItems._id);
+    // cartItems.forEach(item => console.log('→', item._id));
       setCartCount(items.length);
       setLoading(false);
     } catch (err) {
@@ -62,7 +64,8 @@ const productData = cartItems.map((item) => {
   };
 });
 
-  // console.log(productData,'3333333333E');
+// console.log(cartItems,'cartItems');
+
   
 
   if (loading) return <Loader />;

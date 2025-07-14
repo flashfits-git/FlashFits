@@ -27,7 +27,7 @@ export const GetCart = async () => {
 };
 
 export const deleteCartItem = async (itemId) => {
-  console.log(itemId,'4333333');
+  console.log('itemId sent:', itemId);
   
   try {
     const res = await api.delete(`admin/cart/delete/${itemId}`);

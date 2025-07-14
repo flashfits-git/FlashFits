@@ -17,6 +17,7 @@ import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
 import { fetchCategories } from '../api/categories';
+import { getMerchants} from '../api/merchatApis/getMerchantHome'
 import { FontAwesome } from '@expo/vector-icons';
 
 
@@ -34,14 +35,14 @@ export default function SelectionPage() {
   selectedStores: [],
 });
 
-// useEffect(() => {
-//   console.log("Filters updated:", filters);
-// }, [filters]);
+useEffect(() => {
+  console.log("Filters updated:", filters);
+}, [filters]);
 
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
-
+  const [merchants, setMerchants] = useState([]);
   const mainCategories = categoriesData.filter(cat => cat.level === 0);
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
@@ -65,7 +66,6 @@ export default function SelectionPage() {
       : [...prev.selectedCategoryIds, id],
   }));
 };
-
 // Function to toggle colors
 const toggleColor = (color) => {
   setFilters(prev => ({
@@ -85,21 +85,30 @@ const toggleStore = (store) => {
   }));
 };
 
+
   // ✅ Only ONE useEffect for loading categories
-  useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      try {
-        const data = await fetchCategories();
-        setCategoriesData(data);
-      } catch (err) {
-        console.error("Error loading categories", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCategories();
-  }, []);
+useEffect(() => {
+  const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchCategories();
+      const merchantResponse = await getMerchants();
+
+      console.log('Returned merchants:', merchantResponse);
+
+      // ✅ FIX: access the nested `merchants` array
+      setCategoriesData(data);
+      setMerchants(Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : []);
+    } catch (err) {
+      console.error("Error loading categories or merchants", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadCategories();
+}, []);
+
 
   useEffect(() => {
     if (mainCategories.length > 0 && !selectedMainId) {
@@ -127,7 +136,7 @@ useEffect(() => {
             ? await fetchnewArrivalsProductsData()
             : await getFilteredProducts(filters);
         setProducts(res);
-        console.log("Fetched products:", res);
+        // console.log("Fetched products:", res);
       } catch (err) {
         console.error("Error fetching:", err);
       }
@@ -178,7 +187,7 @@ useEffect(() => {
   {/* SORT BUTTON */}
   <TouchableOpacity
     onPress={openSortModal}
-    style={[styles.filterButton]}
+    style={[styles.filterButton1]}
   >
     <Text style={styles.filterText}>SORT</Text>
   </TouchableOpacity>
@@ -304,20 +313,20 @@ onValuesChange={(values) =>
 {/* STORE */}
 <Text style={styles.sectionTitle}>STORE</Text>
 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-  {['Zudio', 'Trends', 'Max', 'H&M'].map(store => (
+  {Array.isArray(merchants) && merchants.map(merchant => (
     <TouchableOpacity
-      key={store}
-      onPress={() => toggleStore(store)}
+      key={merchant._id}
+      onPress={() => toggleStore(merchant.shopName)}
       style={[
         styles.storePill,
-        filters.selectedStores.includes(store) && styles.storePillSelected
+        filters.selectedStores.includes(merchant.shopName) && styles.storePillSelected
       ]}
     >
       <Text style={[
         styles.storeText,
-        filters.selectedStores.includes(store) && styles.storeTextSelected
+        filters.selectedStores.includes(merchant.shopName) && styles.storeTextSelected
       ]}>
-        {store}
+        {merchant.shopName}
       </Text>
     </TouchableOpacity>
   ))}
@@ -374,7 +383,6 @@ onValuesChange={(values) =>
     ))}
   </View>
 </Modalize>
-
       {/* GENDER Modal */}
 <Modalize ref={genderModalRef} adjustToContentHeight>
   <View style={{ paddingVertical: 12 }}>
@@ -487,7 +495,7 @@ filterGenderWrapper: {
   flexDirection: 'row',
   flexWrap: 'wrap',
   justifyContent: 'space-between',
-  gap: 10,
+  // gap: 10,
   marginTop: 20,
   marginBottom: 12,
   paddingHorizontal: 5,
@@ -497,10 +505,27 @@ filterButton: {
   justifyContent: 'center',
   alignItems: 'center',
   height: 50,
-  borderRadius: 20,
+  borderTopLeftRadius: 20,
+  borderBottomLeftRadius: 20,
   backgroundColor: '#fff',
-  borderWidth: 1,
-  borderColor: '#ddd',
+  // borderWidth: 1,
+  // borderColor: '#ddd',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.1,
+  shadowRadius: 3,
+  elevation: 2,
+},
+filterButton1: {
+  flex: 1, // Takes equal space among FILTER and SORT
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: 50,
+  borderTopRightRadius: 20,
+  borderBottomRightRadius: 20,
+  backgroundColor: '#fff',
+  // borderWidth: 1,
+  // borderColor: '#ddd',
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 1 },
   shadowOpacity: 0.1,
@@ -516,13 +541,14 @@ genderButton: {
   height: 50,
   borderRadius: 20,
   backgroundColor: '#fff',
-  borderWidth: 1,
+  borderWidth: .2,
   borderColor: '#ddd',
   shadowColor: '#000',
   shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
+  shadowOpacity: 0.3,
   shadowRadius: 3,
   elevation: 2,
+  marginLeft:10
 },
 
   filterButtonLeft: {
@@ -592,8 +618,8 @@ checkboxSelected: {
     color: '#fff',
   },
   colorPill: {
-  paddingHorizontal: 12,
-  paddingVertical: 8,
+  paddingHorizontal: 20,
+  paddingVertical: 12,
   borderRadius: 10,
   backgroundColor: '#f2f2f2',
 },
@@ -619,8 +645,8 @@ colorPillTextSelected: {
     transform: [{ scale: 1.1 }],
   },
   storePill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 20,
     backgroundColor: '#f2f2f2',
   },
