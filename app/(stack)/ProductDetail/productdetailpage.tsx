@@ -62,7 +62,7 @@ const ProductDetailPage = () => {
         setError(null);
         const data = await productDetailPage(id);
         setProduct(data);
-        console.log(data,'DDDDDDDD');
+        // console.log(data,'DDDDDDDD');
         if (data?.variants?.length > 0) {
          const firstVariant = data.variants.find(x => x._id === variantId);
          setSelectedColor(firstVariant.color.name)
