@@ -50,13 +50,24 @@ useEffect(() => {
   const handleMainCategoryChange = (id) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
-    if (firstSub) setSelectedSubId(firstSub._id);
+    if (firstSub){
+      setSelectedSubId(firstSub._id)
+      console.log("working");
+      
+      setFilters(prev => ({
+        ...prev,
+        selectedCategoryIds: [id],
+      })) ;
+    } 
   };
 
   const handleSubCategoryChange = (id) => {
     setSelectedSubId(id);
+    setFilters(prev => ({
+      ...prev,
+      selectedCategoryIds: [id],
+    }));
   };
-
 
   const toggleCategoryCheckbox = (id) => {
   setFilters(prev => ({
@@ -75,6 +86,7 @@ const toggleColor = (color) => {
       : [...prev.selectedColors, color],
   }));
 };
+
 // Function to toggle store selection
 const toggleStore = (store) => {
   setFilters(prev => ({
@@ -94,7 +106,7 @@ useEffect(() => {
       const data = await fetchCategories();
       const merchantResponse = await getMerchants();
 
-      console.log('Returned merchants:', merchantResponse);
+      // console.log('Returned merchants:', merchantResponse);
 
       // ✅ FIX: access the nested `merchants` array
       setCategoriesData(data);
@@ -129,20 +141,22 @@ useEffect(() => {
 
 useEffect(() => {
     const fetch = async () => {
-      const filters = { merchant, type, category, subCategory, subSubCategory, tag };
+      // const filters = { merchant, type, category, subCategory, subSubCategory, tag };
       try {
-        const res =
-          type === "new arrivals"
-            ? await fetchnewArrivalsProductsData()
-            : await getFilteredProducts(filters);
-        setProducts(res);
-        // console.log("Fetched products:", res);
+        console.log("called");
+        console.log(filters);
+        
+        
+        const res =await getFilteredProducts(filters);
+        console.log(res);
+        
+        setProducts([...res.products]);
       } catch (err) {
         console.error("Error fetching:", err);
       }
     };
     fetch();
-  }, [filters, type, merchant, category, subCategory, subSubCategory, tag ]);
+  }, [filters]);
 
 
 
@@ -206,15 +220,18 @@ useEffect(() => {
 
         {/* Product List */}
 
-<FlatList
+        <FlatList
   data={products}
+  extraData={products} // 👈 this tells FlatList to re-render on data change
   renderItem={renderItem}
-  keyExtractor={(item, index) => index.toString()}
+  keyExtractor={(item) => item._id?.toString()}
+
   numColumns={2}
   showsVerticalScrollIndicator={false}
-  columnWrapperStyle={styles.row} // Ensures 2 per row
+  columnWrapperStyle={styles.row}
   contentContainerStyle={styles.cardList}
 />
+
 
       </View>
 
@@ -410,7 +427,21 @@ onValuesChange={(values) =>
         onPress={() => {
           // 👇 Select category and trigger subcategory display
           setSelectedGender(cat.name);
-          setSelectedMainId(cat._id); // ✅ Set the main category
+          setSelectedMainId(cat._id);
+           // First set all selected categories
+  const newFilters = {
+    selectedCategoryIds: [cat._id],
+    // any other filter properties you use
+  };
+
+  setFilters((prev) => {
+    const isSame =
+      JSON.stringify(prev.selectedCategoryIds) ===
+      JSON.stringify(newFilters.selectedCategoryIds);
+
+    if (isSame) return prev; // Don't update if no change
+    return { ...prev, ...newFilters }; // New reference
+  });
           const firstSub = categoriesData.find(c => c.parentId === cat._id && c.level === 1);
           if (firstSub) setSelectedSubId(firstSub._id);
           genderModalRef.current?.close();

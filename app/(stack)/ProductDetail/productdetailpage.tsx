@@ -47,7 +47,7 @@ const ProductDetailPage = () => {
   // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
 
-  // console.log(id,'ed389e93e93e8');
+  console.log(id,'ed389e93e93e8');
   
 
   const modalizeRef = useRef(null);
@@ -62,7 +62,7 @@ const ProductDetailPage = () => {
         setError(null);
         const data = await productDetailPage(id);
         setProduct(data);
-        console.log(data,'DDDDDDDD');
+        // console.log(data,'DDDDDDDD');
         if (data?.variants?.length > 0) {
          const firstVariant = data.variants.find(x => x._id === variantId);
          setSelectedColor(firstVariant.color.name)

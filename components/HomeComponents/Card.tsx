@@ -1,56 +1,62 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 
 const DressCard = ({ product, onPress }) => {
-  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
-  const imageUrl = variant?.images?.[0]?.url;
+  const imageUrl = product?.images?.[0]?.url;
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
   return (
- <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
+    <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
+              <Text>No Image</Text>
+            </View>
+          )}
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
+            <Text style={styles.ratingText}>⭐ {product?.ratings || '0.0'}</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>
-          {product.name}
+          {product?.name || 'Unnamed Product'}
         </Text>
         <Text style={styles.deliveryText}>13 mins</Text>
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{variant?.price || '0'}</Text>
-        <Text style={styles.oldPrice}>₹{variant?.mrp || '0'}</Text>
+        <Text style={styles.price}>₹{product?.price || '0'}</Text>
+        {product?.mrp && product?.mrp > product?.price ? (
+          <Text style={styles.oldPrice}>₹{product?.mrp}</Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
 };
-
-export default function Card({ product }) {
-  const router = useRouter();
-
-const handlePress = () => {
-  const variant = Array.isArray(product.variants)
-    ? product.variants[0]
-    : product.variants;
-
-  router.push({
-    pathname: '(stack)/ProductDetail/productdetailpage',
-    params: {
-      id: product._id || product.id,
-      variantId: variant?._id,
-    },
-  });
-};
-
-  return <DressCard product={product} onPress={handlePress} />;
-}
 
 const styles = StyleSheet.create({
   cardContainer: {
@@ -144,4 +150,18 @@ const styles = StyleSheet.create({
   },
 });
 
+export default function Card({ product }) {
+  const router = useRouter();
 
+  const handlePress = () => {
+    router.push({
+      pathname: '(stack)/ProductDetail/productdetailpage',
+      params: {
+        id: product?._id,
+        variantId: product?.variantId,
+      },
+    });
+  };
+
+  return <DressCard product={product} onPress={handlePress} />;
+}
