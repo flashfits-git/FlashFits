@@ -15,8 +15,9 @@ import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
-import {getMerchants} from '../api/merchatApis/getMerchantHome'
+import {getMerchants, getProductsByMerchantId} from '../api/merchatApis/getMerchantHome'
 import Loader from '@/components/Loader/Loader';
+
 
 // import { useCart } from './Context';
 
@@ -38,7 +39,7 @@ export default function FlashfitsStores() {
     setLoading(true);
     try {
       const merchantResponse = await getMerchants();
-      // console.log('Returned merchants:', merchantResponse);
+      // console.log(merchantResponse);
       setMerchants(Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : []);
     } catch (err) {
       console.error("Error loading categories or merchants", err);

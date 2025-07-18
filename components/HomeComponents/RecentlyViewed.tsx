@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -13,10 +13,21 @@ import { useNavigation } from '@react-navigation/native';
 const { width } = Dimensions.get('window');
 
 const DressCard = ({ product, onPress }) => {
-  // Handle both object and array cases for variants
-  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
-  const imageUrl = variant?.images?.[0]?.url;
+  const imageUrl =
+    product?.images?.[0]?.url ||
+    product?.variants?.[0]?.images?.[0]?.url ||
+    product?.variants?.images?.[0]?.url ||
+    '';
 
+  const price =
+    product?.price ||
+    product?.variants?.[0]?.price ||
+    product?.variants?.price;
+
+  const mrp =
+    product?.mrp ||
+    product?.variants?.[0]?.mrp ||
+    product?.variants?.mrp;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
@@ -29,29 +40,31 @@ const DressCard = ({ product, onPress }) => {
         </View>
       </View>
 
-          <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={1}>
-              {product.name}
-            </Text>
-            <Text style={styles.deliveryText}>
-              13 mins
-            </Text>
-          </View>
-
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={1}>
+          {product.name}
+        </Text>
+        <Text style={styles.deliveryText}>13 mins</Text>
+      </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{variant?.price}</Text>
-        <Text style={styles.oldPrice}>₹{variant?.mrp}</Text>
+        <Text style={styles.price}>₹{price}</Text>
+        <Text style={styles.oldPrice}>₹{mrp}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default function ImageCardHome({ product = [], accecories = [] }) {
+export default function ImageCardHome({ product = [], accecories = [], deataiPageproducts = [] }) {
   const scrollRef = useRef(null);
   const navigation = useNavigation();
 
-  const dataToRender = product.length ? product : accecories;
+  const dataToRender =
+    deataiPageproducts.length > 0
+      ? deataiPageproducts
+      : product.length > 0
+      ? product
+      : accecories;
 
   return (
     <View style={styles.container}>
@@ -63,7 +76,10 @@ export default function ImageCardHome({ product = [], accecories = [] }) {
             onPress={() =>
               navigation.navigate('(stack)/ProductDetail/productdetailpage', {
                 id: p._id || p.id,
-                variantId: Array.isArray(p.variants) ? p.variants[0]?._id : p.variants?._id,
+                variantId:
+                  Array.isArray(p.variants)
+                    ? p.variants[0]?._id
+                    : p.variants?._id || p.variantId,
               })
             }
           />

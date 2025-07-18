@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,23 @@ import {
   TouchableOpacity,
   ScrollView,
 } from 'react-native';
-import jfrnfr from '../../assets/images/2.jpg';
-import fmg from '../../assets/images/2.jpg';
 import { useNavigation } from 'expo-router';
+import { getProductsByMerchantId } from '../../app/api/merchatApis/getMerchantHome';
 
-const DressCard = ({ image, title, price, oldPrice, discount, rating }) => {
+const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId }) => {
   const navigation = useNavigation();
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
+      onPress={() =>
+        navigation.navigate('(stack)/ShopDetails/StoreDetailPage', {
+          merchantId: merchantId,
+        })
+      }
     >
       <View style={styles.imageWrapper}>
-        <Image source={image} style={styles.image} />
+        <Image source={{ uri: image }} style={styles.image} />
         <View style={styles.ratingContainer}>
           <Text style={styles.star}>★</Text>
           <Text style={styles.rating}>{rating}</Text>
@@ -40,34 +43,42 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating }) => {
   );
 };
 
-export default function CardinStores() {
+export default function CardinStores({ merchantId }) {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!merchantId) return;
+      try {
+        const result = await getProductsByMerchantId(merchantId);
+        // console.log(result, 'Fetched Products');
+        setProducts(result);
+      } catch (error) {
+        console.error('Failed to fetch products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [merchantId]);
+
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <DressCard
-          image={jfrnfr}
-          title="Yellow Quirky Fit Flare Maxi Dress"
-          price="1299"
-          oldPrice="1379"
-          discount="6%"
-          rating="4.7"
-        />
-        <DressCard
-          image={fmg}
-          title="Yellow Bodycon Maxi Dress"
-          price="1349"
-          oldPrice="1459"
-          discount="8%"
-          rating="4.6"
-        />
-        <DressCard
-          image={fmg}
-          title="Yellow Bodycon Maxi Dress"
-          price="1349"
-          oldPrice="1459"
-          discount="8%"
-          rating="4.6"
-        />
+        {products.map((product) => (
+          <DressCard
+            key={product._id}
+            image={product.images?.[0]?.url || 'https://via.placeholder.com/140'}
+            title={product.name}
+            price={product.price}
+            oldPrice={product.mrp || product.price + 100}
+            discount={`${product.discount || 0}%`}
+            rating={product.ratings || '4.5'}
+            merchantId={product.merchant}
+          />
+        ))}
       </ScrollView>
     </View>
   );
