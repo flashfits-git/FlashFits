@@ -50,6 +50,8 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
 
   // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
+
+  // console.log(id,'ed389e93e93e8');
   
 
   const modalizeRef = useRef(null);
