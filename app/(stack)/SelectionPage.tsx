@@ -145,7 +145,6 @@ useEffect(() => {
   }, [filters, type, merchant, category, subCategory, subSubCategory, tag ]);
 
 
-
   if (loading) return <Loader />;
 
   const renderItem = ({ item }) => <Card product={item} />;

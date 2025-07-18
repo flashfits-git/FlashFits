@@ -19,12 +19,49 @@ import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import jfnefn from '../../../assets/images/2.jpg';
+import { useRoute } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import {getMerchantById, getProductsByMerchantId} from '../../api/merchatApis/getMerchantHome'
+import Loader from '@/components/Loader/Loader';
 
-const StoreDetailPage = () => {
 
-const router = useRouter();
+const StoreDetailPage = () => {  
 
+  const [loading, setLoading] = useState(true);
+  const [merchantData, setMerchantData] = useState(null);
+  const [productss, setProductss] = useState([]);
+
+  // console.log(merchantData,'3777777777');
+  
+  const router = useRouter();
+  const route = useRoute();
+  const { merchantId } = route.params;
+
+
+useEffect(() => {
+  if (!merchantId) return;
+
+  const fetchMerchantandProducts = async () => {
+    try {
+      setLoading(true);
+
+      const merchantData = await getMerchantById(merchantId);
+      
+      const products = await getProductsByMerchantId(merchantId);
+      console.log(products,'eragumbo parayne');
+      setMerchantData(merchantData);
+      setProductss(products); // ✅ this is now the array
+    } catch (error) {
+      console.error('Error fetching merchant or products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchMerchantandProducts();
+}, [merchantId]);
+
+  
     const [products, setProducts] = useState([
     {
       id:3e23,
@@ -136,6 +173,9 @@ const router = useRouter();
   ]);
 
 
+  if (loading) return <Loader />;
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
@@ -149,7 +189,7 @@ const router = useRouter();
         </View>
         
         <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => router.push('/FlashfitsStores')} style={styles.iconButton}>
+          <TouchableOpacity onPress={() => router.push('(tabs)/FlashfitsStores')} style={styles.iconButton}>
             <Ionicons name="storefront-outline" size={24} color="#000" />
             <Text style={styles.iconLabel}>Stores</Text>
           </TouchableOpacity>

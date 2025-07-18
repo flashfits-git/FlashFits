@@ -9,3 +9,23 @@ export const getMerchants = async () => {
     throw error; // Forward error to the calling function to handle
   }
 };
+
+export const getMerchantById = async (id: string) => {
+  try {
+    const response = await api.get(`/admin/getMerchant/${id}`);
+    return response.data; // Adjust if your backend wraps it inside another key
+  } catch (error) {
+    console.error(`Failed to fetch merchant with ID ${id}:`, error);
+    throw error;
+  }
+};
+
+export const getProductsByMerchantId = async (merchantId: string) => {
+  try {
+    const response = await api.get(`user/products/merchant/${merchantId}`);
+    return response.data.products; // ✅ return only the array
+  } catch (error) {
+    console.error(`Failed to fetch products for merchant ${merchantId}:`, error);
+    throw error;
+  }
+};
