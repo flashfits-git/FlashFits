@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, Image, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
+// import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -14,12 +15,13 @@ const images = [
 const ShopCard = ({ title, index, merchantId, shopData }) => {
   // console.log(shopData.logo.url);
   
-  const router = useRouter();
+  // const router = useRouter();
+  const navigation = useNavigation();
+
 
   const handlePress = () => {
-    router.push({
-      pathname: '/(stack)/ShopDetails/StoreDetailPage',
-      params: { id: merchantId }, // ✅ Use correct ID
+    navigation.navigate('(stack)/ShopDetails/StoreDetailPage', {
+      merchantId,
     });
   };
 
@@ -45,7 +47,6 @@ const ShopCard = ({ title, index, merchantId, shopData }) => {
     </TouchableOpacity>
   );
 };
-
 
 const CARD_WIDTH = width * 0.25;
 

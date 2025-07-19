@@ -24,6 +24,9 @@ const StoreDetailPage = () => {
   const [merchantData, setMerchantData] = useState(null);
   const [productss, setProductss] = useState([]);
 
+  console.log(merchantData,'merchantDatamerchantData');
+  
+
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params;
@@ -65,24 +68,32 @@ const StoreDetailPage = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
-        <View style={styles.header}>
-          <Image source={jfnefn} style={styles.avatar} />
-          <View>
-            <Text style={styles.userName}>Max</Text>
-            <Text style={styles.welcomeText}>Vytila | 30 min</Text>
-          </View>
-        </View>
-        <View style={styles.iconContainer}>
-          <TouchableOpacity
-            onPress={() => router.push('(tabs)/FlashfitsStores')}
-            style={styles.iconButton}
-          >
-            <Ionicons name="storefront-outline" size={24} color="#000" />
-            <Text style={styles.iconLabel}>Stores</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+<View style={styles.headerContainer}>
+  <View style={styles.header}>
+        <Image
+        source={{
+          uri: merchantData?.merchant?.logo?.url || 'https://via.placeholder.com/60',
+        }}
+        style={styles.avatar}
+      />
+    <View>
+      <Text style={styles.userName}>
+        {merchantData?.merchant?.shopName || 'Shop Name'}
+      </Text>
+      <Text style={styles.welcomeText}>{merchantData?.merchant?.address || 'Address not available'} | 30 min</Text>
+    </View>
+  </View>
+  <View style={styles.iconContainer}>
+    <TouchableOpacity
+      onPress={() => router.push('(tabs)/FlashfitsStores')}
+      style={styles.iconButton}
+    >
+      <Ionicons name="storefront-outline" size={24} color="#000" />
+      <Text style={styles.iconLabel}>Stores</Text>
+    </TouchableOpacity>
+  </View>
+</View>
+
 
       <LinearGradient colors={['#fff', '#fff']} style={styles.body}>
         <ScrollView

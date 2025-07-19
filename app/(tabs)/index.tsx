@@ -149,13 +149,10 @@ export default function Home() {
     <ParentCategoryIndexing products={newArrivalsProducts} />
   </>
 )}
-            {/* <ParentCategoryIndexing products={products}/> */}
           </>
         }
       />
       <Footer/>
-
-      {/* <PopupCart isTabBarVisible={isTabBarVisible} /> */}
     </View>
   );
 }

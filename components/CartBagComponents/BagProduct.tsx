@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 export default function BagProduct({ product, onDelete }) {
   const navigation = useNavigation();
 
-   console.log(product,'HU#EHI/FI');
+  //  console.log(product,'HU#EHI/FI');
    
   return (
     <>
