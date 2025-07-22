@@ -21,3 +21,13 @@ export const signup=async({email,password})=>{
     }
 }
     
+export const phoneLogin=async({phoneNumber})=>{
+    try{
+        const response =await api.post('user/phoneLogin',{phoneNumber})
+        return response.data
+    }
+    catch (error) {
+        console.error('Phone Login error:', error);
+        throw error;
+    }
+}

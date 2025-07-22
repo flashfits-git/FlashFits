@@ -39,11 +39,22 @@ const OTPInput = () => {
     }
   };
 
-  const handleVerify = () => {
-    const enteredOtp = otp.join('');
-    console.log('Entered OTP:', enteredOtp);
-    // Validate OTP here
+
+
+  const verifyOtp = async () => {
+    try {
+      const enteredOtp = otp.join('');
+      const result = await globalThis.confirmationResult.confirm(enteredOtp); // Use entered OTP
+      const idToken = await result.user.getIdToken();
+      // Send idToken to your backend for further auth
+      console.log(idToken)
+    } catch (error) {
+      console.error('OTP verification failed:', error);
+    }
   };
+  
+
+  
 
   const handleResendOtp = () => {
     setTimer(30);

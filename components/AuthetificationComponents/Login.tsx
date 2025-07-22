@@ -14,11 +14,13 @@ import { FontAwesome, AntDesign  } from '@expo/vector-icons';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
+import auth from '@/app/config/firebaseConfig';
+import {signInWithPhoneNumber} from 'firebase/auth'
 
 export default function PhoneLogin() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [syncContacts, setSyncContacts] = useState(true);
+  // const [syncContacts, setSyncContacts] = useState(true);
 
   const redirectUri = 'https://auth.expo.dev/@shubhamexpo7/FlashFits';
 
@@ -32,6 +34,27 @@ export default function PhoneLogin() {
       useProxy: true,
     }
   );
+
+  const handleSendOTP = async () => {
+    try {
+      const confirmationResult = await signInWithPhoneNumber(
+        auth,
+        '+91' + phoneNumber,
+      );
+      console.log(confirmationResult)
+      console.log('OTP sent successfully');
+  
+      // Store confirmationResult globally or via state/store/context
+      globalThis.confirmationResult = confirmationResult;
+  
+      router.push({
+        pathname: '/(auth)/otpVerification',
+        params: { phone: phoneNumber },
+      });
+    } catch (error) {
+      console.error('Failed to send OTP', error);
+    }
+  };
 
   useEffect(() => {
     const getUserInfo = async () => {
@@ -91,7 +114,7 @@ export default function PhoneLogin() {
             phoneNumber.length === 10 ? {} : styles.buttonDisabled,
           ]}
           disabled={phoneNumber.length !== 10}
-          onPress={() => router.push({ pathname: '/(auth)/otpVerification', params: { phone: phoneNumber } })}
+          onPress={handleSendOTP}
         >
           <Text style={styles.buttonText}>Continue</Text>
         </TouchableOpacity>
