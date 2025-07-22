@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 export default function BagProduct({ product, onDelete }) {
   const navigation = useNavigation();
 
-  //  console.log(product,'HU#EHIFI');
+   console.log(product,'HU#EHI/FI');
    
   return (
     <>
@@ -20,6 +20,7 @@ export default function BagProduct({ product, onDelete }) {
                 onPress={() =>
                   navigation.navigate('(stack)/ProductDetail/productdetailpage', {
                     id: item.id, // ✅ Correct based on your data
+                    variantId: item.variantId
                   })
                 }
                 activeOpacity={0.9}

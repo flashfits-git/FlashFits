@@ -3,6 +3,8 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
+// import { Ionicons } from '@expo/vector-icons';
+// import { Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
@@ -16,7 +18,7 @@ import { AddProducttoCart } from '../../api/productApis/cartProduct';
 import { useCart } from '../../ContextParent';
 
 
-
+const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,6 +42,8 @@ const ProductDetailPage = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   // const [cartCount1, setCartCount1] = useState(0);
   const [showToast, setShowToast] = useState(false);
+const [interpolatedColor, setInterpolatedColor] = useState('#fff');
+
 
   const router = useRouter();
   const route = useRoute();
@@ -47,7 +51,7 @@ const ProductDetailPage = () => {
   // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
 
-  console.log(id,'ed389e93e93e8');
+  // console.log(id,'ed389e93e93e8');
   
 
   const modalizeRef = useRef(null);
@@ -87,8 +91,6 @@ const ProductDetailPage = () => {
   const selectedVariant = products?.variants?.find(
     (variant) => variant.color.name === selectedColor
   ) || products?.variants?.[0];
-  // console.log(selectedVariant?._id,'SSDDDDR');
-  
 
 useEffect(() => {
   if (products && selectedVariant) {
@@ -101,7 +103,14 @@ useEffect(() => {
   }
 }, [products, selectedVariant]);
 
+useEffect(() => {
+  const listener = scrollY.addListener(({ value }) => {
+    const color = value < 150 ? '#fff' : '#000'; // Simplified threshold
+    setInterpolatedColor(color);
+  });
 
+  return () => scrollY.removeListener(listener);
+}, []);
   const selectedStock = selectedVariant?.sizes?.find(
     (s) => s.size === selectedSize
   )?.stock || 0;
@@ -119,11 +128,19 @@ useEffect(() => {
     }
     return 0;
   }, [selectedVariant]);
-
   const headerBackgroundColor = scrollY.interpolate({
     inputRange: [0, 300], outputRange: ['transparent', '#fff'], extrapolate: 'clamp',
   });
-
+  const headerTitleColor = scrollY.interpolate({
+  inputRange: [0, 300],
+  outputRange: ['#fff', '#000'],
+  extrapolate: 'clamp',
+});
+const iconColor = scrollY.interpolate({
+  inputRange: [0, 300],
+  outputRange: ['#fff', '#000'],
+  extrapolate: 'clamp',
+});
   const showAddToCartToast = () => {
     setShowToast(true);
     Animated.parallel([
@@ -138,17 +155,7 @@ useEffect(() => {
       }, 1500);
     });
   };
-
-  // console.log(products,'eeei339238');
-  
-
 const handleAddToCart = async () => {
-
-    // const image =
-    // selectedVariant?.images?.[0] || products?.variants?.[0]?.images?.[0] || null;
-    // console.log(selectedVariant?.images?.[0] ,'EUFJFRNFN');
-    
-
   const productData = {
     productId: products._id,
     variantId: selectedVariant?._id,
@@ -173,9 +180,7 @@ const handleAddToCart = async () => {
     modalizeRef.current?.close();
   }, 0);
 };
-
   if (loading) return <Loader />;
-
   if (error || !products || Object.keys(products).length === 0) {
     return (
       <View style={styles.centerContainer}>
@@ -189,25 +194,29 @@ const handleAddToCart = async () => {
 
   return (
     <>
-      <View style={styles.container}>
-        <Animated.View style={[styles.topBar, { backgroundColor: headerBackgroundColor }]}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {products?.brandId?.name || 'Product Details'}
-          </Text>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
-            <View style={styles.iconWithBadge}>
-              <Ionicons name="bag-handle-outline" size={24} color="#000" />
-              {cartCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{cartCount}</Text>
-                </View>
-              )}
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
+<View style={styles.container}>
+<Animated.View style={[styles.topBar, { backgroundColor: headerBackgroundColor }]}>
+  <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+<Ionicons name="chevron-back" size={24} color={interpolatedColor} />
+  </TouchableOpacity>
+
+  <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
+    {products?.brandId?.name || 'Product Details'}
+  </Animated.Text>
+
+  <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
+    <View style={styles.iconWithBadge}>
+      <Ionicons name="bag-handle-outline" size={24} color={interpolatedColor} />
+      {cartCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{cartCount}</Text>
+        </View>
+      )}
+    </View>
+  </TouchableOpacity>
+</Animated.View>
+
+
 
         <Animated.ScrollView
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}

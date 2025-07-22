@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Dimensions, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
 
 const { height } = Dimensions.get('window');
 
@@ -12,6 +13,27 @@ const LocationSelector = () => {
     latitudeDelta: 0.005,
     longitudeDelta: 0.005,
   });
+
+  const getCurrentLocation = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Location permission is required.');
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      const { latitude, longitude } = location.coords;
+
+      setRegion({
+        ...region,
+        latitude,
+        longitude,
+      });
+    } catch (error) {
+      Alert.alert('Error fetching location', error.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -46,7 +68,7 @@ const LocationSelector = () => {
       </View>
 
       {/* Use Current Location Button */}
-      <TouchableOpacity style={styles.useLocation}>
+      <TouchableOpacity style={styles.useLocation} onPress={getCurrentLocation}>
         <Ionicons name="locate" size={20} color="#f60" />
         <Text style={styles.useLocationText}>Use Current Location</Text>
       </TouchableOpacity>
@@ -65,9 +87,16 @@ const LocationSelector = () => {
       </View>
 
       {/* Confirm Button Fixed at Bottom */}
-      <TouchableOpacity style={styles.confirmButton}>
-        <Text style={styles.confirmButtonText}>CONFIRM LOCATION</Text>
-      </TouchableOpacity>
+<TouchableOpacity
+  style={styles.confirmButton}
+  onPress={() => {
+    console.log('Confirmed coordinates:', region.latitude, region.longitude);
+    // You can also send it to backend or save in state here
+  }}
+>
+  <Text style={styles.confirmButtonText}>CONFIRM LOCATION</Text>
+</TouchableOpacity>
+
     </View>
   );
 };
@@ -84,12 +113,11 @@ const styles = StyleSheet.create({
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
-    margin:10,
+    backgroundColor: '#fff',
+    margin: 10,
     borderRadius: 8,
     paddingHorizontal: 20,
     height: 40,
-    backgroundColor:'#fff'
   },
   input: {
     flex: 1,

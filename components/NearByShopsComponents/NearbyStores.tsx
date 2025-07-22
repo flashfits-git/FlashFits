@@ -1,7 +1,9 @@
-import React from 'react';
+import React,{useEffect, useState }from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
+import {getMerchants} from '../../app/api/merchatApis/getMerchantHome'
+import Loader from '@/components/Loader/Loader';
 
 const DUMMY_STORES = [
   { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
@@ -10,32 +12,44 @@ const DUMMY_STORES = [
   { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
 ];
 
-const NearbyStores = () => {
+
+const NearbyStores = ({merchantData}) => {
+
+  
+  // console.log(merchantData,"3e3e3");
+  
   const navigation = useNavigation();
+
 
   return (
     <FlatList
-      data={DUMMY_STORES}
+      data={merchantData}
       horizontal
-      keyExtractor={(item) => item.id}
+      keyExtractor={(item) => item._id}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.listContent}
       renderItem={({ item }) => (
         <View style={styles.storeCard}>
           {/* TouchableOpacity ONLY on header */}
-<TouchableOpacity
-  style={styles.header}
-  onPress={() =>{
-    console.log('ghhg');
-   navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}}
->
+          <TouchableOpacity
+            style={styles.header}
+            onPress={() =>
+              navigation.navigate('(stack)/ShopDetails/StoreDetailPage', {
+                merchantId: item._id, // item represents each merchant from your data array
+              })
+            }
+          >
   <View style={styles.leftBlock}>
-    <Text style={styles.storeName}>{item.name}</Text>
-    <Text style={styles.ratingText1}>{item.address}</Text>
+    <Text style={styles.storeName}>{item.shopName}</Text>
+    <Text style={styles.ratingText}>
+      {item.address ?? 'No address'}
+    </Text>
   </View>
-  <Text style={styles.ratingText}>{item.rating}</Text>
+      <Text style={styles.ratingText}>
+        ⭐ {item.rating ?? 'No rating'}
+      </Text>
 </TouchableOpacity>
-          <CardinStores />
+          <CardinStores merchantId={item._id} />
         </View>
       )}
     />

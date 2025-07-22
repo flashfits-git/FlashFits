@@ -15,17 +15,40 @@ import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
+import {getMerchants, getProductsByMerchantId} from '../api/merchatApis/getMerchantHome'
+import Loader from '@/components/Loader/Loader';
+
+
 // import { useCart } from './Context';
 
 export default function FlashfitsStores() {
-  const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
-  const [selectedSideCategory, setSelectedSideCategory] = useState('1');
+  // const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
+  // const [selectedSideCategory, setSelectedSideCategory] = useState('1');
   const navigation = useNavigation();
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [showStickySearch, setShowStickySearch] = useState(false);
   // const { cartCount } = useCart();
+
+  const [loading, setLoading] = useState(true);
+  const [merchants, setMerchants] = useState([]);
+  
+    useEffect(() => {
+    const loadCategories = async () => {
+    setLoading(true);
+    try {
+      const merchantResponse = await getMerchants();
+      // console.log(merchantResponse);
+      setMerchants(Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : []);
+    } catch (err) {
+      console.error("Error loading categories or merchants", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  loadCategories();
+}, []);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
@@ -63,6 +86,9 @@ export default function FlashfitsStores() {
       scrollOffset.removeListener(listener);
     };
   }, []);
+
+  if (loading) return <Loader />;
+
 
   return (
     <View style={styles.container}>
@@ -102,10 +128,10 @@ export default function FlashfitsStores() {
         </View>
 
         <Text style={styles.sectionTitle}>Stores Near You</Text>
-        <NearbyStores />
+        <NearbyStores merchantData={merchants} />
 
         <Text style={styles.sectionTitle}>Popular Stores</Text>
-        <PopularStores />
+        <PopularStores merchantData={merchants} />
       </ScrollView>
 
       <PopupCart isTabBarVisible={isTabBarVisible} />

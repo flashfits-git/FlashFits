@@ -18,9 +18,7 @@ const CartBag = () => {
   const [scrollY, setScrollY] = useState(0);
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
-  // console.log(cartItems,'ehfjenfeef');
   
-
   const fetchCart = async () => {
     try {
       const cartData = await GetCart();
@@ -61,6 +59,7 @@ const productData = cartItems.map((item) => {
     merchantName: item.merchantId?.shopName || '',
     image: firstVariant.images?.[0] || null, // ✅ Pass clean image
     id: product._id,
+    variantId:firstVariant._id
   };
 });
 

@@ -13,7 +13,6 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-// import CheckoutPage from '../../components/CartBagComponents/CheckoutPage';
 import HeaderCumAddressSection from '../../components/CheckoutComponents/HeaderCumAddressSection';
 import ReviewItemCardsSection from '../../components/CheckoutComponents/ReviewItemCardsSection';
 import { LinearGradient } from 'expo-linear-gradient';

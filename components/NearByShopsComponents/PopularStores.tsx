@@ -3,32 +3,39 @@ import { useNavigation } from '@react-navigation/native'; // ✅ Fix navigation
 import { Star } from 'lucide-react-native'; // optional
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 
-const PopularStores = () => {
+const PopularStores = ({merchantData}) => {
   const navigation = useNavigation(); // ✅ Hook for navigation
 
-
-const DUMMY_STORES = [
-  { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
-  { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
-  { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
-  { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
-];
+//     merchantData.forEach((merchant) => {
+//   console.log('Merchant ID:', merchant._id);
+// });
+  
+// const DUMMY_STORES = [
+//   { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
+//   { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
+//   { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
+//   { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
+// ];
 
   return (
     <View style={styles.wrapper}>
-      {DUMMY_STORES.map((item) => (
-        <View key={item.id} style={styles.inputContainer}>
-<TouchableOpacity
-  style={styles.header}
-  onPress={() => navigation.navigate('(stack)/ShopDetails/StoreDetailPage')}
->
-  <View style={styles.leftBlock}>
-    <Text style={styles.storeName}>{item.name}</Text>
-    <Text style={styles.ratingText1}>{item.address}</Text>
-  </View>
-  <Text style={styles.ratingText}>{item.rating}</Text>
-</TouchableOpacity>
-          <CardinStores />
+      {merchantData.map((item) => (
+        <View key={item._id} style={styles.inputContainer} >
+          <TouchableOpacity
+            style={styles.header}
+            onPress={() =>
+              navigation.navigate('(stack)/ShopDetails/StoreDetailPage', {
+                merchantId: item._id, // item represents each merchant from your data array
+              })
+            }
+          >
+            <View style={styles.leftBlock}>
+              <Text style={styles.storeName}>{item.shopName}</Text>
+              <Text style={styles.ratingText1}>{item.address ?? 'No address'}</Text>
+            </View>
+            <Text style={styles.ratingText}>⭐{item.rating ?? 'No rating'}</Text>
+          </TouchableOpacity>
+          <CardinStores merchantId={item._id} />
         </View>
       ))}
     </View>

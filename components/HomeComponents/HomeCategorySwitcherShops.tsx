@@ -42,9 +42,7 @@ const CategorySwitcher = () => {
         getMerchantsData()
         // setLoading(false)
       }, [])
-      console.log(merchantData);
-      
-
+    
   return (
     <View style={styles.container}> 
       {/* Main Category Tabs */}

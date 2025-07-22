@@ -49,9 +49,6 @@ export default function Home() {
   const getNewArrivalsProducts = async () => {
     try {
       const response = await fetchnewArrivalsProductsData()
-      
-      // console.log(response,'HYGG');
-      
       setNewArrivalsProducts(response)
     } catch (error) {
       console.error('Error fetching products:', error);
