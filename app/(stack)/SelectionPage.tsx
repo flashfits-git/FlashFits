@@ -126,7 +126,6 @@ useEffect(() => {
   const openGengerModal = () => genderModalRef.current?.open();
   const openFilterModal = () => filterModalRef.current?.open();
 
-
 useEffect(() => {
     const fetch = async () => {
       const filters = { merchant, type, category, subCategory, subSubCategory, tag };

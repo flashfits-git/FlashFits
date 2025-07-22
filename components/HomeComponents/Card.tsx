@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const DressCard = ({ product, onPress }) => {
   const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
@@ -11,9 +12,10 @@ const DressCard = ({ product, onPress }) => {
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
           <Image source={{ uri: imageUrl }} style={styles.image} />
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
-          </View>
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={10} color="#000" style={{ marginRight: 2 }} />
+          <Text style={styles.ratingText}>{product.ratings || '0.0'}</Text>
+        </View>
         </View>
       </View>
 
@@ -55,7 +57,7 @@ const handlePress = () => {
 const styles = StyleSheet.create({
   cardContainer: {
     width: '48%',
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   card: {
     backgroundColor: '#fff',

@@ -13,47 +13,17 @@ const mottos = [
 ];
 
 const Footer = () => {
-  // const [currentMottoIndex, setCurrentMottoIndex] = useState(0);
-  // const fadeAnim = useRef(new Animated.Value(1)).current;
-
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     // Fade out
-  //     Animated.timing(fadeAnim, {
-  //       toValue: 0,
-  //       duration: 500,
-  //       useNativeDriver: true,
-  //     }).start(() => {
-  //       // Change motto after fade out
-  //       setCurrentMottoIndex((prevIndex) => (prevIndex + 1) % mottos.length);
-
-  //       // Fade in
-  //       Animated.timing(fadeAnim, {
-  //         toValue: 1,
-  //         duration: 500,
-  //         useNativeDriver: true,
-  //       }).start();
-  //     });
-  //   }, 3000);
-
-  //   return () => clearInterval(interval);
-  // }, []);
-
   return (
     <View style={styles.footer}>
       <Text style={styles.logo}>FlashFits -</Text>  
       <Text style={styles.motto}>Fashion in a Flash!</Text>  
-
-      {/* <Animated.Text style={[styles.motto, { opacity: fadeAnim }]}>
-        {mottos[currentMottoIndex]}
-      </Animated.Text> */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   footer: {
-    height: 50,
+    height: 30,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
@@ -67,6 +37,7 @@ const styles = StyleSheet.create({
     color: '#000',
     opacity: 0.7,
     marginRight: 10,
+    marginTop: 10,
     fontStyle: 'italic',
   },
   motto: {
@@ -74,6 +45,7 @@ const styles = StyleSheet.create({
     color: '#444',
     fontStyle: 'italic',
     flexShrink: 1,
+    marginTop: 10,
   },
 });
 
