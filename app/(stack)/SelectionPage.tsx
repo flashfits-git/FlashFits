@@ -27,7 +27,7 @@ export default function SelectionPage() {
     const { cartItems, cartCount } = useCart();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [selectedGender, setSelectedGender] = useState("Men");
+  const [selectedGender, setSelectedGender] = useState("");
   const [filters, setFilters] = useState({
   priceRange: [0, 2000],
   selectedCategoryIds: [],

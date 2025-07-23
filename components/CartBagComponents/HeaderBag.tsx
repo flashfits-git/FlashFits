@@ -8,15 +8,25 @@ const HeaderBag = () => {
 
   return (
     <View style={styles.headerWrapper}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <Ionicons name="chevron-back" size={24} color="#333" />
-        {/* <Text style={styles.title}>Shopping Bag</Text> */}
-
-      </TouchableOpacity>
-
-      <View style={styles.centerContainer}>
+      {/* <View style={styles.centerContainer}>
         <Text style={styles.title}>Shopping Bag</Text>
-      </View>
+      </View> */}
+              <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#333" />
+          </TouchableOpacity>
+          <View style={styles.headerTitle}>
+            <View style={styles.homeRow}>
+              <Ionicons name="navigate" size={20} color="#333" />
+              <Text style={styles.homeText} numberOfLines={1}>Kachapilly Maradu P.O</Text>
+              <Ionicons name="chevron-down" size={16} color="#333" />
+
+            </View>
+            <Text style={styles.addressText} numberOfLines={1}>
+              72/1533 Baby Smarka Road, Mamangalam, Mamang...
+            </Text>
+          </View>
+        </View>
 
       <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
         <Ionicons name="home" size={24} color="#333" />
@@ -56,6 +66,36 @@ const styles = StyleSheet.create({
   homeButton: {
     padding: 8,
     borderRadius: 20,
+  },
+    headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  backButton: {
+    paddingRight: 4,
+  },
+  headerTitle: {
+    marginLeft: 4,
+    flex: 1,
+  },
+  homeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  homeText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#000000',
+    marginLeft: 4,
+    marginRight: 2,
+    width: 140,
+    // backgroundColor: 'red' // optional for debug
+  },
+  addressText: {
+    color: '#666666',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
 

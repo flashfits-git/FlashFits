@@ -55,7 +55,7 @@ const SlideToPay = ({ label, onComplete }: { label: string; onComplete: () => vo
   return (
     <View style={styles.slideToPayContainer}>
 <LinearGradient
-  colors={['#25834F', '#31a263']}
+  colors={['#39ab6dff', '#31a263']}
   start={{ x: 0, y: 0 }}
   end={{ x: 1, y: 0 }}
   style={styles.slideTrack}
@@ -318,6 +318,7 @@ icon: {
     color: '#fff',
     fontWeight: 'bold',
   },
+  
 });
 
 export default CartScreen;

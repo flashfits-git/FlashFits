@@ -8,6 +8,7 @@ import {
   TouchableOpacity, 
   Image, 
   Animated,
+  PanResponder,
   Dimensions,
   StatusBar,
   Alert
@@ -18,13 +19,14 @@ import BillSection from '@/components/CartBagComponents/BillSection';
 import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectAddressBottomSheet';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'expo-router';
 import { useCart } from '../ContextParent';
 import eed from '../../assets/images/shoppingbag/lih.png';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const maxSlide = width * 0.7;
 
 const CartBag = () => {
   const [cartItems, setCartItems] = useState([]);
@@ -33,6 +35,11 @@ const CartBag = () => {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
+    const [activeTab, setActiveTab] = useState<'TryandBuy' | 'Payment'>('TryandBuy');
+   const [showTryBuyInfo, setShowTryBuyInfo] = useState(false);
+const popupOpacity = useRef(new Animated.Value(0)).current;
+const scrollYAnim = useRef(new Animated.Value(0)).current;
+
   
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -83,6 +90,19 @@ const CartBag = () => {
     }).start();
   }, [scrollY]);
 
+  useEffect(() => {
+  scrollYAnim.addListener(({ value }) => {
+    setScrollY(value);
+    Animated.timing(deliveryBarOpacity, {
+      toValue: value > 50 ? 1 : 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  });
+
+  return () => scrollYAnim.removeAllListeners();
+}, []);
+
   const handleDelete = async (itemId) => {
     Alert.alert(
       'Remove Item',
@@ -105,7 +125,7 @@ const CartBag = () => {
       ]
     );
   };
-
+  
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchCart(false);
@@ -131,8 +151,77 @@ const CartBag = () => {
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  if (loading) return <Loader />;
+    const handlePaymentComplete = () => {
+    alert('Processing payment...');
+  };
 
+  const handleQuantityChange = async (itemId, newQty) => {
+  setCartItems((prev) =>
+    prev.map((item) =>
+      item.productId._id === itemId
+        ? { ...item, quantity: newQty }
+        : item
+    )
+  );
+};
+
+  const SlideToPay = ({ label, onComplete }: { label: string; onComplete: () => void }) => {
+    const slideAnimation = useRef(new Animated.Value(0)).current;
+  
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onPanResponderMove: (_, gestureState) => {
+          if (gestureState.dx > 0 && gestureState.dx <= maxSlide) {
+            slideAnimation.setValue(gestureState.dx);
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (gestureState.dx >= maxSlide * 0.7) {
+            Animated.timing(slideAnimation, {
+              toValue: maxSlide,
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              onComplete();
+              slideAnimation.setValue(0);
+            });
+          } else {
+            Animated.timing(slideAnimation, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }).start();
+          }
+        },
+      })
+    ).current;
+  
+    return (
+      <View style={styles.slideToPayContainer}>
+  <LinearGradient
+    colors={['#20c269f4', '#66e49fd8']}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 1, y: 0 }}
+    style={styles.slideTrack}
+  >
+    <Animated.View
+      style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
+      {...panResponder.panHandlers}
+    >
+      <View style={styles.slideArrows}>
+        <Ionicons name="chevron-forward" size={18} color="#000" />
+        <Ionicons name="chevron-forward" size={18} color="#000" />
+      </View>
+    </Animated.View>
+    <Text style={styles.slideText}>{label}</Text>
+  </LinearGradient>
+  
+      </View>
+    );
+  };
+
+  if (loading) return <Loader />;
   if (cartItems.length === 0) {
     return (
       <View style={styles.container}>
@@ -181,13 +270,105 @@ const CartBag = () => {
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <HeaderBag />
 
-      {/* Fixed Delivery Bar */}
+          {/* Order type selection */}  
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 10, marginHorizontal: 15 }}>
+          {/* Try and Buy Tab */}
+<TouchableOpacity
+  onPress={() => setActiveTab('TryandBuy')}
+  style={styles.tabButton}
+  activeOpacity={0.9}
+>
+  {activeTab === 'TryandBuy' && (
+    <LinearGradient
+      colors={['#f06161e4', '#ea4b9acb']}
+      start={{ x: 0, y: 1 }}
+      end={{ x: 1, y: 0 }}
+      style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
+    />
+  )}
+  <View style={styles.flexRow}>
+    <MaterialIcons
+      name="auto-fix-high"
+      size={18}
+      color="white"
+      style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+    />
+    <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
+      Try then Buy
+    </Text>
+
+    {/* ❓ Help icon with toggle */}
+<TouchableOpacity
+  onPress={() => {
+    setShowTryBuyInfo(true);
+    popupOpacity.setValue(0);
+    Animated.timing(popupOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setTimeout(() => {
+        Animated.timing(popupOpacity, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }).start(() => setShowTryBuyInfo(false));
+      }, 4000);
+    });
+  }}
+  style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+>
+  <MaterialIcons
+    name="help"
+    size={15}
+    color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
+  />
+</TouchableOpacity>
+
+  </View>
+</TouchableOpacity>
+
+
+          {/* Payment Tab */}
+          <TouchableOpacity
+            onPress={() => setActiveTab('Payment')}
+            style={styles.tabButton}
+            activeOpacity={0.9}
+          >
+            {activeTab === 'Payment' && (
+              <LinearGradient
+                colors={['#66e49ff3', '#66e49fd8']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
+              />
+            )}
+            <View style={styles.flexRow}>
+              <MaterialIcons name="payments" size={18} color="black" style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]} />
+              <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
+                Pay Order
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        
+        {showTryBuyInfo && (
+  <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
+<View style={styles.popupContent}>
+  <Text style={styles.popupText}>
+    🛍️ Try before you buy at your doorstep!{'\n'}
+    ✅ Keep what you love{'\n'}
+    🔄 Instant return for the rest!
+  </Text>
+</View>
+  </Animated.View>
+)}
+     {/* Fixed Delivery Bar */}
       <Animated.View 
         style={[
           styles.fixedDeliveryBar,
@@ -196,7 +377,7 @@ const CartBag = () => {
         pointerEvents={scrollY > 10 ? 'auto' : 'none'}
       >
         <LinearGradient
-          colors={['rgba(255,255,255,0.98)', 'rgba(238,238,238,0.98)']}
+          colors={['rgba(255, 255, 255, 0.68)', 'rgba(255, 255, 255, 0.98)']}
           style={styles.fixedDeliveryContent}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
@@ -225,48 +406,42 @@ const CartBag = () => {
         refreshing={refreshing}
         onRefresh={handleRefresh}
       >
+
         {/* Main Delivery Info */}
-        <Animated.View 
-          style={[
-            styles.deliveryInfoWrapper,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
-          <LinearGradient
-            colors={['#FFFFFF', '#F8F9FA']}
-            style={styles.deliveryInfo}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 0, y: 0 }}
-          >
-            <View style={styles.deliveryHeader}>
-              <View style={styles.deliveryLeftSection}>
-                <View style={styles.deliveryTimeContainer}>
-                  <Text style={styles.deliveryMainText}>Delivery in</Text>
-                  <Text style={styles.deliveryTimeText}>2 hours</Text>
-                </View>
-                <View style={styles.superFastBadge}>
-                  <Image source={eed} style={styles.badgeIcon} />
-                  <Text style={styles.badgeText}>Superfast</Text>
-                </View>
-              </View>
-              
-              <View style={styles.deliveryRightSection}>
-                <Text style={styles.itemSummaryText}>{totalItems} items</Text>
-                <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
-              </View>
-            </View>
-            
-            {/* <View style={styles.deliveryProgress}>
-              <View style={styles.progressBar}>
-                <View style={styles.progressFill} />
-              </View>
-              <Text style={styles.progressText}>Order confirmed • Preparing for dispatch</Text>
-            </View> */}
-          </LinearGradient>
-        </Animated.View>
+<Animated.View 
+  style={[
+    styles.deliveryInfoWrapper,
+    {
+      opacity: fadeAnim,
+      transform: [{ translateY: slideAnim }]
+    }
+  ]}
+>
+  <LinearGradient
+    colors={['#FFFFFF', '#F8F9FA']}
+    style={styles.deliveryInfo}
+    start={{ x: 0, y: 1 }}
+    end={{ x: 0, y: 0 }}
+  >
+    <View style={styles.deliveryHeader}>
+      <View style={styles.deliveryLeftSection}>
+        <View style={styles.deliveryTimeContainer}>
+          <Text style={styles.deliveryMainText}>Delivery in</Text>
+          <Text style={styles.deliveryTimeText}>2 hours</Text>
+        </View>
+        <View style={styles.superFastBadge}>
+          <Image source={eed} style={styles.badgeIcon} />
+          <Text style={styles.badgeText}>Superfast</Text>
+        </View>
+      </View>
+      
+      <View style={styles.deliveryRightSection}>
+        <Text style={styles.itemSummaryText}>{totalItems} items</Text>
+        <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
+      </View>
+    </View>
+  </LinearGradient>
+</Animated.View>
 
         {/* Products Section */}
         <Animated.View
@@ -275,7 +450,11 @@ const CartBag = () => {
             transform: [{ translateY: slideAnim }]
           }}
         >
-          <BagProduct product={productData} onDelete={handleDelete} />
+          <BagProduct
+            product={productData}
+            onDelete={handleDelete}
+            onQuantityChange={handleQuantityChange}
+          />
         </Animated.View>
 
         {/* Coupon Section */}
@@ -362,358 +541,188 @@ const CartBag = () => {
             transform: [{ translateY: slideAnim }]
           }}
         >
-          <BillSection />
         </Animated.View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      <SelectAddressBottomSheet />
+      {activeTab === 'Payment' && (
+                  <>
+                    <View style={styles.paymentMethodContainer}>
+                      <View style={styles.paymentMethod}>
+                        <View style={styles.paymentMethodLeft}>
+                          <View style={styles.googlePayIcon}>
+                            {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
+                            <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+          
+                          </View>
+                          <View>
+                            <Text style={styles.payUsingText}>Pay using</Text>
+                            <Text style={styles.googlePayText}>Google Pay</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity style={styles.changeButton}>
+                          <Text style={styles.changeButtonText}>Change</Text>
+                          <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                    <SlideToPay label="Slide to Pay | ₹663" onComplete={handlePaymentComplete} />
+                  </>
+      )}
+          
+       {activeTab === 'TryandBuy' && (
+                  <>
+                            <View style={styles.paymentMethodContainer}>
+                      <View style={styles.paymentMethod}>
+                        <View style={styles.paymentMethodLeft}>
+                          <View style={styles.googlePayIcon}>
+                            <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+                          </View>
+                          <View>
+                            <Text style={styles.payUsingText}>Pay using</Text>
+                            <Text style={styles.googlePayText}>Delivery Charge |  ₹45</Text>
+                          </View>
+                        </View>
+                        <TouchableOpacity style={styles.changeButton}>
+                          <Text style={styles.changeButtonText}>Change</Text>
+                          <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  <SlideToPay label="DELIVER THE ORDER" onComplete={handlePaymentComplete} />
+                  </>
+       )}
+
+      {/* <SelectAddressBottomSheet /> */}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  
-  // Empty Cart Styles
-  emptyCartContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingHorizontal: 32,
-  },
-  emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#F8F9FA',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  emptyIcon: {
-    fontSize: 48,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 8,
-    fontFamily: 'Montserrat',
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 32,
-    fontFamily: 'Montserrat',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  shopNowButton: {
-    width: '100%',
-    height: 56,
-    borderRadius: 28,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  shopNowGradient: {
-    flex: 1,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  shopNowButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Montserrat',
-    letterSpacing: 0.5,
-  },
-  wishlistButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-  },
-  wishlistButtonText: {
-    color: '#666',
-    fontSize: 16,
-    fontWeight: '500',
-    fontFamily: 'Montserrat',
-  },
+  // Base Container
+  container: { flex: 1, backgroundColor: '#fff' },
 
-  // Main Content Styles
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 120,
-  },
+  // Empty Cart States
+  emptyCartContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 32 },
+  emptyIconContainer: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#F8F9FA', justifyContent: 'center', alignItems: 'center', marginBottom: 24 },
+  emptyIcon: { fontSize: 48 },
+  emptyTitle: { fontSize: 24, fontWeight: '700', color: '#1A1A1A', marginBottom: 8, fontFamily: 'Montserrat', textAlign: 'center' },
+  emptySubtitle: { fontSize: 16, color: '#666', marginBottom: 32, fontFamily: 'Montserrat', textAlign: 'center', lineHeight: 22 },
+
+  // Buttons
+  shopNowButton: { width: '100%', height: 56, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  shopNowGradient: { flex: 1, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
+  shopNowButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5 },
+  wishlistButton: { paddingVertical: 16, paddingHorizontal: 24 },
+  wishlistButtonText: { color: '#666', fontSize: 16, fontWeight: '500', fontFamily: 'Montserrat' },
+
+  // Popup
+  popupContainer: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 999, alignItems: 'center' },
+  popupContent: { backgroundColor: '#fff', padding: 12, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 10, maxWidth: '90%' },
+  
+  popupText: { lineHeight: 20,color: '#333', fontSize: 13, fontFamily: 'Montserrat', textAlign: 'center' ,},
+  // Scroll & Content
+  scrollContent: { paddingHorizontal: 16 },
 
   // Fixed Delivery Bar
-  fixedDeliveryBar: {
-    position: 'absolute',
-    top: 60,
-    left: 16,
-    right: 16,
-    zIndex: 10,
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
+  fixedDeliveryContentfixedDeliveryBar: { marginHorizontal: 16, marginTop: 4, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,shadowRadius: 8,elevation: 4},
   fixedDeliveryContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-
-  // Delivery Info Section
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingHorizontal: 13,
+  paddingVertical: 10,
+  borderRadius: 12,
+  backgroundColor: 'rgba(255,255,255,0.95)',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  elevation: 4,
+},
+fixedDeliveryBar: {
+  position: 'absolute',
+  top: 130, // or StatusBar.currentHeight + Header height
+  left: 0,
+  right: 0,
+  zIndex: 1000,
+  width: '100%',
+  paddingHorizontal: 10,
+},
+  // Delivery Info
   deliveryInfoWrapper: {
-    marginTop: 20,
-    marginBottom: 8,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  deliveryInfo: {
-    borderRadius: 16,
-    padding: 20,
-    overflow: 'hidden',
-  },
-  deliveryHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    // marginBottom: 16,
-  },
-  deliveryLeftSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  deliveryTimeContainer: {
-    marginRight: 12,
-  },
-  deliveryMainText: {
-    fontSize: 14,
-    color: '#666',
-    fontFamily: 'Montserrat',
-  },
-  deliveryTimeText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-  },
-  deliveryText: {
-    fontSize: 14,
-    color: '#666',
-    fontFamily: 'Montserrat',
-    marginRight: 8,
-  },
-  deliveryTime: {
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  superFastBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E7F8F2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  badgeIcon: {
-    width: 12,
-    height: 12,
-    marginRight: 4,
-    resizeMode: 'contain',
-  },
-  badgeText: {
-    fontSize: 11,
-    color: '#00B386',
-    fontWeight: '600',
-    fontFamily: 'Montserrat',
-  },
-  deliveryRightSection: {
-    alignItems: 'flex-end',
-  },
-  itemSummaryText: {
-    fontSize: 13,
-    color: '#666',
-    fontFamily: 'Montserrat',
-  },
-  totalAmountText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-  },
-  itemCountContainer: {
-    alignItems: 'flex-end',
-  },
-  itemCountText: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'Montserrat',
-  },
-  totalValueText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-  },
+  borderRadius: 16,
+  overflow: 'hidden',
+  marginVertical: 12, // Add some spacing from adjacent elements
+  backgroundColor: '#fff', // Prevent visual gaps
+},
+  deliveryInfo: { borderRadius: 16, padding: 20, overflow: 'hidden' },
+  deliveryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  deliveryLeftSection: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  deliveryTimeContainer: { marginRight: 12 },
+  deliveryMainText: { fontSize: 14, color: '#666', fontFamily: 'Montserrat' },
+  deliveryTimeText: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat' },
+  deliveryText: { fontSize: 14, color: '#666', fontFamily: 'Montserrat', marginRight: 8 },
+  deliveryTime: { fontWeight: '700', color: '#1A1A1A' },
 
-  // Progress Bar
-  deliveryProgress: {
-    marginTop: 4,
-  },
-  progressBar: {
-    height: 4,
-    backgroundColor: '#E5E5E5',
-    borderRadius: 2,
-    marginBottom: 8,
-  },
-  progressFill: {
-    height: 4,
-    backgroundColor: '#00B386',
-    borderRadius: 2,
-    width: '65%',
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#00B386',
-    fontFamily: 'Montserrat',
-    fontWeight: '500',
-  },
+  // Badge
+  superFastBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E7F8F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
+  badgeIcon: { width: 12, height: 12, marginRight: 4, resizeMode: 'contain' },
+  badgeText: { fontSize: 11, color: '#00B386', fontWeight: '600', fontFamily: 'Montserrat' },
+
+  // Right Section
+  deliveryRightSection: { alignItems: 'flex-end' },
+  itemSummaryText: { fontSize: 13, color: '#666', fontFamily: 'Montserrat' },
+  totalAmountText: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat' },
+  itemCountContainer: { alignItems: 'flex-end' },
+  itemCountText: { fontSize: 12, color: '#666', fontFamily: 'Montserrat' },
+  totalValueText: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'Montserrat' },
 
   // Coupon Section
-  couponSection: {
-    marginVertical: 12,
-  },
-  couponButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#cbfed7ff',
-    padding: 16,
-    borderRadius: 12,
-    // borderWidth: 1,
-    borderColor: '#FFE0B2',
-  },
-  couponLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  couponIcon: {
-    fontSize: 24,
-    marginRight: 12,
-  },
-  couponTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-  },
-  couponSubtitle: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'Montserrat',
-  },
-  couponArrow: {
-    fontSize: 24,
-    color: '#00ff11ff',
-    fontWeight: '300',
-  },
+  couponSection: { marginVertical: 12 },
+  couponButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#cbfed7ff', padding: 16, borderRadius: 12, borderColor: '#FFE0B2' },
+  couponLeft: { flexDirection: 'row', alignItems: 'center' },
+  couponIcon: { fontSize: 24, marginRight: 12 },
+  couponTitle: { fontSize: 16, fontWeight: '600', color: '#1A1A1A', fontFamily: 'Montserrat' },
+  couponSubtitle: { fontSize: 12, color: '#666', fontFamily: 'Montserrat' },
+  couponArrow: { fontSize: 24, color: '#00ff11ff', fontWeight: '300' },
 
   // Explore Section
-  exploreSection: {
-    marginVertical: 16,
-  },
-  exploreButton: {
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  exploreGradient: {
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    borderRadius: 16,
-  },
-  exploreButtonText: {
-    color: '#1A1A1A',
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'Montserrat',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  exploreSubtext: {
-    color: '#666',
-    fontSize: 12,
-    fontFamily: 'Montserrat',
-  },
+  exploreSection: { marginVertical: 16 },
+  exploreButton: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  exploreGradient: { paddingVertical: 20, paddingHorizontal: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16 },
+  exploreButtonText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5, marginBottom: 4 },
+  exploreSubtext: { color: '#666', fontSize: 12, fontFamily: 'Montserrat' },
 
   // Accessories Section
-  accessoriesSection: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  accessoriesHeader: {
-    padding: 20,
-    paddingBottom: 16,
-    alignItems: 'center',
-  },
-  accessoriesTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-    marginBottom: 4,
-  },
-  accessoriesSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    fontFamily: 'Montserrat',
-  },
-  accessoriesScroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 20,
-  },
+  accessoriesSection: { backgroundColor: '#fff', borderRadius: 16, marginVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  accessoriesHeader: { padding: 20, paddingBottom: 16, alignItems: 'center' },
+  accessoriesTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat', marginBottom: 4 },
+  accessoriesSubtitle: { fontSize: 14, color: '#666', fontFamily: 'Montserrat' },
+  accessoriesScroll: { paddingHorizontal: 16, paddingBottom: 20 },
 
-  // Bottom Spacing
-  bottomSpacing: {
-    height: 40,
-  },
+  // Tab Styles
+  tabButton: { width: '50%', paddingVertical: 15, backgroundColor: '#ffffffff', justifyContent: 'center', alignItems: 'center', borderRadius: 60, margin: 3, borderWidth:.5, borderColor:'#c1c1c1ff'},
+  tabText: { marginRight: 6, fontSize: 16, color: '#000', fontFamily: 'Montserrat', fontWeight: 'bold', },
+  activeTabText: { color: '#fff', fontWeight: 'bold' },
+  flexRow: { flexDirection: 'row', alignItems: 'center' },
+
+  // Payment Method
+  paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
+  paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  paymentMethodLeft: { flexDirection: 'row', alignItems: 'center' },
+  googlePayIcon: { marginRight: 12 },
+  googlePayImage: { width: 40, height: 30 },
+  payUsingText: { fontSize: 13, color: '#666' },
+  googlePayText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  changeButton: { flexDirection: 'row', alignItems: 'center' },
+  changeButtonText: { fontSize: 16, fontWeight: '600', color: '#000' },
+
+  // Slide to Pay
+  slideContainer: { padding: 16, backgroundColor: '#fff' },
+  slideTrack: { height: 70, borderRadius: 28, justifyContent: 'center', alignItems: 'center', position: 'relative', marginHorizontal: 16, },
+  slideThumb: { position: 'absolute', left: 5, width: 56, height: 56, borderRadius: 25, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center', elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.3, shadowRadius: 4 },
+  slideArrows: { flexDirection: 'row', alignItems: 'center' },
+  slideText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
 });
 
 export default CartBag;

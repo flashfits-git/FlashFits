@@ -1,4 +1,4 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -8,32 +8,80 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
   const navigation = useNavigation();
   const [updatingQuantity, setUpdatingQuantity] = useState(null);
 
-  // const handleQuantityChange = async (itemId, newQuantity, currentQuantity) => {
-  //   if (newQuantity < 1) return;
+  const handleQuantityChange = async (itemId, newQuantity, currentQuantity) => {
+    if (newQuantity < 1) return;
     
-  //   if (newQuantity !== currentQuantity) {
-  //     setUpdatingQuantity(itemId);
-  //     try {
-  //       // Call parent function to update quantity
-  //       if (onQuantityChange) {
-  //         await onQuantityChange(itemId, newQuantity);
-  //       }
-  //     } catch (error) {
-  //       console.error('Failed to update quantity:', error);
-  //       Alert.alert('Error', 'Failed to update quantity. Please try again.');
-  //     } finally {
-  //       setUpdatingQuantity(null);
-  //     }
-  //   }
-  // };
+    if (newQuantity !== currentQuantity) {
+      setUpdatingQuantity(itemId);
+      try {
+        // Call parent function to update quantity
+        if (onQuantityChange) {
+          await onQuantityChange(itemId, newQuantity);
+        }
+      } catch (error) {
+        console.error('Failed to update quantity:', error);
+        Alert.alert('Error', 'Failed to update quantity. Please try again.');
+      } finally {
+        setUpdatingQuantity(null);
+      }
+    }
+  };
 
-  // const renderQuantityControls = (item) => {
-  //   const isUpdating = updatingQuantity === item.id;
-    
-  //   return (
-
-  //   );
-  // };
+  const renderQuantityControls = (item) => {
+    const isUpdating = updatingQuantity === item.id;
+    const currentQuantity = item.quantity || 1;   
+    return (
+      <View style={styles.quantityContainer}>
+        {/* <Text style={styles.quantityLabel}>Qty:</Text> */}
+        <View style={styles.quantityControls}>
+          {/* Decrease Button */}
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              { opacity: currentQuantity <= 1 || isUpdating ? 0.5 : 1 }
+            ]}
+            onPress={() => handleQuantityChange(item.id, currentQuantity - 1, currentQuantity)}
+            disabled={currentQuantity <= 1 || isUpdating}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="remove" 
+              size={14} 
+              color={currentQuantity <= 1 || isUpdating ? "#999" : "#666"} 
+            />
+          </TouchableOpacity>
+          
+          {/* Quantity Display */}
+          <View style={styles.quantityDisplay}>
+            {isUpdating ? (
+              <ActivityIndicator size="small" color="#666" />
+            ) : (
+              <Text style={styles.quantityText}>
+                {currentQuantity}
+              </Text>
+            )}
+          </View>
+          
+          {/* Increase Button */}
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              { opacity: isUpdating ? 0.5 : 1 }
+            ]}
+            onPress={() => handleQuantityChange(item.id, currentQuantity + 1, currentQuantity)}
+            disabled={isUpdating}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="add" 
+              size={14} 
+              color={isUpdating ? "#999" : "#666"} 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   const renderFeatureRow = (icon, text, isAvailable = true) => (
     <View style={styles.featureRow}>
@@ -55,19 +103,19 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
       {product?.map((item, index) => {
         const saved = item.mrp - item.price;
         const discountPercent = Math.round(((item.mrp - item.price) / item.mrp) * 100);
-        // const totalPrice = item.price * item.quantity;
-        // const totalSaved = saved * item.quantity;
+        const totalPrice = item.price * (item.quantity || 1);
+        const totalSaved = saved * (item.quantity || 1);
 
         return (
           <TouchableOpacity
             key={index}
             style={styles.container}
-            onPress={() =>
-              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                id: item.id,
-                variantId: item.variantId
-              })
-            }
+            // onPress={() =>
+            //   navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+            //     id: item.id,
+            //     variantId: item.variantId
+            //   })
+            // }
             activeOpacity={0.95}
           >
             {/* Discount Badge */}
@@ -122,18 +170,9 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
                   <Text style={styles.sizeLabel}>Size</Text>
                   <Text style={styles.sizeValue}>{item.size || 'N/A'}</Text>
                 </TouchableOpacity>
-                      <View style={styles.quantityContainer}>
-        <Text style={styles.quantityLabel}>Qty:</Text>
-        <View style={styles.quantityControls}>
-          <View style={styles.quantityDisplay}>
-            <Text style={styles.quantityText}>
-             {item.quantity || 'N/A'}
-            </Text>
-          </View>
-          
-        </View>
-      </View>
-
+                
+                {/* Render Quantity Controls */}
+                {renderQuantityControls(item)}
               </View>
 
               {/* Features */}
@@ -141,6 +180,17 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
                 {renderFeatureRow("checkmark", "Try then Buy")}
                 {renderFeatureRow("checkmark", "Instant Return")}
               </View>
+
+              {/* Total Section - Show total price and savings */}
+              {(item.quantity || 1) > 1 && (
+                <View style={styles.totalSection}>
+                  <Text style={styles.totalLabel}>Total: </Text>
+                  <Text style={styles.totalPrice}>₹{totalPrice.toLocaleString()}</Text>
+                  {totalSaved > 0 && (
+                    <Text style={styles.totalSaved}> (Save ₹{totalSaved.toLocaleString()})</Text>
+                  )}
+                </View>
+              )}
             </View>
 
             {/* Delete Button */}
@@ -205,7 +255,6 @@ const styles = StyleSheet.create({
   // Image Section
   imageContainer: {
     marginRight: 12,
-    
   },
   image: {
     width: 130,
@@ -293,6 +342,7 @@ const styles = StyleSheet.create({
   attributesRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
   
@@ -304,6 +354,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#E5E5E5',
+    minWidth: 50,
   },
   sizeLabel: {
     fontSize: 9,
@@ -323,39 +374,33 @@ const styles = StyleSheet.create({
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft:10
   },
-  quantityLabel: {
-    fontSize: 11,
-    color: '#666',
-    fontFamily: 'Montserrat',
-    // marginRight: 1,
-  },
-  // quantityControls: {
-  //   flexDirection: 'row',
-  //   alignItems: 'center',
-  //   backgroundColor: '#F8F9FA',
-  //   borderRadius: 8,
-  //   borderWidth: 1,
-  //   borderColor: '#E5E5E5',
-  // },
-  quantityButton: {
-    width: 28,
-    height: 28,
-    justifyContent: 'center',
+  quantityControls: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    overflow: 'hidden',
+    marginLeft:6
   },
-  quantityDisplay: {
-    minWidth: 32,
-    height: 28,
+  quantityButton: {
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'white',
-    // borderLeftWidth: 1,
+  },
+  quantityDisplay: {
+    minWidth: 36,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderLeftWidth: 1,
     borderRightWidth: 1,
     borderColor: '#E5E5E5',
-    paddingRight:8
   },
   quantityText: {
     fontSize: 12,
