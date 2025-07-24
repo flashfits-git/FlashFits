@@ -2,6 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
+import {phoneLogin} from '@/app/api/auth'
+import {saveToken} from '@/app/utilities/secureStore'
+import { useRouter } from 'expo-router';
+
+const router = useRouter();
 
 const OTPInput = () => {
   const [otp, setOtp] = useState(['', '', '', '', '']);
@@ -44,11 +49,11 @@ const OTPInput = () => {
   const verifyOtp = async () => {
     try {
       const enteredOtp = otp.join('');
-      const result = await globalThis.confirmationResult.confirm(enteredOtp); // Use entered OTP
-      const idToken = await result.user.getIdToken();
-      // Send idToken to your backend for further auth
-      console.log(idToken)
-    } catch (error) {
+      const response = await phoneLogin({phoneNumber: phone});
+      console.log(response)
+      await saveToken('token', response.token);
+      router.replace('/(tabs)');
+      } catch (error) {
       console.error('OTP verification failed:', error);
     }
   };
@@ -116,7 +121,7 @@ const OTPInput = () => {
             <Text style={styles.verifyButtonText}>Resend OTP</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity style={styles.verifyButton} onPress={handleVerify}>
+          <TouchableOpacity style={styles.verifyButton} onPress={verifyOtp}>
             <Text style={styles.verifyButtonText}>Verify and Proceed</Text>
           </TouchableOpacity>
         )}
