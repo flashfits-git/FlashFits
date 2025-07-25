@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const { width } = Dimensions.get('window');
 
@@ -34,9 +35,10 @@ const DressCard = ({ product, onPress }) => {
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
           <Image source={{ uri: imageUrl }} style={styles.image} />
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
-          </View>
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={10} color="#000" style={{ marginRight: 2 }} />
+          <Text style={styles.ratingText}>{product.ratings || '0.0'}</Text>
+        </View>
         </View>
       </View>
 
@@ -142,27 +144,25 @@ const styles = StyleSheet.create({
     color: '#000',
     fontFamily: 'Montserrat',
   },
-  title: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginVertical: 6,
-    color: '#333',
-    paddingHorizontal: 6,
-    fontFamily: 'Montserrat',
-  },
-  titleRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingHorizontal: 6,
-  marginVertical: 6,
+title: {
+  fontSize: 13,
+  fontWeight: '500',
+  color: '#333',
+  fontFamily: 'Montserrat',
+  flex: 1,
+  marginRight: 6,
 },
-
+titleRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 6,
+  marginVertical: 4,
+},
 deliveryText: {
   fontSize: 11,
   color: '#888',
   fontFamily: 'Montserrat',
-  marginLeft: 4,
   flexShrink: 0,
 },
   priceRow: {

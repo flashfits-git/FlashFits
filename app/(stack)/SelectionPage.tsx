@@ -27,7 +27,7 @@ export default function SelectionPage() {
     const { cartItems, cartCount } = useCart();
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [selectedGender, setSelectedGender] = useState("Men");
+  const [selectedGender, setSelectedGender] = useState("");
   const [filters, setFilters] = useState({
   priceRange: [0, 2000],
   selectedCategoryIds: [],
@@ -137,7 +137,6 @@ useEffect(() => {
   const openSortModal = () => sortModalRef.current?.open();
   const openGengerModal = () => genderModalRef.current?.open();
   const openFilterModal = () => filterModalRef.current?.open();
-
 
 useEffect(() => {
     const fetch = async () => {

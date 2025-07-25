@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const DressCard = ({ product, onPress }) => {
   const imageUrl = product?.images?.[0]?.url;
@@ -28,15 +29,9 @@ const DressCard = ({ product, onPress }) => {
     <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          {imageUrl ? (
-            <Image source={{ uri: imageUrl }} style={styles.image} />
-          ) : (
-            <View style={[styles.image, { justifyContent: 'center', alignItems: 'center' }]}>
-              <Text>No Image</Text>
-            </View>
-          )}
+          <Image source={{ uri: imageUrl }} style={styles.image} />
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product?.ratings || '0.0'}</Text>
+            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
           </View>
         </View>
       </View>
@@ -61,7 +56,7 @@ const DressCard = ({ product, onPress }) => {
 const styles = StyleSheet.create({
   cardContainer: {
     width: '48%',
-    marginBottom: 16,
+    // marginBottom: 16,
   },
   card: {
     backgroundColor: '#fff',
