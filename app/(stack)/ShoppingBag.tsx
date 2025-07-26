@@ -165,61 +165,91 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
   );
 };
 
-  const SlideToPay = ({ label, onComplete }: { label: string; onComplete: () => void }) => {
-    const slideAnimation = useRef(new Animated.Value(0)).current;
-  
-    const panResponder = useRef(
-      PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
-        onPanResponderMove: (_, gestureState) => {
-          if (gestureState.dx > 0 && gestureState.dx <= maxSlide) {
-            slideAnimation.setValue(gestureState.dx);
-          }
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          if (gestureState.dx >= maxSlide * 0.7) {
-            Animated.timing(slideAnimation, {
-              toValue: maxSlide,
-              duration: 200,
-              useNativeDriver: true,
-            }).start(() => {
-              onComplete();
-              slideAnimation.setValue(0);
-            });
-          } else {
-            Animated.timing(slideAnimation, {
-              toValue: 0,
-              duration: 200,
-              useNativeDriver: true,
-            }).start();
-          }
-        },
-      })
-    ).current;
-  
+const SlideToPay = ({ label, onComplete }) => {
+  const slideAnimation = useRef(new Animated.Value(0)).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dx > 0 && gestureState.dx <= maxSlide) {
+          slideAnimation.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx >= maxSlide * 0.7) {
+          Animated.timing(slideAnimation, {
+            toValue: maxSlide,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            onComplete();
+            slideAnimation.setValue(0);
+          });
+        } else {
+          Animated.timing(slideAnimation, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
+  if (label === 'tryandbuy') {
     return (
       <View style={styles.slideToPayContainer}>
-  <LinearGradient
-    colors={['#20c269f4', '#66e49fd8']}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 0 }}
-    style={styles.slideTrack}
-  >
-    <Animated.View
-      style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-      {...panResponder.panHandlers}
-    >
-      <View style={styles.slideArrows}>
-        <Ionicons name="chevron-forward" size={18} color="#000" />
-        <Ionicons name="chevron-forward" size={18} color="#000" />
-      </View>
-    </Animated.View>
-    <Text style={styles.slideText}>{label}</Text>
-  </LinearGradient>
-  
+        <LinearGradient
+          colors={['#f06161e4', '#ea4b9acb']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.slideTrack}
+        >
+          {/* Try and Buy: Red Arrows */}
+          <Animated.View
+            style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.slideArrows}>
+              <Ionicons name="chevron-forward" size={18} color="#F00" />
+              <Ionicons name="chevron-forward" size={18} color="#F00" />
+            </View>
+          </Animated.View>
+          <Text style={styles.slideText}>Try then Buy</Text>
+        </LinearGradient>
       </View>
     );
-  };
+  }
+
+  if (label === 'prepaid') {
+    return (
+      <View style={styles.slideToPayContainer}>
+        <LinearGradient
+          colors={['#20c269f4', '#66e49fd8']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.slideTrack}
+        >
+          {/* Prepaid: Blue Arrows */}
+          <Animated.View
+            style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
+            {...panResponder.panHandlers}
+          >
+            <View style={styles.slideArrows}>
+              <Ionicons name="chevron-forward" size={18} color="#66e49fd8" />
+              <Ionicons name="chevron-forward" size={18} color="#66e49fd8" />
+            </View>
+          </Animated.View>
+          <Text style={styles.slideText}>Pay Now</Text>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  // fallback (should not occur if only used for these two labels)
+  return null;
+};
 
   if (loading) return <Loader />;
   if (cartItems.length === 0) {
@@ -534,15 +564,6 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
-
-        {/* Bill Section */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }}
-        >
-        </Animated.View>
       </ScrollView>
 
       {activeTab === 'Payment' && (
@@ -566,7 +587,7 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
                         </TouchableOpacity>
                       </View>
                     </View>
-                    <SlideToPay label="Slide to Pay | ₹663" onComplete={handlePaymentComplete} />
+                    <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
                   </>
       )}
           
@@ -589,7 +610,7 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
                         </TouchableOpacity>
                       </View>
                     </View>
-                  <SlideToPay label="DELIVER THE ORDER" onComplete={handlePaymentComplete} />
+                  <SlideToPay label="tryandbuy" onComplete={handlePaymentComplete} />
                   </>
        )}
 

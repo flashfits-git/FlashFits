@@ -24,12 +24,17 @@ const StoreDetailPage = () => {
   const [merchantData, setMerchantData] = useState(null);
   const [productss, setProductss] = useState([]);
 
-  console.log(merchantData,'merchantDatamerchantData');
+  // console.log(merchantData,'merchantDatamerchantData');
+  // console.log(merchantData.merchant._id,'merchantDatamerchantData');
+
   
 
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params;
+
+  // console.log(merchantData,' : cotton : cotton : cotton : cottonc');
+  
 
   useEffect(() => {
     if (!merchantId) return;

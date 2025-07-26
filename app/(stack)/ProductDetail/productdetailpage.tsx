@@ -30,8 +30,7 @@ const fallbackImages = [
 
 const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
-  
-   
+
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -48,11 +47,7 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
   const router = useRouter();
   const route = useRoute();
 
-  // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
-
-  // console.log(id,'ed389e93e93e8');
-  
 
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -60,7 +55,7 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
   const toastTranslateY = useRef(new Animated.Value(30)).current;
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async ()=> {
       try {
         setLoading(true);
         setError(null);
@@ -79,8 +74,7 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
       } finally {
         setLoading(false);
       }
-    };
-
+    }
     if (id) fetchData();
   }, [id]);
 
