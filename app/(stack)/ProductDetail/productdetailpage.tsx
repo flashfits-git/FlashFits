@@ -423,12 +423,12 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   
   topBar: {
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, elevation: 4,
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, height: 70, borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
   },
   iconButton: { padding: 8 },
-  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat' },
+  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat', textTransform: 'uppercase', },
   iconWithBadge: { position: 'relative' },
   badge: {
     position: 'absolute', top: -6, right: -6, backgroundColor: 'red', borderRadius: 8,

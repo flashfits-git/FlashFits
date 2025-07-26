@@ -10,6 +10,7 @@ import {
 import { Modalize } from 'react-native-modalize';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import { fetchnewArrivalsProductsData, getFilteredProducts } from '../api/productApis/products';
@@ -34,6 +35,8 @@ export default function SelectionPage() {
   selectedColors: [],
   selectedStores: [],
 });
+  const route = useRoute();
+  const { type } = route.params;
 
 useEffect(() => {
   console.log("Filters updated:", filters);
@@ -132,7 +135,6 @@ useEffect(() => {
   const genderModalRef = useRef(null);
   const filterModalRef = useRef(null);
 
-  const { type, merchant, category, subCategory, subSubCategory, tag } = useLocalSearchParams();
 
   const openSortModal = () => sortModalRef.current?.open();
   const openGengerModal = () => genderModalRef.current?.open();
@@ -170,7 +172,7 @@ useEffect(() => {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Bottoms</Text>
+          <Text style={styles.headerTitle}>{type}</Text>
           <View style={styles.headerIcons}>
             <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
               <Ionicons name="search" size={22} color="black" style={styles.icon} />
@@ -348,7 +350,9 @@ onValuesChange={(values) =>
 </View>
 
     {/* APPLY BUTTON */}
-    <TouchableOpacity style={styles.applyButton}>
+    <TouchableOpacity style={styles.applyButton}
+    onPress={() => filterModalRef.current?.close()}
+    >
       <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apply Filters</Text>
     </TouchableOpacity>
   </View>
@@ -476,8 +480,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  fontSize: 20,
+  fontWeight: 'bold',
+  textTransform: 'uppercase',
+  marginVertical: 12,     // Adds space above and below
+  paddingHorizontal: 16,  // Adds space to the sides
+  textAlign: 'center',    // Center the text (optional)
+  color: '#333' 
   },
   headerIcons: {
     flexDirection: 'row',

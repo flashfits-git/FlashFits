@@ -18,13 +18,13 @@ const Categories = ({products}) => {
 
   const handleTitlePress = () => {
     navigation.navigate('(stack)/SelectionPage',{
-     type:"new arrivals",
+     type:"New arrivals",
     });
   };
 
   const handleViewAll = () => {
     navigation.navigate('(stack)/SelectionPage',{
-     type:"new arrivals",
+     type:"New arrivals",
     });
   };
 

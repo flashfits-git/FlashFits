@@ -270,13 +270,14 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
       </View>
     );
   }
+  
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <HeaderBag />
 
           {/* Order type selection */}  
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 10, marginHorizontal: 15 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
           {/* Try and Buy Tab */}
 <TouchableOpacity
   onPress={() => setActiveTab('TryandBuy')}
@@ -609,7 +610,7 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 16, color: '#666', marginBottom: 32, fontFamily: 'Montserrat', textAlign: 'center', lineHeight: 22 },
 
   // Buttons
-  shopNowButton: { width: '100%', height: 56, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
+  shopNowButton: { width: '100%', height: 56, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,  },
   shopNowGradient: { flex: 1, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   shopNowButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5 },
   wishlistButton: { paddingVertical: 16, paddingHorizontal: 24 },
@@ -617,14 +618,14 @@ const styles = StyleSheet.create({
 
   // Popup
   popupContainer: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 999, alignItems: 'center' },
-  popupContent: { backgroundColor: '#fff', padding: 12, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, elevation: 10, maxWidth: '90%' },
+  popupContent: { backgroundColor: '#fff', padding: 12, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6,  maxWidth: '90%' },
   
   popupText: { lineHeight: 20,color: '#333', fontSize: 13, fontFamily: 'Montserrat', textAlign: 'center' ,},
   // Scroll & Content
   scrollContent: { paddingHorizontal: 16 },
 
   // Fixed Delivery Bar
-  fixedDeliveryContentfixedDeliveryBar: { marginHorizontal: 16, marginTop: 4, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,shadowRadius: 8,elevation: 4},
+  fixedDeliveryContentfixedDeliveryBar: { marginHorizontal: 16, marginTop: 2, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,shadowRadius: 8},
   fixedDeliveryContent: {
   flexDirection: 'row',
   justifyContent: 'space-between',
@@ -637,14 +638,13 @@ const styles = StyleSheet.create({
   shadowOffset: { width: 0, height: 2 },
   shadowOpacity: 0.08,
   shadowRadius: 8,
-  elevation: 4,
 },
 fixedDeliveryBar: {
   position: 'absolute',
-  top: 130, // or StatusBar.currentHeight + Header height
+  top: 120, // or StatusBar.currentHeight + Header height
   left: 0,
   right: 0,
-  zIndex: 1000,
+  zIndex: 800,
   width: '100%',
   paddingHorizontal: 10,
 },
@@ -652,7 +652,7 @@ fixedDeliveryBar: {
   deliveryInfoWrapper: {
   borderRadius: 16,
   overflow: 'hidden',
-  marginVertical: 12, // Add some spacing from adjacent elements
+  marginVertical: 8, // Add some spacing from adjacent elements
   backgroundColor: '#fff', // Prevent visual gaps
 },
   deliveryInfo: { borderRadius: 16, padding: 20, overflow: 'hidden' },
@@ -688,13 +688,13 @@ fixedDeliveryBar: {
 
   // Explore Section
   exploreSection: { marginVertical: 16 },
-  exploreButton: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 4 },
+  exploreButton: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
   exploreGradient: { paddingVertical: 20, paddingHorizontal: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16 },
   exploreButtonText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5, marginBottom: 4 },
   exploreSubtext: { color: '#666', fontSize: 12, fontFamily: 'Montserrat' },
 
   // Accessories Section
-  accessoriesSection: { backgroundColor: '#fff', borderRadius: 16, marginVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  accessoriesSection: { backgroundColor: '#fff', borderRadius: 16, marginVertical: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 },
   accessoriesHeader: { padding: 20, paddingBottom: 16, alignItems: 'center' },
   accessoriesTitle: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat', marginBottom: 4 },
   accessoriesSubtitle: { fontSize: 14, color: '#666', fontFamily: 'Montserrat' },

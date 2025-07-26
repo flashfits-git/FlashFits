@@ -70,23 +70,29 @@ export default function ImageCardHome({ product = [], accecories = [], deataiPag
 
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} ref={scrollRef}>
-        {dataToRender.map((p, index) => (
-          <DressCard
-            key={p._id || p.id || index}
-            product={p}
-            onPress={() =>
-              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                id: p._id || p.id,
-                variantId:
-                  Array.isArray(p.variants)
-                    ? p.variants[0]?._id
-                    : p.variants?._id || p.variantId,
-              })
-            }
-          />
-        ))}
-      </ScrollView>
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  ref={scrollRef}
+  contentContainerStyle={{ flexDirection: 'row' }}
+>
+  {dataToRender.map((p, index) => (
+    <DressCard
+      key={p._id || p.id || index}
+      product={p}
+      onPress={() =>
+        navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+          id: p._id || p.id,
+          variantId:
+            Array.isArray(p.variants)
+              ? p.variants[0]?._id
+              : p.variants?._id || p.variantId,
+        })
+      }
+    />
+  ))}
+</ScrollView>
+
     </View>
   );
 }
@@ -103,14 +109,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 3,
   },
   shadowWrapper: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6,
     borderRadius: 15,
     marginBottom: 10,
   },

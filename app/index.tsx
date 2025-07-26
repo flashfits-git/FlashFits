@@ -13,7 +13,6 @@ export default function Index() {
     const checkAuth = async () => {
       // Replace this with your actual auth check logic
       const token = await SecureStore.getItemAsync('token');
-
       setIsAuthenticated(!!token); // or check session validity
       setIsLoading(false);
     };

@@ -78,9 +78,17 @@ export default function PhoneLogin() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+        {/* place the logo image  */}
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>Login</Text>
-        <Text style={styles.subtitle}>Enter your phone number to proceed.</Text>
+
+      <View style={styles.logoContainer}>
+  <Image
+    source={require('../../assets/loaders/logo.png')}
+    style={styles.logo}
+    resizeMode="contain"
+  />
+</View>
+        {/* <Text style={styles.subtitle}>Enter your phone number to proceed.</Text> */}
 
         <View style={styles.inputContainer}>
           <View style={styles.countryRow}>
@@ -160,12 +168,17 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 100,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    fontFamily: 'Montserrat',
-  },
+  logoContainer: {
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginBottom: 30,
+  width: '100%',
+},
+
+logo: {
+  width: 300,
+  height: 120,
+},
   subtitle: {
     fontSize: 14,
     color: '#555',
