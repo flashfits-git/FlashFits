@@ -21,11 +21,14 @@ import Loader from '@/components/Loader/Loader';
 
 const StoreDetailPage = () => {
   const [loading, setLoading] = useState(true);
-  const [merchantData, setMerchantData] = useState(null);
+  const [merchantData, setMerchantData] = useState({});
   const [productss, setProductss] = useState([]);
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params;
+
+  console.log(merchantData?.merchant?.logo?.url,'merchantData?.merchant?.logo?.url');
+  
 
   useEffect(() => {
     if (!merchantId) return;
@@ -37,9 +40,10 @@ const StoreDetailPage = () => {
         const products = await getProductsByMerchantId(merchantId);
         setMerchantData(merchantData);
         setProductss(products);
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching merchant or products:', error);
-      } finally {
+      } finally{
         setLoading(false);
       }
     };
@@ -62,6 +66,11 @@ const StoreDetailPage = () => {
 
   if (loading) return <Loader />;
 
+  const logoUrl = merchantData?.merchant?.logo?.url;
+// const hasLogo = typeof logoUrl === 'string' && !!logoUrl;
+// console.log('Typeod :',typeof(logoUrl),logoUrl);
+
+
   return (
     <LinearGradient
       colors={['#f9fafb', '#ffffffff']}
@@ -72,7 +81,7 @@ const StoreDetailPage = () => {
           <View style={styles.headerContent}>
             <Image
               source={{
-                uri: merchantData?.merchant?.logo?.url || 'https://via.placeholder.com/60',
+                uri: String(logoUrl) || 'no image',
               }}
               style={styles.avatar}
             />
@@ -175,6 +184,7 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 9,
   },
+  
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
