@@ -14,6 +14,12 @@ import { Ionicons } from '@expo/vector-icons'; // Already imported
 const { width } = Dimensions.get('window');
 
 const DressCard = ({ product, onPress }) => {
+
+  // console.log(product,'groupedProductsgroupedProductsgroupedProductsgroupedProducts');
+
+  // console.log(typeof(product?.images?.[0]?.url),typeof(product?.variants?.[0]?.images?.[0]?.url), typeof(product?.variants?.images?.[0]?.url));
+  
+  
   const imageUrl =
     product?.images?.[0]?.url ||
     product?.variants?.[0]?.images?.[0]?.url ||
@@ -34,7 +40,7 @@ const DressCard = ({ product, onPress }) => {
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+          <Image source={{ uri: String(imageUrl) }} style={styles.image} />
         <View style={styles.ratingContainer}>
           <Ionicons name="star" size={10} color="#000" style={{ marginRight: 2 }} />
           <Text style={styles.ratingText}>{product.ratings || '0.0'}</Text>

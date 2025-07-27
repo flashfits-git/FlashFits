@@ -308,63 +308,62 @@ const SlideToPay = ({ label, onComplete }) => {
 
           {/* Order type selection */}  
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
+          
           {/* Try and Buy Tab */}
-<TouchableOpacity
-  onPress={() => setActiveTab('TryandBuy')}
-  style={styles.tabButton}
-  activeOpacity={0.9}
->
-  {activeTab === 'TryandBuy' && (
-    <LinearGradient
-      colors={['#f06161e4', '#ea4b9acb']}
-      start={{ x: 0, y: 1 }}
-      end={{ x: 1, y: 0 }}
-      style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
-    />
-  )}
-  <View style={styles.flexRow}>
-    <MaterialIcons
-      name="auto-fix-high"
-      size={18}
-      color="white"
-      style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
-    />
-    <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
-      Try then Buy
-    </Text>
+          <TouchableOpacity
+            onPress={() => setActiveTab('TryandBuy')}
+            style={styles.tabButton}
+            activeOpacity={0.9}
+          >
+            {activeTab === 'TryandBuy' && (
+              <LinearGradient
+                colors={['#f06161e4', '#ea4b9acb']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
+              />
+            )}
+            <View style={styles.flexRow}>
+              <MaterialIcons
+                name="auto-fix-high"
+                size={18}
+                color="white"
+                style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+              />
+              <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
+                Try then Buy
+              </Text>
 
-    {/* ❓ Help icon with toggle */}
-<TouchableOpacity
-  onPress={() => {
-    setShowTryBuyInfo(true);
-    popupOpacity.setValue(0);
-    Animated.timing(popupOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setTimeout(() => {
-        Animated.timing(popupOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }).start(() => setShowTryBuyInfo(false));
-      }, 4000);
-    });
-  }}
-  style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
->
-  <MaterialIcons
-    name="help"
-    size={15}
-    color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
-  />
-</TouchableOpacity>
+              {/* ❓ Help icon with toggle */}
+          <TouchableOpacity
+            onPress={() => {
+              setShowTryBuyInfo(true);
+              popupOpacity.setValue(0);
+              Animated.timing(popupOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+              }).start(() => {
+                setTimeout(() => {
+                  Animated.timing(popupOpacity, {
+                    toValue: 0,
+                    duration: 500,
+                    useNativeDriver: true,
+                  }).start(() => setShowTryBuyInfo(false));
+                }, 4000);
+              });
+            }}
+            style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+          >
+            <MaterialIcons
+              name="help"
+              size={15}
+              color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
+            />
+          </TouchableOpacity>
 
-  </View>
-</TouchableOpacity>
-
-
+            </View>
+          </TouchableOpacity>
           {/* Payment Tab */}
           <TouchableOpacity
             onPress={() => setActiveTab('Payment')}
@@ -388,6 +387,7 @@ const SlideToPay = ({ label, onComplete }) => {
           </TouchableOpacity>
         </View>
         
+          {/* Try and Buy Tab info pop up*/}
         {showTryBuyInfo && (
   <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
 <View style={styles.popupContent}>
@@ -398,7 +398,8 @@ const SlideToPay = ({ label, onComplete }) => {
   </Text>
 </View>
   </Animated.View>
-)}
+          )}
+
      {/* Fixed Delivery Bar */}
       <Animated.View 
         style={[
@@ -566,6 +567,7 @@ const SlideToPay = ({ label, onComplete }) => {
         </Animated.View>
       </ScrollView>
 
+            {/* slide bar swiching */}
       {activeTab === 'Payment' && (
                   <>
                     <View style={styles.paymentMethodContainer}>
@@ -590,7 +592,6 @@ const SlideToPay = ({ label, onComplete }) => {
                     <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
                   </>
       )}
-          
        {activeTab === 'TryandBuy' && (
                   <>
                             <View style={styles.paymentMethodContainer}>
