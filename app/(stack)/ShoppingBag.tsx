@@ -20,6 +20,7 @@ import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectA
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { clearCart} from '../api/productApis/cartProduct';
 import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'expo-router';
 import { useCart } from '../ContextParent';
@@ -39,12 +40,12 @@ const CartBag = () => {
    const [showTryBuyInfo, setShowTryBuyInfo] = useState(false);
 const popupOpacity = useRef(new Animated.Value(0)).current;
 const scrollYAnim = useRef(new Animated.Value(0)).current;
-
-  
-  // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
+
+  // console.log(cartItems);
+  
   
   const fetchCart = async (showLoader = true) => {
     try {
@@ -52,8 +53,7 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
       const cartData = await GetCart();
       const items = cartData.items || [];
       setCartItems(items);
-      setCartCount(items.length);
-      
+      setCartCount(items.length);    
       // Animate content entrance
       Animated.parallel([
         Animated.timing(fadeAnim, {
@@ -76,6 +76,7 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
       setRefreshing(false);
     }
   };
+
 
   useEffect(() => {
     fetchCart();
@@ -103,28 +104,33 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
   return () => scrollYAnim.removeAllListeners();
 }, []);
 
-  const handleDelete = async (itemId) => {
-    Alert.alert(
-      'Remove Item',
-      'Are you sure you want to remove this item from your bag?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Remove',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteCartItem(itemId);
-              await fetchCart(false);
-            } catch (error) {
-              console.error("Failed to delete cart item:", error);
-              Alert.alert('Error', 'Failed to remove item. Please try again.');
+const handleDelete = async (itemId, quantity, size) => {
+  Alert.alert(
+    'Remove Item',
+    'Are you sure you want to remove this item from your bag?',
+    [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            if (cartCount === 1) {
+              await clearCart();
+              console.log('cartCleat');
+            } else {
+              await deleteCartItem(itemId, quantity, size);
             }
+            await fetchCart(false); // refresh cart after deletion or clear
+          } catch (error) {
+            console.error('Failed to delete cart item:', error);
+            Alert.alert('Error', 'Failed to remove item. Please try again.');
           }
-        }
-      ]
-    );
-  };
+        },
+      },
+    ]
+  );
+};
   
   const handleRefresh = async () => {
     setRefreshing(true);

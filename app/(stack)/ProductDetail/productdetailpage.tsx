@@ -3,8 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
-// import { Ionicons } from '@expo/vector-icons';
-// import { Animated } from 'react-native';
+import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
@@ -14,8 +13,8 @@ import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
-import { AddProducttoCart } from '../../api/productApis/cartProduct';
-import { useCart } from '../../ContextParent';
+import { AddProducttoCart ,clearCart} from '../../api/productApis/cartProduct';
+import { useCart } from '../../ContextParent'; 
 
 
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
@@ -30,6 +29,9 @@ const fallbackImages = [
 
 const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
+
+    // console.log(cartItems,'cartItemscartItemscartItemscartItemsr');
+    
 
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
@@ -149,6 +151,8 @@ const iconColor = scrollY.interpolate({
       }, 1500);
     });
   };
+
+
 const handleAddToCart = async () => {
   const productData = {
     productId: products._id,
@@ -157,24 +161,77 @@ const handleAddToCart = async () => {
     size: selectedSize,
     quantity: quantity,
     merchantId: products.merchantId._id,
-    image:selectedVariant?.images?.[0].url
+    image: selectedVariant?.images?.[0]?.url
   };
+
   try {
-    const response = await AddProducttoCart(productData);
-    setCartItems(prevItems => [...prevItems, productData]); // or use response.cart if API returns updated cart
-    setCartCount(cartCount => cartCount + 1);
-    console.log('Added to cart:', response);
+    // ✅ Step 1: Fetch latest cart from backend
+    // const latestCart = await GetCart(); // <- your API function
+    const currentItems = cartItems || [];
+
+    // ✅ Step 2: Check if cart is not empty
+    if (currentItems.length > 0) {
+      const currentMerchantId = currentItems[0]?.merchantId?._id || currentItems[0]?.merchantId;
+
+      if (currentMerchantId !== productData.merchantId) {
+        Alert.alert(
+          'Clear Cart?',
+          'Your cart contains items from another shop. Clear the cart and add this new item?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => console.log('User cancelled adding')
+            },
+            {
+              text: 'Clear Cart',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await clearCart();
+                  setCartItems([]);
+                  setCartCount(0);
+
+                  // ✅ Add the product after clearing
+                  await AddProducttoCart(productData);
+                  setCartItems([productData]);
+                  setCartCount(1);
+                  showAddToCartToast();
+                  setTimeout(() => {
+                    modalizeRef.current?.close();
+                  }, 0);
+                } catch (error) {
+                  console.error('Error while clearing and adding:', error);
+                }
+              }
+            }
+          ]
+        );
+        return;
+      }
+    }
+
+    // ✅ Step 3: Add to cart if cart is empty or same merchant
+    await AddProducttoCart(productData);
+    setCartItems(prev => [...prev, productData]);
+    setCartCount(count => count + 1);
+    showAddToCartToast();
+
   } catch (error) {
     console.error('Failed to add to cart', error);
   }
-
-  showAddToCartToast();
 
   setTimeout(() => {
     modalizeRef.current?.close();
   }, 0);
 };
+
+
+
+
   if (loading) return <Loader />;
+
+
   if (error || !products || Object.keys(products).length === 0) {
     return (
       <View style={styles.centerContainer}>

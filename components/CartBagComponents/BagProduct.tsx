@@ -195,7 +195,7 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
 
             {/* Delete Button */}
             <TouchableOpacity
-              onPress={() => onDelete(item.id)}
+              onPress={() => onDelete(item.id, item.quantity, item.size)}
               style={styles.deleteButton}
               activeOpacity={0.7}
             >
