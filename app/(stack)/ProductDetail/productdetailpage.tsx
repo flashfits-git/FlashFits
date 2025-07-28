@@ -13,7 +13,7 @@ import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
-import { AddProducttoCart ,clearCart} from '../../api/productApis/cartProduct';
+import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
 import { useCart } from '../../ContextParent'; 
 
 
@@ -166,9 +166,10 @@ const handleAddToCart = async () => {
 
   try {
     // ✅ Step 1: Fetch latest cart from backend
-    // const latestCart = await GetCart(); // <- your API function
-    const currentItems = cartItems || [];
-
+    const latestCart = await GetCart(); // <- your API function
+    const currentItems = latestCart.items || [];
+    console.log(currentItems.length,'git reset --hard HEADgit reset --hard HEADgit reset --hard HEAD');
+   
     // ✅ Step 2: Check if cart is not empty
     if (currentItems.length > 0) {
       const currentMerchantId = currentItems[0]?.merchantId?._id || currentItems[0]?.merchantId;
