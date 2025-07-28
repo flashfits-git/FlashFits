@@ -4,23 +4,22 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  Switch,
   StyleSheet,
   Image,
   SafeAreaView,
   ScrollView,
+  Dimensions,
 } from 'react-native';
-import { FontAwesome, AntDesign  } from '@expo/vector-icons';
+import { FontAwesome, AntDesign } from '@expo/vector-icons';
 import * as Google from 'expo-auth-session/providers/google';
 import * as SecureStore from 'expo-secure-store';
 import { useRouter } from 'expo-router';
-// import auth from '@/app/config/firebaseConfig';
-// import {signInWithPhoneNumber} from 'firebase/auth'
+
+const { width, height } = Dimensions.get('window');
 
 export default function PhoneLogin() {
   const router = useRouter();
   const [phoneNumber, setPhoneNumber] = useState('');
-  // const [syncContacts, setSyncContacts] = useState(true);
 
   const redirectUri = 'https://auth.expo.dev/@shubhamexpo7/FlashFits';
 
@@ -37,16 +36,7 @@ export default function PhoneLogin() {
 
   const handleSendOTP = async () => {
     try {
-      // const confirmationResult = await signInWithPhoneNumber(
-      //   auth,
-      //   '+91' + phoneNumber,
-      // );
-      // console.log(confirmationResult)
       console.log('OTP sent successfully');
-  
-      // Store confirmationResult globally or via state/store/context
-      // globalThis.confirmationResult = confirmationResult;
-  
       router.push({
         pathname: '/(auth)/otpVerification',
         params: { phone: phoneNumber },
@@ -78,36 +68,42 @@ export default function PhoneLogin() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-        {/* place the logo image  */}
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView 
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Logo Section */}
+        <View style={styles.logoContainer}>
+          <Image
+            source={require('../../assets/loaders/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
 
-      <View style={styles.logoContainer}>
-  <Image
-    source={require('../../assets/loaders/logo.png')}
-    style={styles.logo}
-    resizeMode="contain"
-  />
-</View>
-        {/* <Text style={styles.subtitle}>Enter your phone number to proceed.</Text> */}
-
-        <View style={styles.inputContainer}>
-          <View style={styles.countryRow}>
-            <Image
-              source={{ uri: 'https://flagcdn.com/w40/in.png' }}
-              style={styles.flag}
-            />
-            <Text style={styles.countryName}>India</Text>
-          </View>
-
-          <View style={styles.phoneRow}>
-            <Text style={styles.countryCode}>+91</Text>
+        {/* Phone Input Section */}
+        <View style={styles.inputSection}>
+          <View style={styles.inputContainer}>
+            <View style={styles.countrySelector}>
+              <Image
+                source={{ uri: 'https://flagcdn.com/w40/in.png' }}
+                style={styles.flag}
+              />
+              <Text style={styles.countryCode}>+91</Text>
+              <AntDesign name="down" size={12} color="#666" />
+            </View>
+            
+            <View style={styles.divider} />
+            
             <TextInput
-              style={styles.input}
-              // placeholder="0 00 00 00 00"
+              style={styles.phoneInput}
+              placeholder="Enter phone number"
+              placeholderTextColor="#999"
               keyboardType="phone-pad"
               value={phoneNumber}
               onChangeText={(text) => {
-                const cleaned = text.replace(/[^0-9]/g, ''); // only digits
+                const cleaned = text.replace(/[^0-9]/g, '');
                 if (cleaned.length <= 10) {
                   setPhoneNumber(cleaned);
                 }
@@ -116,43 +112,56 @@ export default function PhoneLogin() {
           </View>
         </View>
 
+        {/* Continue Button */}
         <TouchableOpacity
           style={[
-            styles.button,
-            phoneNumber.length === 10 ? {} : styles.buttonDisabled,
+            styles.continueButton,
+            phoneNumber.length === 10 ? styles.continueButtonActive : styles.continueButtonDisabled,
           ]}
           disabled={phoneNumber.length !== 10}
           onPress={handleSendOTP}
         >
-          <Text style={styles.buttonText}>Continue</Text>
+          <Text style={[
+            styles.continueButtonText,
+            phoneNumber.length === 10 ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
+          ]}>
+            Continue
+          </Text>
         </TouchableOpacity>
 
+        {/* Divider */}
+        <View style={styles.dividerContainer}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
-        <Text style={styles.termsText}>
-          By clicking, I accept the <Text style={styles.linkText}>Terms & Conditions</Text> &{' '}
-          <Text style={styles.linkText}>Privacy Policy</Text>
-        </Text>
+        {/* Social Login Buttons */}
+        <View style={styles.socialContainer}>
+          <TouchableOpacity
+            disabled={!request}
+            onPress={() => promptAsync()}
+            style={styles.socialButton}
+          >
+            <AntDesign name="google" size={20} color="#000000ff" />
+            <Text style={styles.socialButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
 
-        {/* Google Login Button */}
-          <View style={{ marginTop: 10, width:'100%',alignItems: 'center'  }}>
-            <TouchableOpacity
-              disabled={!request}
-              onPress={() => promptAsync()}
-              style={[styles.socialButton, styles.googleButton]}
-            >
-              <AntDesign  name="google" size={20} color="#DB4437" style={{ marginRight: 10 }} />
-              <Text style={[styles.socialButtonText, styles.googleText]}>
-                Continue with Google
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={[styles.socialButton, styles.facebookButton]}>
+            <FontAwesome name="facebook" size={20} color="#030303ff" />
+            <Text style={styles.socialButtonText}>Continue with Facebook</Text>
+          </TouchableOpacity>
+        </View>
 
-            <TouchableOpacity style={[styles.socialButton, styles.facebookButton]}>
-              <FontAwesome name="facebook" size={20} color="white" style={{ marginRight: 10 }} />
-              <Text style={[styles.socialButtonText, styles.facebookText]}>
-                Continue with Facebook
-              </Text>
-            </TouchableOpacity>
-          </View>
+        {/* Terms and Conditions */}
+        <View style={styles.termsContainer}>
+          <Text style={styles.termsText}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.termsLink}>Terms of Service</Text>
+            {' '}and{' '}
+            <Text style={styles.termsLink}>Privacy Policy</Text>
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -161,138 +170,186 @@ export default function PhoneLogin() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fdfdfd',
+    backgroundColor: '#FAFAFA',
   },
   container: {
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 100,
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingTop: height * 0.08,
+    paddingBottom: 40,
   },
   logoContainer: {
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginBottom: 30,
-  width: '100%',
-},
-
-logo: {
-  width: 300,
-  height: 120,
-},
-  subtitle: {
-    fontSize: 14,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 20,
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  logo: {
+    width: width * 0.6,
+    height: 80,
+  },
+  welcomeContainer: {
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 8,
     fontFamily: 'Montserrat',
   },
-  inputContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 5,
-    marginBottom: 20,
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontFamily: 'Montserrat',
+    lineHeight: 22,
   },
-  countryRow: {
+  inputSection: {
+    marginBottom: 32,
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+  },
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 16,
   },
   flag: {
     width: 24,
     height: 18,
-    marginRight: 8,
     borderRadius: 3,
-  },
-  countryName: {
-    fontSize: 16,
-    fontFamily: 'Montserrat',
-  },
-  phoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    paddingBottom: 8,
-    marginBottom: 15,
+    marginRight: 8,
   },
   countryCode: {
-    fontSize: 18,
-    marginRight: 10,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginRight: 8,
     fontFamily: 'Montserrat',
   },
-  input: {
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#E5E5E5',
+    marginRight: 16,
+  },
+  phoneInput: {
     flex: 1,
-    fontSize: 18,
+    fontSize: 16,
+    color: '#1A1A1A',
     fontFamily: 'Montserrat',
+    fontWeight: '500',
   },
-  button: {
-    // backgroundColor: '#8FD9FB',
-    marginTop: 10,
-    paddingVertical: 15,
-    width: '100%',
+  continueButton: {
+    borderRadius: 16,
+    paddingVertical: 18,
     alignItems: 'center',
-     height: 70,
-    backgroundColor: '#000',
-    borderRadius: 20,
     justifyContent: 'center',
+    marginBottom: 32,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 6,
   },
-  buttonDisabled: {
-  opacity: 0.5,
-},
-  buttonText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+  continueButtonActive: {
+    backgroundColor: '#181919ff',
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#F5F5F5',
+  },
+  continueButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
     fontFamily: 'Montserrat',
   },
-  termsText: {
-    marginTop: 15,
-    fontSize: 12,
-    color: '#555',
-    textAlign: 'center',
-    paddingHorizontal: 10,
+  continueButtonTextActive: {
+    color: '#FFFFFF',
+  },
+  continueButtonTextDisabled: {
+    color: '#999',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E5E5',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#999',
     fontFamily: 'Montserrat',
   },
-  linkText: {
-    fontWeight: 'bold',
-    color: '#222',
-    fontFamily: 'Montserrat',
+  socialContainer: {
+    marginBottom: 32,
   },
   socialButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    marginVertical: 8,
-    width: '90%',
     justifyContent: 'center',
-  },
-  googleButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: '#E5E5E5',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 2,
   },
   facebookButton: {
-    backgroundColor: '#74b0ff',
-    borderWidth: 1,
-    borderColor: '#74b0ff',
+    marginBottom: 0,
   },
   socialButtonText: {
     fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginLeft: 12,
     fontFamily: 'Montserrat',
   },
-  googleText: {
-    color: '#333',
+  termsContainer: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  termsText: {
+    fontSize: 13,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 18,
     fontFamily: 'Montserrat',
   },
-  facebookText: {
-    color: '#fff',
+  termsLink: {
+    color: '#1d1e1eff',
+    fontWeight: '600',
+    fontFamily: 'Montserrat',
   },
 });
