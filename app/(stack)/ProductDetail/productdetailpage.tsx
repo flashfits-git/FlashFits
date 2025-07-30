@@ -31,9 +31,6 @@ const fallbackImages = [
 const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
 
-    // console.log(cartItems,'cartItemscartItemscartItemscartItemsr');
-    
-
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,7 +39,6 @@ const ProductDetailPage = () => {
   const [selectedColor, setSelectedColor] = useState(null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  // const [cartCount1, setCartCount1] = useState(0);
   const [showToast, setShowToast] = useState(false);
 const [interpolatedColor, setInterpolatedColor] = useState('#fff');
 const [errorMessage, setErrorMessage] = useState('');
@@ -78,7 +74,6 @@ const errorTimeoutRef = useRef(null);
         setError(null);
         const data = await productDetailPage(id);
         setProduct(data);
-        // console.log(data,'DDDDDDDD');
         if (data?.variants?.length > 0) {
          const firstVariant = data.variants.find(x => x._id === variantId);
          setSelectedColor(firstVariant.color.name)
@@ -187,7 +182,6 @@ const handleAddToCart = async () => {
     // Step 3: Fetch the latest cart (ensure consistency)
     const latestCart = await GetCart();
     const cartItemsSafe = latestCart.items || [];
-
     // Step 4: Check if identical item exists already (by product, variant, size)
     const existingItem = cartItemsSafe.find(
       item =>
@@ -229,7 +223,7 @@ const handleAddToCart = async () => {
               onPress: async () => {
                 try {
                   await clearCart();
-                  setCartItems([]);
+                  // setCartItems([]);
                   setCartCount(0);
 
                   // ✅ Add the product after clearing
@@ -250,7 +244,6 @@ const handleAddToCart = async () => {
          return;
     }
     await AddProducttoCart(productData);
-
     // Step 8: Update UI state
     setCartItems(prev => [...prev, productData]);
     setCartCount(count => count + 1);
@@ -391,6 +384,7 @@ const handleAddToCart = async () => {
                             onPress={() => {
                               setSelectedColor(colorName);
                               setSelectedSize(null);
+                              setQuantity(1);
                             }}
                           />
                         );
@@ -402,20 +396,27 @@ const handleAddToCart = async () => {
               </View>
 
               <View style={styles.quantityContainer}>
-                <TouchableOpacity
-                  style={styles.circleButton}
-                  onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-                >
-                  <Text style={styles.buttonText}>−</Text>
-                </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.circleButton,
+                  quantity === 1 && { opacity: 0.4 }, // Visual feedback
+                ]}
+                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
+                disabled={quantity === 1} // ✅ Disable when quantity is 1
+              >
+                <Text style={styles.buttonText}>−</Text>
+              </TouchableOpacity>
                 <Text style={styles.quantityText}>{quantity}</Text>
-                <TouchableOpacity
-                  style={styles.circleButton}
-                  onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
-                  disabled={quantity >= selectedStock}
-                >
-                  <Text style={styles.buttonText}>+</Text>
-                </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.circleButton,
+                quantity >= selectedStock && { opacity: 0.4 }, // Visual feedback
+              ]}
+              onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
+              disabled={quantity >= selectedStock} // ✅ Disable when at stock limit
+            >
+              <Text style={styles.buttonText}>+</Text>
+            </TouchableOpacity>
               </View>
             </View>
 
@@ -463,7 +464,12 @@ const handleAddToCart = async () => {
                   backgroundColor: selectedSize === s.size ? '#eee' : '#fff',
                   opacity: s.stock === 0 ? 0.4 : 1,
                 }]}
-                onPress={() => s.stock > 0 && setSelectedSize(s.size)}
+                onPress={() => {
+                  if (s.stock > 0) {
+                    setSelectedSize(s.size);
+                    setQuantity(1); // ✅ Reset quantity when size changes
+                  }
+                }}
               >
                 <Text style={[styles.sizeText, { fontWeight: selectedSize === s.size ? 'bold' : 'normal' }]}>
                   {s.size}

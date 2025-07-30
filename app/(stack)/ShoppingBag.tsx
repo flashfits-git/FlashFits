@@ -232,7 +232,7 @@ const SlideToPay = ({ label, onComplete }) => {
     return (
       <View style={styles.slideToPayContainer}>
         <LinearGradient
-          colors={['#61b3f6ff', '#61b3f6d1']}
+          colors={['#61b3f6ff', '#61b3f6d1']}  
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.slideTrack}
