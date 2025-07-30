@@ -8,7 +8,6 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import ennc from '../../assets/images/3.jpg'
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width * 0.75;
@@ -19,13 +18,11 @@ const plans = [
     id: '1',
     title: 'Jeans Cargo Collection',
     subtitle: '5 week • 4x/week',
-    image: ennc, // Replace with real image
   },
   {
     id: '2',
     title: 'T-Shirts Acid Wash ',
     subtitle: '4 week • 3x/week',
-    image: ennc,
   },
 ];
 
@@ -50,7 +47,6 @@ const FeaturedDress = () => {
                 <Text style={styles.exploreButtonText}>Explore</Text>
               </TouchableOpacity>
             </View>
-            <Image source={{ uri: ennc }} style={styles.cardImage} />
           </View>
         ))}
       </ScrollView>

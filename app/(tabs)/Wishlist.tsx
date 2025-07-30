@@ -42,7 +42,6 @@ export default function WishlistScreen() {
 
 
   return (
-
      <View style={styles.container}>
       <HeaderWishlist />
       <WhishlistCard product={newArrivalsProducts}/>

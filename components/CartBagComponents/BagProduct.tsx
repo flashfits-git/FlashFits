@@ -1,195 +1,482 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import React from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
-export default function BagProduct({ product, onDelete }) {
+export default function BagProduct({ product, onDelete, onQuantityChange }) {
   const navigation = useNavigation();
+  const [updatingQuantity, setUpdatingQuantity] = useState(null);
 
-   console.log(product,'HU#EHI/FI');
-   
+  const handleQuantityChange = async (itemId, newQuantity, currentQuantity) => {
+    if (newQuantity < 1) return;
+    
+    if (newQuantity !== currentQuantity) {
+      setUpdatingQuantity(itemId);
+      try {
+        // Call parent function to update quantity
+        if (onQuantityChange) {
+          await onQuantityChange(itemId, newQuantity);
+        }
+      } catch (error) {
+        console.error('Failed to update quantity:', error);
+        Alert.alert('Error', 'Failed to update quantity. Please try again.');
+      } finally {
+        setUpdatingQuantity(null);
+      }
+    }
+  };
+
+  const renderQuantityControls = (item) => {
+    const isUpdating = updatingQuantity === item.id;
+    const currentQuantity = item.quantity || 1;   
+    return (
+      <View style={styles.quantityContainer}>
+        {/* <Text style={styles.quantityLabel}>Qty:</Text> */}
+        <View style={styles.quantityControls}>
+          {/* Decrease Button */}
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              { opacity: currentQuantity <= 1 || isUpdating ? 0.5 : 1 }
+            ]}
+            onPress={() => handleQuantityChange(item.id, currentQuantity - 1, currentQuantity)}
+            disabled={currentQuantity <= 1 || isUpdating}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="remove" 
+              size={12} 
+              color={currentQuantity <= 1 || isUpdating ? "#999" : "#666"} 
+            />
+          </TouchableOpacity>
+          
+          {/* Quantity Display */}
+          <View style={styles.quantityDisplay}>
+            {isUpdating ? (
+              <ActivityIndicator size="small" color="#666" />
+            ) : (
+              <Text style={styles.quantityText}>
+                {currentQuantity}
+              </Text>
+            )}
+          </View>
+          
+          {/* Increase Button */}
+          <TouchableOpacity
+            style={[
+              styles.quantityButton,
+              { opacity: isUpdating ? 0.5 : 1 }
+            ]}
+            onPress={() => handleQuantityChange(item.id, currentQuantity + 1, currentQuantity)}
+            disabled={isUpdating}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name="add" 
+              size={14} 
+              color={isUpdating ? "#999" : "#666"} 
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderFeatureRow = (icon, text, isAvailable = true) => (
+    <View style={styles.featureRow}>
+      <View style={[styles.featureIcon, { backgroundColor: isAvailable ? '#E7F8F2' : '#FFF3F3' }]}>
+        <Ionicons 
+          name={isAvailable ? "checkmark" : "close"} 
+          size={10} 
+          color={isAvailable ? "#00B386" : "#FF6B6B"} 
+        />
+      </View>
+      <Text style={[styles.featureText, { color: isAvailable ? '#333' : '#999' }]}>
+        {text}
+      </Text>
+    </View>
+  );
+
   return (
-    <>
+    <View style={styles.wrapper}>
       {product?.map((item, index) => {
         const saved = item.mrp - item.price;
+        const discountPercent = Math.round(((item.mrp - item.price) / item.mrp) * 100);
+        const totalPrice = item.price * (item.quantity || 1);
+        const totalSaved = saved * (item.quantity || 1);
 
         return (
-              <TouchableOpacity
-                key={index}
-                style={styles.container}
-                onPress={() =>
-                  navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                    id: item.id, // ✅ Correct based on your data
-                    variantId: item.variantId
-                  })
-                }
-                activeOpacity={0.9}
-              >
+          <TouchableOpacity
+            key={index}
+            style={styles.container}
+            // onPress={() =>
+            //   navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+            //     id: item.id,
+            //     variantId: item.variantId
+            //   })
+            // }
+            activeOpacity={0.95}
+          >
+            {/* Discount Badge */}
+            {discountPercent > 0 && (
+              <View style={styles.discountBadge}>
+                <Text style={styles.discountBadgeText}>{discountPercent}% OFF</Text>
+              </View>
+            )}
+
+            {/* Product Image */}
             <View style={styles.imageContainer}>
               {item.image ? (
                 <Image source={{ uri: item.image.url }} style={styles.image} />
               ) : (
-                <Text>No image</Text>
+                <View style={styles.noImageContainer}>
+                  <Ionicons name="image-outline" size={40} color="#ccc" />
+                  <Text style={styles.noImageText}>No Image</Text>
+                </View>
               )}
             </View>
 
+            {/* Product Details */}
             <View style={styles.detailsContainer}>
+              {/* Product Title */}
               <View style={styles.titleContainer}>
                 <Text style={styles.title} numberOfLines={2}>{item.name}</Text>
+                {item.merchantName && (
+                  <Text style={styles.merchantName} numberOfLines={1}>
+                   {item.merchantName}
+                  </Text>
+                )}
               </View>
 
-              <View style={styles.priceRow}>
-                <Text style={styles.price}>₹{item.price}</Text>
-                <Text style={styles.strikePrice}>₹{item.mrp}</Text>
+              {/* Price Section */}
+              <View style={styles.priceSection}>
+                <View style={styles.priceRow}>
+                  <Text style={styles.currentPrice}>₹{item.price.toLocaleString()}</Text>
+                  {item.mrp > item.price && (
+                    <Text style={styles.originalPrice}>₹{item.mrp.toLocaleString()}</Text>
+                  )}
+                </View>
+                {saved > 0 && (
+                  <Text style={styles.savings}>
+                    You save: <Text style={styles.savingsAmount}>₹{saved.toLocaleString()}</Text>
+                  </Text>
+                )}
               </View>
 
-              <Text style={styles.discount}>
-                You Saved: <Text style={styles.greenText}>₹{saved}</Text>
-              </Text>
-
-              <TouchableOpacity style={styles.sizeBox} disabled>
-                <Text style={styles.sizeText}>Size: {item.size || 'N/A'}</Text>
-              </TouchableOpacity>
-
-              <View style={styles.returnRow}>
-                <Text style={styles.deliveryText}>Try then Buy</Text>
-                <Image
-                  source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
-                  style={styles.tickIcon}
-                />
+              {/* Size and Quantity Row */}
+              <View style={styles.attributesRow}>
+                <TouchableOpacity style={styles.sizeContainer} disabled>
+                  <Text style={styles.sizeLabel}>Size</Text>
+                  <Text style={styles.sizeValue}>{item.size || 'N/A'}</Text>
+                </TouchableOpacity>
+                
+                {/* Render Quantity Controls */}
+                {renderQuantityControls(item)}
               </View>
 
-              <View style={styles.returnRow}>
-                <Text style={styles.deliveryText}>Instant Return</Text>
-                <Image
-                  source={require('../../assets/images/shoppingbag/icons8-tick-100.png')}
-                  style={styles.tickIcon}
-                />
+              {/* Features */}
+              <View style={styles.featuresContainer}>
+                {renderFeatureRow("checkmark", "Try then Buy")}
+                {renderFeatureRow("checkmark", "Instant Return")}
               </View>
+
+              {/* Total Section - Show total price and savings */}
+              {(item.quantity || 1) > 1 && (
+                <View style={styles.totalSection}>
+                  <Text style={styles.totalLabel}>Total: </Text>
+                  <Text style={styles.totalPrice}>₹{totalPrice.toLocaleString()}</Text>
+                  {totalSaved > 0 && (
+                    <Text style={styles.totalSaved}> (Save ₹{totalSaved.toLocaleString()})</Text>
+                  )}
+                </View>
+              )}
             </View>
 
+            {/* Delete Button */}
             <TouchableOpacity
-              onPress={() => onDelete(item.id)}
+              onPress={() => onDelete(item.id, item.quantity, item.size)}
               style={styles.deleteButton}
+              activeOpacity={0.7}
             >
-              <Ionicons name="trash-outline" size={18} color="black" />
+              <LinearGradient
+                colors={['#000000ff', '#12121273']}
+                style={styles.deleteGradient}
+              >
+                <Ionicons name="trash-outline" size={16} color="white" />
+              </LinearGradient>
             </TouchableOpacity>
           </TouchableOpacity>
         );
       })}
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginVertical: 8,
+  },
   container: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     backgroundColor: 'white',
-    borderRadius: 12,
-    margin: 8,
+    borderRadius: 16,
+    marginVertical: 6,
+    marginHorizontal: 4,
     position: 'relative',
-    minHeight: 130,
-    padding: 8,
-    width: '85%',
-    alignSelf: 'center',
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    // elevation: 4,
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
   },
+  
+  // Discount Badge
+  discountBadge: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: '#010101ff',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    zIndex: 5,
+  },
+  discountBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '700',
+    fontFamily: 'Montserrat',
+  },
+  
+  // Image Section
   imageContainer: {
-    position: 'relative',
-    zIndex: 2,
+    marginRight: 12,
   },
   image: {
-    width: 120,
-    height: 130,
+    width: 130,
+    height: 200,
     borderRadius: 12,
+    backgroundColor: '#F8F9FA',
   },
+  noImageContainer: {
+    width: 100,
+    height: 200,
+    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    borderStyle: 'dashed',
+  },
+  noImageText: {
+    fontSize: 10,
+    color: '#ccc',
+    marginTop: 4,
+    fontFamily: 'Montserrat',
+  },
+  
+  // Details Container
   detailsContainer: {
     flex: 1,
-    marginLeft: 8,
-    paddingRight: 8,
-    paddingVertical: 4,
-    height: 130,
     justifyContent: 'space-between',
-    zIndex: 2,
+    paddingRight: 32, // Space for delete button
   },
+  
+  // Title Section
   titleContainer: {
-    marginBottom: 2,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
+    color: '#1A1A1A',
     fontFamily: 'Montserrat',
-    lineHeight: 16,
+    lineHeight: 18,
+    marginBottom: 2,
+  },
+  merchantName: {
+    fontSize: 11,
+    color: '#666',
+    fontFamily: 'Montserrat',
+    fontStyle: 'italic',
+  },
+  
+  // Price Section
+  priceSection: {
+    marginBottom: 8,
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 2,
   },
-  price: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'black',
-    marginRight: 6,
+  currentPrice: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1A1A1A',
     fontFamily: 'Montserrat',
+    marginRight: 8,
   },
-  strikePrice: {
-    fontSize: 10,
-    color: 'gray',
+  originalPrice: {
+    fontSize: 12,
+    color: '#999',
     textDecorationLine: 'line-through',
     fontFamily: 'Montserrat',
   },
-  discount: {
-    color: 'green',
+  savings: {
     fontSize: 11,
-    marginBottom: 2,
+    color: '#666',
     fontFamily: 'Montserrat',
   },
-  sizeBox: {
-    padding: 4,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-    marginBottom: 2,
+  savingsAmount: {
+    color: '#00B386',
+    fontWeight: '600',
   },
-  sizeText: {
-    fontSize: 11,
-    color: 'gray',
+  
+  // Attributes Row (Size + Quantity)
+  attributesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  
+  // Size Container
+  sizeContainer: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    minWidth: 50,
+  },
+  sizeLabel: {
+    fontSize: 9,
+    color: '#666',
     fontFamily: 'Montserrat',
+    textAlign: 'center',
   },
-  deliveryText: {
+  sizeValue: {
     fontSize: 11,
+    fontWeight: '600',
+    color: '#333',
     fontFamily: 'Montserrat',
-    fontWeight: '300',
-    marginBottom: 2,
+    textAlign: 'center',
   },
-  tickIcon: {
-    width: 14,
-    height: 14,
-    marginLeft: 4,
-    resizeMode: 'contain',
-  },
-  returnRow: {
+  
+  // Quantity Controls
+  quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  greenText: {
-    color: 'green',
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+    overflow: 'hidden',
+    marginLeft:6
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  quantityDisplay: {
+    minWidth: 36,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  quantityText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+    fontFamily: 'Montserrat',
+  },
+  
+  // Features Container
+  featuresContainer: {
+    marginBottom: 4,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 3,
+  },
+  featureIcon: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
+  },
+  featureText: {
+    fontSize: 10,
+    fontFamily: 'Montserrat',
+    fontWeight: '400',
+  },
+  
+  // Total Section
+  totalSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  totalLabel: {
+    fontSize: 11,
+    color: '#666',
+    fontFamily: 'Montserrat',
+  },
+  totalPrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'Montserrat',
+  },
+  totalSaved: {
+    fontSize: 10,
+    color: '#00B386',
     fontFamily: 'Montserrat',
     fontWeight: '500',
   },
+  
+  // Delete Button
   deleteButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 20,
-    padding: 6,
-    zIndex: 3,
+    top: 12,
+    right: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#000000ff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  deleteGradient: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

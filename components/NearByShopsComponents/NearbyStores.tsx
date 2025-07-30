@@ -14,6 +14,9 @@ const DUMMY_STORES = [
 
 
 const NearbyStores = ({merchantData}) => {
+
+  
+  // console.log(merchantData,"3e3e3");
   
   const navigation = useNavigation();
 
@@ -46,7 +49,7 @@ const NearbyStores = ({merchantData}) => {
         ⭐ {item.rating ?? 'No rating'}
       </Text>
 </TouchableOpacity>
-          <CardinStores />
+          <CardinStores merchantId={item._id} />
         </View>
       )}
     />

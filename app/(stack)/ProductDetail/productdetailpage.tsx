@@ -3,8 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
-// import { Ionicons } from '@expo/vector-icons';
-// import { Animated } from 'react-native';
+import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
@@ -14,8 +13,9 @@ import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
-import { AddProducttoCart } from '../../api/productApis/cartProduct';
-import { useCart } from '../../ContextParent';
+import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
+import ErrorMessage from '../../utilities/errorHandlingPopUp'
+import { useCart } from '../../ContextParent'; 
 
 
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
@@ -30,8 +30,10 @@ const fallbackImages = [
 
 const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
-  
-   
+
+    // console.log(cartItems,'cartItemscartItemscartItemscartItemsr');
+    
+
   const [products, setProduct] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,15 +45,19 @@ const ProductDetailPage = () => {
   // const [cartCount1, setCartCount1] = useState(0);
   const [showToast, setShowToast] = useState(false);
 const [interpolatedColor, setInterpolatedColor] = useState('#fff');
+const [errorMessage, setErrorMessage] = useState('');
+const errorTimeoutRef = useRef(null);
 
 
   const router = useRouter();
   const route = useRoute();
 
-  // const { id ,variantId} = useLocalSearchParams();
   const { id, variantId } = route.params || {};
+<<<<<<<<< Temporary merge branch 1
+=========
 
-  // console.log(id,'ed389e93e93e8');
+  console.log(id,'ed389e93e93e8');
+>>>>>>>>> Temporary merge branch 2
   
 
   const modalizeRef = useRef(null);
@@ -59,8 +65,17 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(30)).current;
 
+  const showError = (message) => {
+  setErrorMessage(message);
+  // Auto-hide after 3 seconds
+  if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+  errorTimeoutRef.current = setTimeout(() => {
+    setErrorMessage('');
+  }, 3000);
+};
+
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async ()=> {
       try {
         setLoading(true);
         setError(null);
@@ -79,8 +94,7 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
       } finally {
         setLoading(false);
       }
-    };
-
+    }
     if (id) fetchData();
   }, [id]);
 
@@ -155,32 +169,112 @@ const iconColor = scrollY.interpolate({
       }, 1500);
     });
   };
+
+
 const handleAddToCart = async () => {
+  // Step 1: Securely get the current available stock for the selected variant & size
+  const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0;
+
+  // Step 2: Prepare the product data to add (do not mutate input!)
   const productData = {
     productId: products._id,
     variantId: selectedVariant?._id,
     name: products.name,
     size: selectedSize,
-    quantity: quantity,
+    quantity,
     merchantId: products.merchantId._id,
-    image:selectedVariant?.images?.[0].url
+    image: selectedVariant?.images?.[0]?.url,
   };
+
   try {
-    const response = await AddProducttoCart(productData);
-    setCartItems(prevItems => [...prevItems, productData]); // or use response.cart if API returns updated cart
-    setCartCount(cartCount => cartCount + 1);
-    console.log('Added to cart:', response);
+    // Step 3: Fetch the latest cart (ensure consistency)
+    const latestCart = await GetCart();
+    const cartItemsSafe = latestCart.items || [];
+
+    // Step 4: Check if identical item exists already (by product, variant, size)
+    const existingItem = cartItemsSafe.find(
+      item =>
+        item.productId === productData.productId &&
+        item.variantId === productData.variantId &&
+        item.size === productData.size
+    );
+    const existingQty = existingItem?.quantity || 0;
+    const totalRequest = existingQty + quantity;
+
+    // Step 5: Deny if not enough stock (avoid server roundtrips later)
+    if (totalRequest > currentStock) {
+      showError(
+        `Only ${currentStock} items available. You already have ${existingQty} in cart.`
+      );
+      return;
+    }
+
+    // Step 6: Merchant consistency enforcement (cart hygiene)
+    const cartMerchant =
+      cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
+    if (
+      cartItemsSafe.length > 0 &&
+      cartMerchant &&
+      cartMerchant !== productData.merchantId
+    ) {
+        Alert.alert(
+          'Clear Cart?',
+          'Your cart contains items from another shop. Clear the cart and add this new item?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel',
+              onPress: () => console.log('User cancelled adding')
+            },
+            {
+              text: 'Clear Cart',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await clearCart();
+                  setCartItems([]);
+                  setCartCount(0);
+
+                  // ✅ Add the product after clearing
+                  await AddProducttoCart(productData);
+                  setCartItems([productData]);
+                  setCartCount(1);
+                  showAddToCartToast();
+                  setTimeout(() => {
+                    modalizeRef.current?.close();
+                  }, 0);
+                } catch (error) {
+                  console.error('Error while clearing and adding:', error);
+                }
+              }
+            }
+          ]
+        );
+         return;
+    }
+    await AddProducttoCart(productData);
+
+    // Step 8: Update UI state
+    setCartItems(prev => [...prev, productData]);
+    setCartCount(count => count + 1);
+    showAddToCartToast();
+    setQuantity(1);
   } catch (error) {
-    console.error('Failed to add to cart', error);
+    // Graceful robust error message bubbling
+    const backendMsg =
+      error?.response?.data?.message || 'Failed to add to cart. Please try again.';
+    showError(backendMsg);
+  } finally {
+    // Always close sheet immediately after handling
+    setTimeout(() => {
+      modalizeRef.current?.close();
+    }, 0);
   }
-
-  showAddToCartToast();
-
-  setTimeout(() => {
-    modalizeRef.current?.close();
-  }, 0);
 };
+
   if (loading) return <Loader />;
+
+
   if (error || !products || Object.keys(products).length === 0) {
     return (
       <View style={styles.centerContainer}>
@@ -216,7 +310,9 @@ const handleAddToCart = async () => {
   </TouchableOpacity>
 </Animated.View>
 
-
+{errorMessage !== '' && (
+  <ErrorMessage message={errorMessage} />
+)}
 
         <Animated.ScrollView
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
@@ -423,12 +519,12 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   
   topBar: {
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, elevation: 4,
+    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, height: 70, borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
   },
   iconButton: { padding: 8 },
-  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat' },
+  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat', textTransform: 'uppercase', },
   iconWithBadge: { position: 'relative' },
   badge: {
     position: 'absolute', top: -6, right: -6, backgroundColor: 'red', borderRadius: 8,
@@ -503,7 +599,26 @@ const styles = StyleSheet.create({
   },
   sizeText: { textAlign: 'center' },
   stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Montserrat' },
-  
+  errorBox: {
+  position: 'absolute',
+  top: 80,
+  left: 20,
+  right: 20,
+  padding: 12,
+  backgroundColor: '#ffe0e0',
+  borderColor: '#ff4d4d',
+  borderWidth: 1,
+  borderRadius: 8,
+  zIndex: 100,
+  elevation: 10,
+},
+
+errorText: {
+  color: '#b00020',
+  fontSize: 14,
+  textAlign: 'center',
+  fontWeight: 'bold',
+},
   modalButton: {
     position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
     paddingHorizontal: 16, paddingBottom: 24,

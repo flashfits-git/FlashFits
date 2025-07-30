@@ -12,8 +12,7 @@ export default function Index() {
   useEffect(() => {
     const checkAuth = async () => {
       // Replace this with your actual auth check logic
-      const token = await SecureStore.getItemAsync('user_token');
-
+      const token = await SecureStore.getItemAsync('token');
       setIsAuthenticated(!!token); // or check session validity
       setIsLoading(false);
     };
@@ -25,7 +24,7 @@ export default function Index() {
         <Loader/>
     );
   }
-  // return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)'} />;
-  return <Redirect href={'/(tabs)'} />;
+  return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)'} />;
+  // return <Redirect href={'/(tabs)'} />;
 
 }

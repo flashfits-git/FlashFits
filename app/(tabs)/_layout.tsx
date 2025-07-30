@@ -77,30 +77,12 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
 };
 
 function TabsWithCart() {
-  // const { setCartItems, setCartCount } = useCart();
-
-  // useEffect(() => {
-  //   const fetchCart = async () => {
-  //     try {
-  //       const cartData = await GetCart();
-  //       const items = cartData.items || [];
-  //       // console.log('Number of items in cart:', items.length);
-
-  //       setCartItems(items);
-  //       setCartCount(items.length);
-  //       // await storeCartLocally(items);
-  //     } catch (err) {
-  //       console.error('Failed to load cart:', err);
-  //     }
-  //   };
-
-  //   fetchCart();
-  // }, []);
 
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
+        animation: 'none', 
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,

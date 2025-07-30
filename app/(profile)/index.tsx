@@ -2,17 +2,39 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import { Alert } from 'react-native';
 
 const ProfilePage = () => {
     const router = useRouter();
 
-    const handleNavigation = (title: string) => {
-        const screenName = title.replace(/\s+/g, '').toLowerCase(); // 'Newme wallet' -> 'newmewallet'
-        router.push({
-          pathname: `/(profile)/${screenName}`,
-          params: { title },
-        });
-      };
+const handleNavigation = async (title: string) => {
+  if (title === 'Logout') {
+    Alert.alert(
+      'Confirm Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await SecureStore.deleteItemAsync('token');
+            router.replace('/(auth)');
+          },
+        },
+      ]
+    );
+    return;
+  }
+
+  const screenName = title.replace(/\s+/g, '').toLowerCase();
+  router.push({
+    pathname: `/(profile)/${screenName}`,
+    params: { title },
+  });
+};
+
     return (
         <ScrollView style={styles.container}>
             {/* Top Bar */}

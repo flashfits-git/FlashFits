@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -9,66 +9,96 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const { width } = Dimensions.get('window');
 
 const DressCard = ({ product, onPress }) => {
-  // Handle both object and array cases for variants
-  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
-  const imageUrl = variant?.images?.[0]?.url;
 
+  // console.log(product,'groupedProductsgroupedProductsgroupedProductsgroupedProducts');
+
+  // console.log(typeof(product?.images?.[0]?.url),typeof(product?.variants?.[0]?.images?.[0]?.url), typeof(product?.variants?.images?.[0]?.url));
+  
+  
+  const imageUrl =
+    product?.images?.[0]?.url ||
+    product?.variants?.[0]?.images?.[0]?.url ||
+    product?.variants?.images?.[0]?.url ||
+    '';
+
+  const price =
+    product?.price ||
+    product?.variants?.[0]?.price ||
+    product?.variants?.price;
+
+  const mrp =
+    product?.mrp ||
+    product?.variants?.[0]?.mrp ||
+    product?.variants?.mrp;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUrl }} style={styles.image} />
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
-          </View>
+          <Image source={{ uri: String(imageUrl) }} style={styles.image} />
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={10} color="#000" style={{ marginRight: 2 }} />
+          <Text style={styles.ratingText}>{product.ratings || '0.0'}</Text>
+        </View>
         </View>
       </View>
 
-          <View style={styles.titleRow}>
-            <Text style={styles.title} numberOfLines={1}>
-              {product.name}
-            </Text>
-            <Text style={styles.deliveryText}>
-              13 mins
-            </Text>
-          </View>
-
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={1}>
+          {product.name}
+        </Text>
+        <Text style={styles.deliveryText}>13 mins</Text>
+      </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{variant?.price}</Text>
-        <Text style={styles.oldPrice}>₹{variant?.mrp}</Text>
+        <Text style={styles.price}>₹{price}</Text>
+        <Text style={styles.oldPrice}>₹{mrp}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-export default function ImageCardHome({ product = [], accecories = [] }) {
+export default function ImageCardHome({ product = [], accecories = [], deataiPageproducts = [] }) {
   const scrollRef = useRef(null);
   const navigation = useNavigation();
 
-  const dataToRender = product.length ? product : accecories;
+  const dataToRender =
+    deataiPageproducts.length > 0
+      ? deataiPageproducts
+      : product.length > 0
+      ? product
+      : accecories;
 
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} ref={scrollRef}>
-        {dataToRender.map((p, index) => (
-          <DressCard
-            key={p._id || p.id || index}
-            product={p}
-            onPress={() =>
-              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                id: p._id || p.id,
-                variantId: Array.isArray(p.variants) ? p.variants[0]?._id : p.variants?._id,
-              })
-            }
-          />
-        ))}
-      </ScrollView>
+<ScrollView
+  horizontal
+  showsHorizontalScrollIndicator={false}
+  ref={scrollRef}
+  contentContainerStyle={{ flexDirection: 'row' }}
+>
+  {dataToRender.map((p, index) => (
+    <DressCard
+      key={p._id || p.id || index}
+      product={p}
+      onPress={() =>
+        navigation.navigate('(stack)/ProductDetail/productdetailpage', {
+          id: p._id || p.id,
+          variantId:
+            Array.isArray(p.variants)
+              ? p.variants[0]?._id
+              : p.variants?._id || p.variantId,
+        })
+      }
+    />
+  ))}
+</ScrollView>
+
     </View>
   );
 }
@@ -85,14 +115,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 3,
   },
   shadowWrapper: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6,
     borderRadius: 15,
     marginBottom: 10,
   },
@@ -126,27 +154,25 @@ const styles = StyleSheet.create({
     color: '#000',
     fontFamily: 'Montserrat',
   },
-  title: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginVertical: 6,
-    color: '#333',
-    paddingHorizontal: 6,
-    fontFamily: 'Montserrat',
-  },
-  titleRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingHorizontal: 6,
-  marginVertical: 6,
+title: {
+  fontSize: 13,
+  fontWeight: '500',
+  color: '#333',
+  fontFamily: 'Montserrat',
+  flex: 1,
+  marginRight: 6,
 },
-
+titleRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 6,
+  marginVertical: 4,
+},
 deliveryText: {
   fontSize: 11,
   color: '#888',
   fontFamily: 'Montserrat',
-  marginLeft: 4,
   flexShrink: 0,
 },
   priceRow: {

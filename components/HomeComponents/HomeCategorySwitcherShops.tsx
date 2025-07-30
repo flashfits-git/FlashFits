@@ -27,6 +27,8 @@ const categories = Object.keys(categoryData);
 const CategorySwitcher = () => {
   const [selectedCategory, setSelectedCategory] = useState('All');
     const [merchantData, setMerchnatData] = useState()
+    // console.log(merchantData,'3e3e3e');
+    
   
     const navigation = useNavigation();
 

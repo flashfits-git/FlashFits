@@ -35,7 +35,7 @@ const PopularStores = ({merchantData}) => {
             </View>
             <Text style={styles.ratingText}>⭐{item.rating ?? 'No rating'}</Text>
           </TouchableOpacity>
-          <CardinStores />
+          <CardinStores merchantId={item._id} />
         </View>
       ))}
     </View>

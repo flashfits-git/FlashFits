@@ -41,7 +41,6 @@ export default function ImageCardHome({ products }) {
       const inStockVariant = product.variants.find(variant =>
         variant.sizes.some(size => size.stock > 0)
       );
-
       // If a valid variant is found, return the product along with that variant
       if (inStockVariant) {
         return {

@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
-
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,325 +7,340 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
-  TextInput,
+  Platform,
 } from 'react-native';
-
 import { Ionicons } from '@expo/vector-icons';
-
 import { LinearGradient } from 'expo-linear-gradient';
-import TrendingStyles from '../../../components/ShopDetailPage/TrendingStyles ';
-import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
+import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
-import jfnefn from '../../../assets/images/2.jpg';
 import { useRoute } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import {getMerchantById, getProductsByMerchantId} from '../../api/merchatApis/getMerchantHome'
+import { getMerchantById, getProductsByMerchantId } from '../../api/merchatApis/getMerchantHome';
 import Loader from '@/components/Loader/Loader';
 
-
-const StoreDetailPage = () => {  
-
+const StoreDetailPage = () => {
   const [loading, setLoading] = useState(true);
-  const [merchantData, setMerchantData] = useState(null);
+  const [merchantData, setMerchantData] = useState({});
   const [productss, setProductss] = useState([]);
-
-  // console.log(merchantData,'3777777777');
-  
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params;
 
+  console.log(merchantData?.merchant?.logo?.url,'merchantData?.merchant?.logo?.url');
+  
 
-useEffect(() => {
-  if (!merchantId) return;
+  useEffect(() => {
+    if (!merchantId) return;
 
-  const fetchMerchantandProducts = async () => {
-    try {
-      setLoading(true);
+    const fetchMerchantandProducts = async () => {
+      try {
+        setLoading(true);
+        const merchantData = await getMerchantById(merchantId);
+        const products = await getProductsByMerchantId(merchantId);
+        setMerchantData(merchantData);
+        setProductss(products);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching merchant or products:', error);
+      } finally{
+        setLoading(false);
+      }
+    };
 
-      const merchantData = await getMerchantById(merchantId);
-      
-      const products = await getProductsByMerchantId(merchantId);
-      console.log(products,'eragumbo parayne');
-      setMerchantData(merchantData);
-      setProductss(products); // ✅ this is now the array
-    } catch (error) {
-      console.error('Error fetching merchant or products:', error);
-    } finally {
-      setLoading(false);
-    }
+    fetchMerchantandProducts();
+  }, [merchantId]);
+
+  const groupBySubCategory = (products) => {
+    return products.reduce((acc, product) => {
+      const subCatName = product.subCategoryId?.name || 'Others';
+      if (!acc[subCatName]) {
+        acc[subCatName] = [];
+      }
+      acc[subCatName].push(product);
+      return acc;
+    }, {});
   };
 
-  fetchMerchantandProducts();
-}, [merchantId]);
-
-  
-    const [products, setProducts] = useState([
-    {
-      id:3e23,
-      name: "Classic White Shirt",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Shirts" },
-      subSubCategoryId: { _id: "5", name: "Formal Shirts" },
-      gender: "men",
-      description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 1499,
-      price: 999,
-      features: { fabric: "100% Cotton", fit: "Slim Fit", sleeve: "Full Sleeve" },
-      tags: ["white", "shirt", "formal", "slim fit"],
-      variants: [
-        {
-          color: { name: "White", hex: "#fff" },
-          sizes: [
-            { size: "S", stock: 3 },
-            { size: "M", stock: 5 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 2 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-        {
-          color: { name: "Off white", hex: "#000" },
-          sizes: [
-            { size: "S", stock: 6 },
-            { size: "M", stock: 42 },
-            { size: "L", stock: 4 },
-            { size: "XL", stock: 8 },
-          ],
-          images: [
-            {
-              public_id: "white_shirt_1",
-              url: "https://example.com/images/white-shirt-1.jpg",
-            },
-            {
-              public_id: "white_shirt_2",
-              url: "https://example.com/images/white-shirt-2.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "white_shirt_main",
-            url: "https://example.com/images/white-shirt-main.jpg",
-          },
-          discount: 33,
-        },
-      ],
-      ratings: 4.5,
-      numReviews: 27,
-      isActive: true,
-    },
-    {
-      id:3234,
-      name: "Denim Jacket Denim Jacket Denim Jacket",
-      merchantId: { _id: "1", name: "Trendify Merchants" },
-      brandId: { _id: "2", name: "UrbanClassics" },
-      categoryId: { _id: "3", name: "Topwear" },
-      subCategoryId: { _id: "4", name: "Jackets" },
-      subSubCategoryId: { _id: "5", name: "Denim Jackets" },
-      gender: "women",
-            description: "A classic white shirt made from premium cotton A classic white shirt made from premium cotton  A classic white shirt made from premium cotton  ",
-      mrp: 2999,
-      price: 1999,
-      features: { material: "Denim", pockets: "4", wash: "Medium" },
-      tags: ["denim", "jacket", "casual"],
-      variants: [
-        {
-          color: { name: "Blue", hex: "#1E3A8A" },
-          sizes: [
-            { size: "S", stock: 1},
-            { size: "M", stock: 5 },
-            { size: "L", stock: 3 },
-          ],
-          images: [
-            {
-              public_id: "denim_jacket_1",
-              url: "https://example.com/images/denim-jacket-1.jpg",
-            },
-          ],
-          mainImage: {
-            public_id: "denim_jacket_main",
-            url: "https://unsplash.com/photos/boy-in-white-crew-neck-t-shirt-wearing-black-sunglasses-PDZAMYvduVk",
-          },
-          discount: 25,
-        },
-      ],
-      ratings: 4.8,
-      numReviews: 54,
-      isActive: true,
-    },
-  ]);
-
+  const groupedProducts = groupBySubCategory(productss);
 
   if (loading) return <Loader />;
 
+  const logoUrl = merchantData?.merchant?.logo?.url;
+// const hasLogo = typeof logoUrl === 'string' && !!logoUrl;
+// console.log('Typeod :',typeof(logoUrl),logoUrl);
+
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.headerContainer}>
+    <LinearGradient
+      colors={['#f9fafb', '#ffffffff']}
+      style={styles.background}
+    >
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.headerContainer}>
+          <View style={styles.headerContent}>
+            <Image
+              source={{
+                uri: String(logoUrl) || 'no image',
+              }}
+              style={styles.avatar}
+            />
 
-        <View style={styles.header}>
-          <Image source={jfnefn} style={styles.avatar} />
-          <View>
-            <Text style={styles.userName}>Max</Text>
-            <Text style={styles.welcomeText}>Vytila | 30 min</Text>
+<View style={styles.headerTextBox}>
+
+  
+<View style={styles.storeNameRow}>
+  <Text
+    style={styles.storeName}
+    numberOfLines={2}
+    ellipsizeMode="tail"
+  >
+    {merchantData?.merchant?.shopName || 'Shop Name'}
+  </Text>
+
+  <View style={styles.dot} />
+  <Ionicons name="time-outline" size={13} color="#000000ff" style={{ marginLeft: 2 }} />
+  <Text style={styles.timeText}>30 min</Text>
+</View>
+
+  <View style={styles.storeMetaRow}>
+    <Ionicons name="location-outline" size={15} color="#000000ff" style={{ marginRight: 2 }} />
+    <Text style={styles.addressText} numberOfLines={1}>
+      {merchantData?.merchant?.address || 'Address not available'}
+    </Text>
+  </View>
+</View>
+
           </View>
-        </View>
-        
-        <View style={styles.iconContainer}>
-          <TouchableOpacity onPress={() => router.push('(tabs)/FlashfitsStores')} style={styles.iconButton}>
-            <Ionicons name="storefront-outline" size={24} color="#000" />
+          <TouchableOpacity
+            onPress={() => router.push('(tabs)/FlashfitsStores')}
+            style={styles.storesButton}
+          >
+            <Ionicons name="storefront-outline" size={26} color="#000000ff" />
             <Text style={styles.iconLabel}>Stores</Text>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <LinearGradient colors={['#fff', '#fff']} style={styles.body}>
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.sectionContainer}>
+          <View style={styles.sectionCard}>
             <ShopOffersCarousel />
           </View>
 
-          <Text style={styles.sectionTitle}>Products in Store</Text>
+    <View style={styles.sectionContainer}>
+      <View style={styles.flexRow}>
+        <Text style={styles.sectionTitle}>Products in Store</Text>
+        <LinearGradient
+          colors={['#000', 'transparent']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={styles.thickToThinLine}
+        />
+      </View>
+    </View>
 
-          <View style={styles.sectionContainer}>
-            <RecentlyViewed product={products}/>
-          </View>
-          <View style={styles.sectionContainer}>
-            <RecentlyViewed product={products}/>
-          </View>
-          <View style={styles.sectionContainer}>
-            <RecentlyViewed product={products}/>
-          </View>
-          <View style={styles.sectionContainer1}>
+
+          {Object.entries(groupedProducts).map(([subCatName, products]) => (
+            <View key={subCatName} style={styles.categorySection}>
+              <Text style={styles.subTitle}>{subCatName}</Text>
+              <RecentlyViewed deataiPageproducts={products} />
+            </View>
+          ))}
+
+          <View style={styles.featuredSection}>
             <FeaturedDress />
           </View>
         </ScrollView>
-      </LinearGradient>
-    </SafeAreaView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    minHeight: '100%',
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // vertically center the content
-    paddingHorizontal: 16,
-    marginVertical: 12,
+    alignItems: 'flex-end',
+    paddingHorizontal: 18,
+    paddingTop: Platform.OS === 'android' ? 18 : 8,
+    paddingBottom: 10,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+    shadowColor: '#7891bf',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 15,
+    elevation: 9,
   },
-    sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    // marginBottom: 12,
-    marginTop: 16,
-    fontFamily: 'Montserrat',
-  },
-  header: {
+  
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    marginRight: 15,
+    backgroundColor: '#eaeaff',
+    borderWidth: 1.5,
+    borderColor: '#ebebf2',
   },
-  userName: {
-    fontSize: 30,
-    fontWeight: '600',
-    color: '#000',
-    fontFamily: 'Montserrat',
+  headerTextBox: {
+    flexShrink: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
   },
-  welcomeText: {
-    fontSize: 13,
-    color: '#444',
-    fontFamily: 'Montserrat',
-  },
-  iconContainer: {
-    marginLeft: 5,
-  },
-  searchContainer: {
+storeName: {
+  fontSize: 20,
+  fontWeight: '700',
+  color: '#272848',
+  fontFamily: Platform.OS === 'ios' ? 'Montserrat-SemiBold' : 'Roboto',
+  maxWidth: '65%', // ✅ Ensures title doesn't collide with time
+  flexShrink: 1,
+  textTransform: 'capitalize',
+},
+  storeMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    height: 44,
+    marginTop: 10 ,
   },
-  searchIcon: {
-    marginRight: 10,
+  addressText: {
+    fontSize: 13.5,
+    color: '#464650',
+    flexShrink: 1,
+    maxWidth: 150,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#000',
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#adadad',
+    marginHorizontal: 8,
   },
-  body: {
-    flex: 1,
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    paddingTop: 12,
-    overflow: 'hidden', // to handle radius clipping
+  timeText: {
+    fontSize: 13,
+    color: '#000000ff',
+    marginLeft: 2,
+    fontWeight: '500',
+  },
+thickToThinLine: {
+  height: 3,                  // Thicker for a bolder look
+  flex: 1,
+  borderRadius: 4,
+  marginLeft: 8,
+  marginRight: 4,
+  // Simulate "thick-to-thin": Use transform to 'taper' the right edge
+  // by scaling Y and translating as necessary
+  // If possible, use clipPath or border mask for a true taper
+  // For React Native, we use scaleY and skewX for effect
+  transform: [{ scaleY: 0.75 }, { skewX: '8deg' }],
+  // Optional shadow for pop
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 2,
+  elevation: 2,  // Android shadow
+  opacity:.5
+},
+  storesButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
+    padding: 5,
+  },
+    sectionContainer: {
+    // marginTop: 20,
+    marginHorizontal: 16,
+  },
+  iconLabel: {
+    fontSize: 13,
+    marginTop: 2,
+    color: '#000000ff',
+    fontWeight: '600',
+    letterSpacing: 0.1,
+  },
+    flexRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    maxWidth: 600,
+    paddingHorizontal: 12,
+    paddingBottom: 40,
+    maxWidth: 700,
     alignSelf: 'center',
     width: '100%',
+    gap: 14,
   },
-  sectionContainer: {
-    width: '100%',
-    maxWidth: 500,
-    alignSelf: 'center',
-
-  },
-    sectionContainer1: {
-    width: '100%',
-    maxWidth: 500,
-    alignSelf: 'center',
-    borderTopWidth:1,
-    
-  },
-
-iconButton: {
-  alignItems: 'center',  // center icon and text horizontally
-},
-
-iconLabel: {
-  fontSize: 12,
-  marginTop: 2,
+  sectionTitle: {
+  fontSize: 18,
+  fontWeight: 'bold',
   color: '#000',
-  fontFamily: 'Montserrat',
-}
+  marginRight: 12,  
+  },
+storeNameRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  flexWrap: 'nowrap',
+  gap: 6,
+},
+  categorySection: {
+    marginBottom: 12,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    shadowColor: '#000000ff',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 5,
+    // elevation: 2,
+  },
+  sectionCard: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 18,
+    marginTop: 10,
+    // marginBottom: 14,
+    shadowColor: '#46474aff',
+    shadowOffset: { width: 1, height: 5 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    // elevation: 4,
+  },
+  subTitle: {
+    fontSize: 16.2,
+    fontWeight: '600',
+    color: '#0e0e0fff',
+    // marginBottom: 6,
+    marginTop: 10,
+    paddingLeft: 10,
+    // paddingLeft: 3
+  },
+  featuredSection: {
+    marginTop: 15,
+    marginBottom: 4,
+    backgroundColor: '#f8f7fe',
+    borderRadius: 16,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e6fa',
+  },
 });
 
 export default StoreDetailPage;
