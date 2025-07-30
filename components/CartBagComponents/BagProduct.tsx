@@ -46,7 +46,7 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
           >
             <Ionicons 
               name="remove" 
-              size={14} 
+              size={12} 
               color={currentQuantity <= 1 || isUpdating ? "#999" : "#666"} 
             />
           </TouchableOpacity>
@@ -200,7 +200,7 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
               activeOpacity={0.7}
             >
               <LinearGradient
-                colors={['#FF6B6B', '#FF5252']}
+                colors={['#000000ff', '#12121273']}
                 style={styles.deleteGradient}
               >
                 <Ionicons name="trash-outline" size={16} color="white" />
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#010101ff',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     overflow: 'hidden',
-    shadowColor: '#FF6B6B',
+    shadowColor: '#000000ff',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,

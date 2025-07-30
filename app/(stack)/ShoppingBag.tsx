@@ -207,7 +207,7 @@ const SlideToPay = ({ label, onComplete }) => {
     return (
       <View style={styles.slideToPayContainer}>
         <LinearGradient
-          colors={['#f06161e4', '#ea4b9acb']}
+          colors={['#111111ff', '#1c1c1cd9']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.slideTrack}
@@ -218,8 +218,8 @@ const SlideToPay = ({ label, onComplete }) => {
             {...panResponder.panHandlers}
           >
             <View style={styles.slideArrows}>
-              <Ionicons name="chevron-forward" size={18} color="#F00" />
-              <Ionicons name="chevron-forward" size={18} color="#F00" />
+              <Ionicons name="chevron-forward" size={18} color="#000" />
+              <Ionicons name="chevron-forward" size={18} color="#000" />
             </View>
           </Animated.View>
           <Text style={styles.slideText}>Try then Buy</Text>
@@ -232,7 +232,7 @@ const SlideToPay = ({ label, onComplete }) => {
     return (
       <View style={styles.slideToPayContainer}>
         <LinearGradient
-          colors={['#20c269f4', '#66e49fd8']}
+          colors={['#61b3f6ff', '#61b3f6d1']}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.slideTrack}
@@ -243,8 +243,8 @@ const SlideToPay = ({ label, onComplete }) => {
             {...panResponder.panHandlers}
           >
             <View style={styles.slideArrows}>
-              <Ionicons name="chevron-forward" size={18} color="#66e49fd8" />
-              <Ionicons name="chevron-forward" size={18} color="#66e49fd8" />
+              <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
+              <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
             </View>
           </Animated.View>
           <Text style={styles.slideText}>Pay Now</Text>
@@ -323,7 +323,7 @@ const SlideToPay = ({ label, onComplete }) => {
           >
             {activeTab === 'TryandBuy' && (
               <LinearGradient
-                colors={['#f06161e4', '#ea4b9acb']}
+                colors={['#111111ff', '#1c1c1cd9']}
                 start={{ x: 0, y: 1 }}
                 end={{ x: 1, y: 0 }}
                 style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
@@ -378,7 +378,7 @@ const SlideToPay = ({ label, onComplete }) => {
           >
             {activeTab === 'Payment' && (
               <LinearGradient
-                colors={['#66e49ff3', '#66e49fd8']}
+                colors={['#61b3f6ff', '#61b3f6d1']}
                 start={{ x: 0, y: 1 }}
                 end={{ x: 1, y: 0 }}
                 style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}

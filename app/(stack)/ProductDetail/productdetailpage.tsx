@@ -14,6 +14,7 @@ import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
 import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
+import ErrorMessage from '../../utilities/errorHandlingPopUp'
 import { useCart } from '../../ContextParent'; 
 
 
@@ -44,6 +45,8 @@ const ProductDetailPage = () => {
   // const [cartCount1, setCartCount1] = useState(0);
   const [showToast, setShowToast] = useState(false);
 const [interpolatedColor, setInterpolatedColor] = useState('#fff');
+const [errorMessage, setErrorMessage] = useState('');
+const errorTimeoutRef = useRef(null);
 
 
   const router = useRouter();
@@ -55,6 +58,15 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
   const scrollY = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(30)).current;
+
+  const showError = (message) => {
+  setErrorMessage(message);
+  // Auto-hide after 3 seconds
+  if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+  errorTimeoutRef.current = setTimeout(() => {
+    setErrorMessage('');
+  }, 3000);
+};
 
   useEffect(() => {
     const fetchData = async ()=> {
@@ -154,27 +166,51 @@ const iconColor = scrollY.interpolate({
 
 
 const handleAddToCart = async () => {
+  // Step 1: Securely get the current available stock for the selected variant & size
+  const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0;
+
+  // Step 2: Prepare the product data to add (do not mutate input!)
   const productData = {
     productId: products._id,
     variantId: selectedVariant?._id,
     name: products.name,
     size: selectedSize,
-    quantity: quantity,
+    quantity,
     merchantId: products.merchantId._id,
-    image: selectedVariant?.images?.[0]?.url
+    image: selectedVariant?.images?.[0]?.url,
   };
 
   try {
-    // ✅ Step 1: Fetch latest cart from backend
-    const latestCart = await GetCart(); // <- your API function
-    const currentItems = latestCart.items || [];
-    console.log(currentItems.length,'git reset --hard HEADgit reset --hard HEADgit reset --hard HEAD');
-   
-    // ✅ Step 2: Check if cart is not empty
-    if (currentItems.length > 0) {
-      const currentMerchantId = currentItems[0]?.merchantId?._id || currentItems[0]?.merchantId;
+    // Step 3: Fetch the latest cart (ensure consistency)
+    const latestCart = await GetCart();
+    const cartItemsSafe = latestCart.items || [];
 
-      if (currentMerchantId !== productData.merchantId) {
+    // Step 4: Check if identical item exists already (by product, variant, size)
+    const existingItem = cartItemsSafe.find(
+      item =>
+        item.productId === productData.productId &&
+        item.variantId === productData.variantId &&
+        item.size === productData.size
+    );
+    const existingQty = existingItem?.quantity || 0;
+    const totalRequest = existingQty + quantity;
+
+    // Step 5: Deny if not enough stock (avoid server roundtrips later)
+    if (totalRequest > currentStock) {
+      showError(
+        `Only ${currentStock} items available. You already have ${existingQty} in cart.`
+      );
+      return;
+    }
+
+    // Step 6: Merchant consistency enforcement (cart hygiene)
+    const cartMerchant =
+      cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
+    if (
+      cartItemsSafe.length > 0 &&
+      cartMerchant &&
+      cartMerchant !== productData.merchantId
+    ) {
         Alert.alert(
           'Clear Cart?',
           'Your cart contains items from another shop. Clear the cart and add this new item?',
@@ -208,27 +244,27 @@ const handleAddToCart = async () => {
             }
           ]
         );
-        return;
-      }
+         return;
     }
-
-    // ✅ Step 3: Add to cart if cart is empty or same merchant
     await AddProducttoCart(productData);
+
+    // Step 8: Update UI state
     setCartItems(prev => [...prev, productData]);
     setCartCount(count => count + 1);
     showAddToCartToast();
-
+    setQuantity(1);
   } catch (error) {
-    console.error('Failed to add to cart', error);
+    // Graceful robust error message bubbling
+    const backendMsg =
+      error?.response?.data?.message || 'Failed to add to cart. Please try again.';
+    showError(backendMsg);
+  } finally {
+    // Always close sheet immediately after handling
+    setTimeout(() => {
+      modalizeRef.current?.close();
+    }, 0);
   }
-
-  setTimeout(() => {
-    modalizeRef.current?.close();
-  }, 0);
 };
-
-
-
 
   if (loading) return <Loader />;
 
@@ -268,7 +304,9 @@ const handleAddToCart = async () => {
   </TouchableOpacity>
 </Animated.View>
 
-
+{errorMessage !== '' && (
+  <ErrorMessage message={errorMessage} />
+)}
 
         <Animated.ScrollView
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
@@ -555,7 +593,26 @@ const styles = StyleSheet.create({
   },
   sizeText: { textAlign: 'center' },
   stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Montserrat' },
-  
+  errorBox: {
+  position: 'absolute',
+  top: 80,
+  left: 20,
+  right: 20,
+  padding: 12,
+  backgroundColor: '#ffe0e0',
+  borderColor: '#ff4d4d',
+  borderWidth: 1,
+  borderRadius: 8,
+  zIndex: 100,
+  elevation: 10,
+},
+
+errorText: {
+  color: '#b00020',
+  fontSize: 14,
+  textAlign: 'center',
+  fontWeight: 'bold',
+},
   modalButton: {
     position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
     paddingHorizontal: 16, paddingBottom: 24,
