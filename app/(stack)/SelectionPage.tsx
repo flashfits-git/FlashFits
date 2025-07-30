@@ -34,6 +34,7 @@ export default function SelectionPage() {
   selectedCategoryIds: [],
   selectedColors: [],
   selectedStores: [],
+  sortBy:[],
 });
   const route = useRoute();
   const { type } = route.params;
@@ -371,12 +372,11 @@ onValuesChange={(values) =>
     </Text>
 
     {[
-      "What's new",
-      'Price - high to low',
-      'Popularity',
-      'Discount',
-      'Price - low to high',
-      'Customer Rating'
+      "newest",
+      'priceLowToHigh',
+      'priceHighToLow',
+      'discount',
+      'customerRating',
     ].map((option, index) => (
       <TouchableOpacity
         key={option}
@@ -387,14 +387,14 @@ onValuesChange={(values) =>
           borderBottomColor: '#eee',
         }}
         onPress={() => {
-          // setSortOption(option);
+          setFilters(prev => ({ ...prev, sortBy: option }));
           sortModalRef.current?.close();
         }}
       >
         <Text style={{
           fontSize: 16,
           color: '#222',
-          fontWeight: option === 'Customer Rating' ? '700' : '400'
+          fontWeight: option === 'customerRating' ? '700' : '400'
         }}>
           {option}
         </Text>
@@ -430,6 +430,7 @@ onValuesChange={(values) =>
           // 👇 Select category and trigger subcategory display
           setSelectedGender(cat.name);
           setSelectedMainId(cat._id);
+          setFilters(prev => ({ ...prev, selectedCategoryIds: [cat._id] }));
            // First set all selected categories
   const newFilters = {
     selectedCategoryIds: [cat._id],

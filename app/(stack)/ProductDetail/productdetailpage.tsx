@@ -53,11 +53,8 @@ const errorTimeoutRef = useRef(null);
   const route = useRoute();
 
   const { id, variantId } = route.params || {};
-<<<<<<<<< Temporary merge branch 1
-=========
 
-  console.log(id,'ed389e93e93e8');
->>>>>>>>> Temporary merge branch 2
+  // console.log(id,'ed389e93e93e8');
   
 
   const modalizeRef = useRef(null);
