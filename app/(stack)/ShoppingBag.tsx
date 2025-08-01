@@ -137,22 +137,27 @@ const handleDelete = async (itemId, quantity, size) => {
     await fetchCart(false);
   };
 
-  const productData = cartItems.map((item) => {
-    const product = item.productId || {};
-    const firstVariant = product.variants?.[0] || {};
+  // console.log(cartItems,'productproductproductproduct');
+  
 
-    return {
-      name: product.name || '',
-      price: firstVariant.price || null,
-      mrp: firstVariant.mrp || null,
-      size: item.size || null,
-      quantity: item.quantity || 1,
-      merchantName: item.merchantId?.shopName || '',
-      image: firstVariant.images?.[0] || null,
-      id: product._id,
-      variantId: firstVariant._id
-    };
-  });
+const productData = cartItems.map((item) => {
+  const product = item.productId || {};
+  const firstVariant = product.variants?.[0] || {};
+
+  return {
+    id: product._id,
+    name: product.name || '',
+    price: firstVariant.price || null,
+    mrp: firstVariant.mrp || null,
+    size: item.size || null,
+    quantity: item.quantity || 1,
+    stockQuantity: item.stockQuantity || 0, // ✅ Add this line
+    merchantName: item.merchantId?.shopName || '',
+    image: firstVariant.images?.[0] || null,
+    variantId: firstVariant._id
+  };
+});
+
 
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);

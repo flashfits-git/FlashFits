@@ -4,10 +4,9 @@ import * as SecureStore from 'expo-secure-store';
 
 export const AddProducttoCart = async (productData) => {
   // console.log(productData,'DFD');
-  
   try {
     const response = await api.post('user/cart/add', productData); // replace '/cart/add' with your actual endpoint
-    console.log(response.data,'33333333333333333');
+    // console.log(response.data,'33333333333333333');
     
     return response.data;
   } catch (error) {
@@ -52,6 +51,8 @@ export const clearCart = async () => {
 
   return response.data;
 };
+
+
 
 
 

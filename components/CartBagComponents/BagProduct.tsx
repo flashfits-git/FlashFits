@@ -8,6 +8,9 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
   const navigation = useNavigation();
   const [updatingQuantity, setUpdatingQuantity] = useState(null);
 
+  // console.log(product,'productDataproductDataproductData');
+  
+
   const handleQuantityChange = async (itemId, newQuantity, currentQuantity) => {
     if (newQuantity < 1) return;
     
@@ -27,61 +30,72 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
     }
   };
 
-  const renderQuantityControls = (item) => {
-    const isUpdating = updatingQuantity === item.id;
-    const currentQuantity = item.quantity || 1;   
-    return (
-      <View style={styles.quantityContainer}>
-        {/* <Text style={styles.quantityLabel}>Qty:</Text> */}
-        <View style={styles.quantityControls}>
-          {/* Decrease Button */}
-          <TouchableOpacity
-            style={[
-              styles.quantityButton,
-              { opacity: currentQuantity <= 1 || isUpdating ? 0.5 : 1 }
-            ]}
-            onPress={() => handleQuantityChange(item.id, currentQuantity - 1, currentQuantity)}
-            disabled={currentQuantity <= 1 || isUpdating}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name="remove" 
-              size={12} 
-              color={currentQuantity <= 1 || isUpdating ? "#999" : "#666"} 
-            />
-          </TouchableOpacity>
-          
-          {/* Quantity Display */}
-          <View style={styles.quantityDisplay}>
-            {isUpdating ? (
-              <ActivityIndicator size="small" color="#666" />
-            ) : (
-              <Text style={styles.quantityText}>
-                {currentQuantity}
-              </Text>
-            )}
-          </View>
-          
-          {/* Increase Button */}
-          <TouchableOpacity
-            style={[
-              styles.quantityButton,
-              { opacity: isUpdating ? 0.5 : 1 }
-            ]}
-            onPress={() => handleQuantityChange(item.id, currentQuantity + 1, currentQuantity)}
-            disabled={isUpdating}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name="add" 
-              size={14} 
-              color={isUpdating ? "#999" : "#666"} 
-            />
-          </TouchableOpacity>
+const renderQuantityControls = (item) => {
+  const isUpdating = updatingQuantity === item.id;
+  const currentQuantity = item.quantity || 1;
+  const maxStock = item.stockQuantity || 1; // ✅ fallback if missing
+
+  const canIncrease = currentQuantity < maxStock && !isUpdating;
+  const canDecrease = currentQuantity > 1 && !isUpdating;
+
+  return (
+    <View style={styles.quantityContainer}>
+      <View style={styles.quantityControls}>
+        {/* Decrease Button */}
+        <TouchableOpacity
+          style={[
+            styles.quantityButton,
+            { opacity: canDecrease ? 1 : 0.5 }
+          ]}
+          onPress={() =>
+            canDecrease &&
+            handleQuantityChange(item.id, currentQuantity - 1, currentQuantity)
+          }
+          disabled={!canDecrease}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="remove"
+            size={12}
+            color={canDecrease ? "#666" : "#999"}
+          />
+        </TouchableOpacity>
+
+        {/* Quantity Display */}
+        <View style={styles.quantityDisplay}>
+          {isUpdating ? (
+            <ActivityIndicator size="small" color="#666" />
+          ) : (
+            <Text style={styles.quantityText}>
+              {currentQuantity}
+            </Text>
+          )}
         </View>
+
+        {/* Increase Button */}
+        <TouchableOpacity
+          style={[
+            styles.quantityButton,
+            { opacity: canIncrease ? 1 : 0.5 }
+          ]}
+          onPress={() =>
+            canIncrease &&
+            handleQuantityChange(item.id, currentQuantity + 1, currentQuantity)
+          }
+          disabled={!canIncrease}
+          activeOpacity={0.7}
+        >
+          <Ionicons
+            name="add"
+            size={14}
+            color={canIncrease ? "#666" : "#999"}
+          />
+        </TouchableOpacity>
       </View>
-    );
-  };
+    </View>
+  );
+};
+
 
   const renderFeatureRow = (icon, text, isAvailable = true) => (
     <View style={styles.featureRow}>
@@ -110,12 +124,6 @@ export default function BagProduct({ product, onDelete, onQuantityChange }) {
           <TouchableOpacity
             key={index}
             style={styles.container}
-            // onPress={() =>
-            //   navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-            //     id: item.id,
-            //     variantId: item.variantId
-            //   })
-            // }
             activeOpacity={0.95}
           >
             {/* Discount Badge */}

@@ -164,10 +164,8 @@ const iconColor = scrollY.interpolate({
 
 
 const handleAddToCart = async () => {
-  // Step 1: Securely get the current available stock for the selected variant & size
   const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0;
 
-  // Step 2: Prepare the product data to add (do not mutate input!)
   const productData = {
     productId: products._id,
     variantId: selectedVariant?._id,
@@ -176,13 +174,12 @@ const handleAddToCart = async () => {
     quantity,
     merchantId: products.merchantId._id,
     image: selectedVariant?.images?.[0]?.url,
+    stockQuantity: currentStock, // ✅ Include actual stock available
   };
 
   try {
-    // Step 3: Fetch the latest cart (ensure consistency)
     const latestCart = await GetCart();
     const cartItemsSafe = latestCart.items || [];
-    // Step 4: Check if identical item exists already (by product, variant, size)
     const existingItem = cartItemsSafe.find(
       item =>
         item.productId === productData.productId &&
@@ -192,7 +189,6 @@ const handleAddToCart = async () => {
     const existingQty = existingItem?.quantity || 0;
     const totalRequest = existingQty + quantity;
 
-    // Step 5: Deny if not enough stock (avoid server roundtrips later)
     if (totalRequest > currentStock) {
       showError(
         `Only ${currentStock} items available. You already have ${existingQty} in cart.`
@@ -200,7 +196,6 @@ const handleAddToCart = async () => {
       return;
     }
 
-    // Step 6: Merchant consistency enforcement (cart hygiene)
     const cartMerchant =
       cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
     if (
@@ -208,59 +203,51 @@ const handleAddToCart = async () => {
       cartMerchant &&
       cartMerchant !== productData.merchantId
     ) {
-        Alert.alert(
-          'Clear Cart?',
-          'Your cart contains items from another shop. Clear the cart and add this new item?',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () => console.log('User cancelled adding')
-            },
-            {
-              text: 'Clear Cart',
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await clearCart();
-                  // setCartItems([]);
-                  setCartCount(0);
-
-                  // ✅ Add the product after clearing
-                  await AddProducttoCart(productData);
-                  setCartItems([productData]);
-                  setCartCount(1);
-                  showAddToCartToast();
-                  setTimeout(() => {
-                    modalizeRef.current?.close();
-                  }, 0);
-                } catch (error) {
-                  console.error('Error while clearing and adding:', error);
-                }
+      Alert.alert(
+        'Clear Cart?',
+        'Your cart contains items from another shop. Clear the cart and add this new item?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Clear Cart',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await clearCart();
+                setCartCount(0);
+                await AddProducttoCart(productData);
+                setCartItems([productData]);
+                setCartCount(1);
+                showAddToCartToast();
+                setTimeout(() => {
+                  modalizeRef.current?.close();
+                }, 0);
+              } catch (error) {
+                console.error('Error while clearing and adding:', error);
               }
-            }
-          ]
-        );
-         return;
+            },
+          },
+        ]
+      );
+      return;
     }
+
     await AddProducttoCart(productData);
-    // Step 8: Update UI state
     setCartItems(prev => [...prev, productData]);
     setCartCount(count => count + 1);
     showAddToCartToast();
     setQuantity(1);
   } catch (error) {
-    // Graceful robust error message bubbling
     const backendMsg =
       error?.response?.data?.message || 'Failed to add to cart. Please try again.';
     showError(backendMsg);
   } finally {
-    // Always close sheet immediately after handling
     setTimeout(() => {
       modalizeRef.current?.close();
     }, 0);
   }
 };
+
 
   if (loading) return <Loader />;
 
@@ -564,7 +551,7 @@ const styles = StyleSheet.create({
   
   colorRow: { flexDirection: 'row', paddingLeft: 4, paddingTop: 2, flexWrap: 'wrap' },
   colorCircle: { width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1 },
-  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat' },
+  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat', paddingLeft:8 },
 
   quantityContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   circleButton: {
@@ -586,7 +573,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 10,
   },
   addToBagButton: {
-    height: 70, backgroundColor: '#000', borderRadius: 28,
+    height: 65, backgroundColor: '#000', borderRadius: 28,
     justifyContent: 'center', alignItems: 'center',
   },
   addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
