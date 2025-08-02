@@ -3,6 +3,7 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
+import Colors from '@/assets/theme/Colors';
 import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -34,7 +35,7 @@ const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
 
   const [products, setProduct] = useState({});
-  const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
+  // const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
     const [merchantData, setMerchantData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,7 +57,11 @@ const navigation = useNavigation();
   const { id, variantId } = route.params || {};
 
   // console.log(products,'ed389e93e93e8');
-  
+      // const merchantId = products?.merchantId?._id;
+      // const subSubCategoryId = products?.subSubCategoryId?._id;
+
+      // console.log(products, 'iuef98yef98efwef8u9');
+    
 
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -88,8 +93,8 @@ useEffect(() => {
 
       // 2. Fetch "You May Like" Products
       // if (merchantId && subSubCategoryId) {
-        const similarProducts = await getYouMayLikeProducts(merchantId, subSubCategoryId);
-        setYouMayLikeProducts(similarProducts);
+        // const similarProducts = await getYouMayLikeProducts(merchantId, subSubCategoryId);
+        // setYouMayLikeProducts(similarProducts);
         // console.log(youMayLikeProducts.length,'youMayLikeProductsyouMayLikeProducts');
         
 
@@ -196,7 +201,7 @@ const iconColor = scrollY.interpolate({
   };
 
 
-   console.log(selectedVariant?.images?.[0]?.url, 'url' );
+  //  console.log(selectedVariant?.images?.[0]?.url, 'url' );
    
 const handleAddToCart = async () => {
   const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0
@@ -392,20 +397,24 @@ const handleAddToCart = async () => {
                   {selectedVariant?.mrp && selectedVariant.mrp > selectedVariant.price && (
                     <Text style={styles.strike}>₹{selectedVariant.mrp}</Text>
                   )}
+                    {/* <Text style={styles.optionLabel}>{selectedColor}</Text> */}
                 </Text>
 
                 <View style={styles.ratingContainer}>
                   <Ionicons name="star" size={16} color="#FFD700" />
                   <Text style={styles.ratingText}>{products?.ratings || 0} Stars</Text>
                 </View>
-
                 {products?.variants?.length > 1 && (
                   <View>
                     <View style={styles.colorRow}>
                       {products.variants.map((variant, idx) => {
                         const colorName = variant.color.name;
-                        const colorHex = variant.color.hex || '#CCCCCC';
+                        const colorHex =
+                          variant.color.hex ||
+                          Colors[colorName] || // Use mapping from your theme file
+                          '#cacacaff';         // Default fallback
                         const isSelected = selectedColor === colorName;
+
                         return (
                           <TouchableOpacity
                             key={idx}
@@ -419,7 +428,7 @@ const handleAddToCart = async () => {
                                 shadowOffset: isSelected ? { width: 0, height: 2 } : { width: 0, height: 0 },
                                 shadowOpacity: isSelected ? 0.25 : 0,
                                 shadowRadius: isSelected ? 6 : 0,
-                                elevation: isSelected ? 6 : 0, // Android
+                                elevation: isSelected ? 6 : 0,
                               },
                             ]}
                             onPress={() => {
@@ -431,7 +440,7 @@ const handleAddToCart = async () => {
                         );
                       })}
                     </View>
-                    <Text style={styles.optionLabel}>Color: {selectedColor}</Text>
+                    <Text style={styles.optionLabel}>{selectedColor}</Text>
                   </View>
                 )}
               </View>
@@ -475,7 +484,10 @@ const handleAddToCart = async () => {
             </Text>
           </View>
 
-          <YouMayLike />
+         <YouMayLike
+            merchantId={products?.merchantId?._id}
+            subSubCategoryId={products?.subSubCategoryId?._id}
+          />
         </Animated.ScrollView>
 
         <View style={styles.fixedButton}>
@@ -620,7 +632,7 @@ headerTitle: {
   
   colorRow: { flexDirection: 'row', paddingLeft: 4, paddingTop: 2, flexWrap: 'wrap' },
   colorCircle: { width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1 },
-  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat', paddingLeft:8 },
+  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat'},
 
   quantityContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   circleButton: {
