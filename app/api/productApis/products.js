@@ -50,6 +50,27 @@ export const getFilteredProducts = async (filters) => {
   }
 };
 
+export const getYouMayLikeProducts = async (merchantId, subSubCategoryId) => {
+ 
+  // console.log(merchantId,subSubCategoryId,'subSubCategoryId._idsubSubCategoryId._id');
+  
+
+  try {
+    const res = await api.get('user/products/getYouMayLikeProducts', {
+      params: {
+        merchantId,
+        subSubCategoryId,
+      },
+    });
+    // console.log(res.data,'566y');
+    
+    return res.data;
+  } catch (error) {
+    console.error('Axios error in getYouMayLikeProducts:', error);
+    throw error;
+  }
+};
+
 
 
 

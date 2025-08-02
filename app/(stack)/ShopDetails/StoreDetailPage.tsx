@@ -27,7 +27,7 @@ const StoreDetailPage = () => {
   const route = useRoute();
   const { merchantId } = route.params;
 
-  console.log(merchantData?.merchant?.logo?.url,'merchantData?.merchant?.logo?.url');
+  // console.log(merchantData?.merchant?.logo?.url,'merchantData?.merchant?.logo?.url');
   
 
   useEffect(() => {

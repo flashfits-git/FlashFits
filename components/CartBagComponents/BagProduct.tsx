@@ -3,93 +3,71 @@ import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { UpdateCartQuantity } from '../../app/api/productApis/cartProduct';
 
 export default function BagProduct({ product, onDelete, onQuantityChange }) {
   const navigation = useNavigation();
   const [updatingQuantity, setUpdatingQuantity] = useState(null);
 
-  // console.log(product,'productDataproductDataproductData');
-  
+const handleQuantityChange = async (cartId, newQty) => {
+  if (!cartId || typeof newQty !== 'number' || newQty < 1) {
+    console.error('Invalid cartId or quantity');
+    return;
+  }
+  setUpdatingQuantity(cartId);
+  try {
+    await UpdateCartQuantity({ cartId, quantity: newQty });
 
-  const handleQuantityChange = async (itemId, newQuantity, currentQuantity) => {
-    if (newQuantity < 1) return;
-    
-    if (newQuantity !== currentQuantity) {
-      setUpdatingQuantity(itemId);
-      try {
-        // Call parent function to update quantity
-        if (onQuantityChange) {
-          await onQuantityChange(itemId, newQuantity);
-        }
-      } catch (error) {
-        console.error('Failed to update quantity:', error);
-        Alert.alert('Error', 'Failed to update quantity. Please try again.');
-      } finally {
-        setUpdatingQuantity(null);
-      }
+    if (onQuantityChange) {
+      onQuantityChange(cartId, newQty);
     }
-  };
+  } catch (err) {
+    console.error('Error updating quantity:', err);
+    Alert.alert('Error', 'Failed to update quantity. Please try again.');
+    // Optionally you can trigger a state rollback here
+  } finally {
+    setUpdatingQuantity(null); // Always reset (even on error)
+  }
+};
 
 const renderQuantityControls = (item) => {
-  const isUpdating = updatingQuantity === item.id;
-  const currentQuantity = item.quantity || 1;
-  const maxStock = item.stockQuantity || 1; // ✅ fallback if missing
+  const {
+    cartId,
+    quantity: currentQuantity = 1,
+    stockQuantity = 1,
+  } = item;
+  const isUpdating = updatingQuantity === cartId;
 
-  const canIncrease = currentQuantity < maxStock && !isUpdating;
+  const canIncrease = currentQuantity < stockQuantity && !isUpdating;
   const canDecrease = currentQuantity > 1 && !isUpdating;
 
   return (
     <View style={styles.quantityContainer}>
       <View style={styles.quantityControls}>
-        {/* Decrease Button */}
+        {/* Decrease */}
         <TouchableOpacity
-          style={[
-            styles.quantityButton,
-            { opacity: canDecrease ? 1 : 0.5 }
-          ]}
-          onPress={() =>
-            canDecrease &&
-            handleQuantityChange(item.id, currentQuantity - 1, currentQuantity)
-          }
+          style={[styles.quantityButton, { opacity: canDecrease ? 1 : 0.5 }]}
+          onPress={() => handleQuantityChange(cartId, currentQuantity - 1)}
           disabled={!canDecrease}
-          activeOpacity={0.7}
         >
-          <Ionicons
-            name="remove"
-            size={12}
-            color={canDecrease ? "#666" : "#999"}
-          />
+          <Ionicons name="remove" size={12} color="#666" />
         </TouchableOpacity>
 
-        {/* Quantity Display */}
         <View style={styles.quantityDisplay}>
           {isUpdating ? (
             <ActivityIndicator size="small" color="#666" />
           ) : (
-            <Text style={styles.quantityText}>
-              {currentQuantity}
-            </Text>
+            <Text style={styles.quantityText}>{currentQuantity}</Text>
           )}
         </View>
 
-        {/* Increase Button */}
+        {/* Increase */}
         <TouchableOpacity
-          style={[
-            styles.quantityButton,
-            { opacity: canIncrease ? 1 : 0.5 }
-          ]}
-          onPress={() =>
-            canIncrease &&
-            handleQuantityChange(item.id, currentQuantity + 1, currentQuantity)
-          }
+          style={[styles.quantityButton, { opacity: canIncrease ? 1 : 0.5 }]}
+          onPress={() => handleQuantityChange(cartId, currentQuantity + 1)}
           disabled={!canIncrease}
-          activeOpacity={0.7}
         >
-          <Ionicons
-            name="add"
-            size={14}
-            color={canIncrease ? "#666" : "#999"}
-          />
+          <Ionicons name="add" size={14} color="#666" />
         </TouchableOpacity>
       </View>
     </View>
@@ -136,7 +114,7 @@ const renderQuantityControls = (item) => {
             {/* Product Image */}
             <View style={styles.imageContainer}>
               {item.image ? (
-                <Image source={{ uri: item.image.url }} style={styles.image} />
+                <Image source={{ uri: item.image }} style={styles.image} />
               ) : (
                 <View style={styles.noImageContainer}>
                   <Ionicons name="image-outline" size={40} color="#ccc" />
@@ -203,10 +181,11 @@ const renderQuantityControls = (item) => {
 
             {/* Delete Button */}
             <TouchableOpacity
-              onPress={() => onDelete(item.id, item.quantity, item.size)}
+              onPress={() => onDelete(item.cartId)}
               style={styles.deleteButton}
               activeOpacity={0.7}
-            >
+   
+   >
               <LinearGradient
                 colors={['#000000ff', '#12121273']}
                 style={styles.deleteGradient}

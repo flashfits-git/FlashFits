@@ -20,7 +20,7 @@ import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectA
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { clearCart} from '../api/productApis/cartProduct';
+import { clearCart, UpdateCartQuantity } from '../api/productApis/cartProduct';
 import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'expo-router';
 import { useCart } from '../ContextParent';
@@ -30,12 +30,12 @@ const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
 const CartBag = () => {
-  const [cartItems, setCartItems] = useState([]);
+  // const [] = useState([]);
   const [loading, setLoading] = useState(true);
   const [scrollY, setScrollY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
-  const { cartCount, setCartCount } = useCart();
+  const { cartCount, setCartCount, cartItems, setCartItems} = useCart();
     const [activeTab, setActiveTab] = useState<'TryandBuy' | 'Payment'>('TryandBuy');
    const [showTryBuyInfo, setShowTryBuyInfo] = useState(false);
 const popupOpacity = useRef(new Animated.Value(0)).current;
@@ -43,9 +43,6 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
-
-  // console.log(cartItems);
-  
   
   const fetchCart = async (showLoader = true) => {
     try {
@@ -104,7 +101,10 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
   return () => scrollYAnim.removeAllListeners();
 }, []);
 
-const handleDelete = async (itemId, quantity, size) => {
+const handleDelete = async (itemId) => {
+
+  console.log(itemId,'itemIditemIditemId');
+  
   Alert.alert(
     'Remove Item',
     'Are you sure you want to remove this item from your bag?',
@@ -119,7 +119,7 @@ const handleDelete = async (itemId, quantity, size) => {
               await clearCart();
               console.log('cartCleat');
             } else {
-              await deleteCartItem(itemId, quantity, size);
+              await deleteCartItem(itemId);
             }
             await fetchCart(false); // refresh cart after deletion or clear
           } catch (error) {
@@ -137,7 +137,7 @@ const handleDelete = async (itemId, quantity, size) => {
     await fetchCart(false);
   };
 
-  // console.log(cartItems,'productproductproductproduct');
+  // console.log(cartItems,'ewfkhbkjewefwbkj');
   
 
 const productData = cartItems.map((item) => {
@@ -145,19 +145,19 @@ const productData = cartItems.map((item) => {
   const firstVariant = product.variants?.[0] || {};
 
   return {
-    id: product._id,
+    id: product._id,                      // product ID
+    cartId: item._id,                     // ✅ cart item ID
     name: product.name || '',
-    price: firstVariant.price || null,
-    mrp: firstVariant.mrp || null,
+    price: item.price || 0,
+    mrp: item.mrp || 0,
     size: item.size || null,
     quantity: item.quantity || 1,
-    stockQuantity: item.stockQuantity || 0, // ✅ Add this line
+    stockQuantity: item.stockQuantity || 0,
     merchantName: item.merchantId?.shopName || '',
-    image: firstVariant.images?.[0] || null,
-    variantId: firstVariant._id
+    image: item.image?.url || null,
+    variantId: item.variantId || firstVariant._id  // Use item.variantId for safety
   };
 });
-
 
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -166,15 +166,28 @@ const productData = cartItems.map((item) => {
     alert('Processing payment...');
   };
 
-  const handleQuantityChange = async (itemId, newQty) => {
-  setCartItems((prev) =>
-    prev.map((item) =>
-      item.productId._id === itemId
-        ? { ...item, quantity: newQty }
-        : item
-    )
-  );
-};
+// const handleQuantityChange = async (cartId, newQty) => {
+//   if (!cartId || typeof newQty !== 'number') {
+//     console.error('Missing required data for updating quantity');
+//     return;
+//   }
+//   try {
+//     // Call backend API with just cartId and new quantity
+//     await UpdateCartQuantity({ cartId, quantity: newQty });
+
+//     // Update local cart state for the matching cartId
+//     setCartItems((prev) =>
+//       prev.map((item) =>
+//         item._id === cartId
+//           ? { ...item, quantity: newQty }
+//           : item
+//       )
+//     );
+//   } catch (err) {
+//     console.error('Error updating quantity:', err);
+//     Alert.alert('Error', 'Failed to update quantity. Please try again.');
+//   }
+// };
 
 const SlideToPay = ({ label, onComplete }) => {
   const slideAnimation = useRef(new Animated.Value(0)).current;
@@ -496,7 +509,15 @@ const SlideToPay = ({ label, onComplete }) => {
           <BagProduct
             product={productData}
             onDelete={handleDelete}
-            onQuantityChange={handleQuantityChange}
+              onQuantityChange={(cartId, newQty) => {
+              setCartItems(prev =>
+                prev.map(item =>
+                  item._id === cartId
+                    ? { ...item, quantity: newQty }
+                    : item
+                )
+              );
+            }}
           />
         </Animated.View>
 

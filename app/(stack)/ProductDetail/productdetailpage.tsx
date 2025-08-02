@@ -7,15 +7,17 @@ import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
-import { productDetailPage } from '../../api/productApis/products';
+import { productDetailPage, getYouMayLikeProducts} from '../../api/productApis/products';
 import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
 import { useRoute } from '@react-navigation/native';
 import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
+import { getMerchantById } from '../../api/merchatApis/getMerchantHome'
 import ErrorMessage from '../../utilities/errorHandlingPopUp'
 import { useCart } from '../../ContextParent'; 
+import { useNavigation } from '@react-navigation/native';
 
 
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
@@ -32,6 +34,8 @@ const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
 
   const [products, setProduct] = useState({});
+  const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
+    const [merchantData, setMerchantData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -43,6 +47,7 @@ const ProductDetailPage = () => {
 const [interpolatedColor, setInterpolatedColor] = useState('#fff');
 const [errorMessage, setErrorMessage] = useState('');
 const errorTimeoutRef = useRef(null);
+const navigation = useNavigation();
 
 
   const router = useRouter();
@@ -50,7 +55,7 @@ const errorTimeoutRef = useRef(null);
 
   const { id, variantId } = route.params || {};
 
-  // console.log(id,'ed389e93e93e8');
+  // console.log(products,'ed389e93e93e8');
   
 
   const modalizeRef = useRef(null);
@@ -67,28 +72,54 @@ const errorTimeoutRef = useRef(null);
   }, 3000);
 };
 
-  useEffect(() => {
-    const fetchData = async ()=> {
-      try {
-        setLoading(true);
-        setError(null);
-        const data = await productDetailPage(id);
-        setProduct(data);
-        if (data?.variants?.length > 0) {
-         const firstVariant = data.variants.find(x => x._id === variantId);
-         setSelectedColor(firstVariant.color.name)
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 1. Fetch Product Details
+      const data = await productDetailPage(id);
+      setProduct(data);
+
+      // Extract IDs
+      const merchantId = data?.merchantId?._id;
+      const subSubCategoryId = data?.subSubCategoryId?._id;
+
+      // 2. Fetch "You May Like" Products
+      // if (merchantId && subSubCategoryId) {
+        const similarProducts = await getYouMayLikeProducts(merchantId, subSubCategoryId);
+        setYouMayLikeProducts(similarProducts);
+        // console.log(youMayLikeProducts.length,'youMayLikeProductsyouMayLikeProducts');
+        
+
+      // 3. Handle default variant selection
+      if (data?.variants?.length > 0) {
+        const firstVariant = data.variants.find(x => x._id === variantId);
+        if (firstVariant) {
+          setSelectedColor(firstVariant.color.name);
           const availableSize = firstVariant.sizes.find(s => s.stock > 0);
           if (availableSize) setSelectedSize(availableSize.size);
         }
-      } catch (err) {
-        console.error('Error fetching product:', err);
-        setError('Failed to load product details');
-      } finally {
-        setLoading(false);
       }
+
+      // 4. Fetch Merchant Details
+      if (merchantId) {
+        const merchantInfo = await getMerchantById(merchantId);
+        setMerchantData(merchantInfo);
+      }
+
+    } catch (err) {
+      console.error('Error fetching product, merchant, or recommendations:', err);
+      setError('Failed to load product details');
+    } finally {
+      setLoading(false);
     }
-    if (id) fetchData();
-  }, [id]);
+  };
+
+  if (id) fetchData();
+}, [id, variantId]);
+
 
   useEffect(() => {
     setIsSlideDisabled(!selectedSize || selectedStock === 0);
@@ -117,6 +148,7 @@ useEffect(() => {
 
   return () => scrollY.removeListener(listener);
 }, []);
+
   const selectedStock = selectedVariant?.sizes?.find(
     (s) => s.size === selectedSize
   )?.stock || 0;
@@ -134,6 +166,7 @@ useEffect(() => {
     }
     return 0;
   }, [selectedVariant]);
+
   const headerBackgroundColor = scrollY.interpolate({
     inputRange: [0, 300], outputRange: ['transparent', '#fff'], extrapolate: 'clamp',
   });
@@ -163,8 +196,10 @@ const iconColor = scrollY.interpolate({
   };
 
 
+   console.log(selectedVariant?.images?.[0]?.url, 'url' );
+   
 const handleAddToCart = async () => {
-  const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0;
+  const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0
 
   const productData = {
     productId: products._id,
@@ -173,7 +208,10 @@ const handleAddToCart = async () => {
     size: selectedSize,
     quantity,
     merchantId: products.merchantId._id,
-    image: selectedVariant?.images?.[0]?.url,
+    image: {
+    public_id: selectedVariant?.images?.[0]?.public_id,
+    url: selectedVariant?.images?.[0]?.url,
+   },
     stockQuantity: currentStock, // ✅ Include actual stock available
   };
 
@@ -267,14 +305,29 @@ const handleAddToCart = async () => {
     <>
 <View style={styles.container}>
 <Animated.View style={[styles.topBar, { backgroundColor: headerBackgroundColor }]}>
+  {/* Left: Back Button */}
   <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-<Ionicons name="chevron-back" size={24} color={interpolatedColor} />
+    <Ionicons name="chevron-back" size={24} color={interpolatedColor} />
   </TouchableOpacity>
 
-  <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
-    {products?.brandId?.name || 'Product Details'}
-  </Animated.Text>
+  {/* Center: Merchant Name */}
+  <View style={styles.titleContainer}>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      onPress={() => {
+        const id = merchantData?.merchant?._id || merchantData?._id;
+        if (id) {
+          navigation.navigate('(stack)/ShopDetails/StoreDetailPage', { merchantId: id });
+        }
+      }}
+    >
+      <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
+        {merchantData?.merchant?.shopName || 'Product Details'}
+      </Animated.Text>
+    </TouchableOpacity>
+  </View>
 
+  {/* Right: Bag Icon */}
   <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
     <View style={styles.iconWithBadge}>
       <Ionicons name="bag-handle-outline" size={24} color={interpolatedColor} />
@@ -286,6 +339,7 @@ const handleAddToCart = async () => {
     </View>
   </TouchableOpacity>
 </Animated.View>
+
 
 {errorMessage !== '' && (
   <ErrorMessage message={errorMessage} />
@@ -418,7 +472,6 @@ const handleAddToCart = async () => {
 
             <Text style={styles.description}>
               {products?.description || 'No description available.'}
-              <Text style={styles.readMore}> Read More...</Text>
             </Text>
           </View>
 
@@ -514,7 +567,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, height: 70, borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
   },
   iconButton: { padding: 8 },
-  headerTitle: { flex: 1, textAlign: 'center', fontWeight: 'bold', fontSize: 16, fontFamily: 'Montserrat', textTransform: 'uppercase', },
+headerTitle: {
+  textAlign: 'center',
+  fontWeight: 'bold',
+  fontSize: 16,
+  fontFamily: 'Montserrat',
+  textTransform: 'uppercase',
+},
   iconWithBadge: { position: 'relative' },
   badge: {
     position: 'absolute', top: -6, right: -6, backgroundColor: 'red', borderRadius: 8,
@@ -539,7 +598,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
   },
   discountText: { color: '#fff', fontSize: 12, fontWeight: 'bold', fontFamily: 'Montserrat' },
-
+  titleContainer: {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  top: 0,
+  bottom: 0,
+  justifyContent: 'center',
+  alignItems: 'center',
+  paddingHorizontal: 50, // to avoid overlapping the side icons
+  zIndex: -1,
+},
   infoContainer: { padding: 10 },
   title: { fontSize: 20, fontWeight: '600', fontFamily: 'Montserrat', marginLeft: 5,},
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
