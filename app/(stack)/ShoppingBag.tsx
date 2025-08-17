@@ -25,6 +25,7 @@ import Loader from '@/components/Loader/Loader';
 import { useRouter } from 'expo-router';
 import { useCart } from '../ContextParent';
 import eed from '../../assets/images/shoppingbag/lih.png';
+import { createOrder } from '../api/orderApis';
 
 const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
@@ -162,8 +163,15 @@ const productData = cartItems.map((item) => {
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const handlePaymentComplete = () => {
-    alert('Processing payment...');
+    const handlePaymentComplete = async () => {
+    try {
+      const orderData = await createOrder();
+      // console.log(orderData, 'orderData');
+      //back to home
+      router.replace('/');
+    } catch (error) {
+      console.error('Error creating order:', error);
+    }
   };
 
 // const handleQuantityChange = async (cartId, newQty) => {
