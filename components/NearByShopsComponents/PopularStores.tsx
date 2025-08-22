@@ -31,7 +31,13 @@ const PopularStores = ({merchantData}) => {
           >
             <View style={styles.leftBlock}>
               <Text style={styles.storeName}>{item.shopName}</Text>
-              <Text style={styles.ratingText1}>{item.address ?? 'No address'}</Text>
+              <Text style={styles.ratingText1}>
+                                {item.address
+                                ? [item.address.street, item.address.city, item.address.state, item.address.postalCode, item.address.country]
+                                    .filter(Boolean)
+                                    .join(', ')
+                                : 'No address'}
+              </Text>
             </View>
             <Text style={styles.ratingText}>⭐{item.rating ?? 'No rating'}</Text>
           </TouchableOpacity>

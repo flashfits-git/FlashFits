@@ -152,6 +152,7 @@ export default function Home() {
           </>
         }
       />
+      <PopupCart isTabBarVisible={isTabBarVisible} />
       <Footer/>
     </View>
   );

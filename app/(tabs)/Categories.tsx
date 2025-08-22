@@ -15,6 +15,7 @@ import { useNavigation } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { fetchCategories } from '../api/categories.js';
 import Loader from '@/components/Loader/Loader';
+
 // import { useCart } from './Context';
 
 const Categories = () => {

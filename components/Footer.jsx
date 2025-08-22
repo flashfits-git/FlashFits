@@ -134,7 +134,7 @@ const Footer = () => {
           >
             <View style={styles.textContainer}>
               <Text style={styles.logo}>FlashFits -</Text>
-              <Text style={styles.motto}>Fashion in a Flash!</Text>
+              <Text style={styles.motto}>Fashion in a Flash ?</Text>
             </View>
             <Ionicons
               name={isExpanded ? 'arrow-down' : 'arrow-up'}
@@ -153,25 +153,33 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     width: '100%',
-    zIndex: 30,
+
   },
   // overlay: {
   //   // ...StyleSheet.absoluteFillObject,
   //   backgroundColor: 'rgba(113, 113, 113, 0.38)',
   //   zIndex: 1,
   // },
-  footer: {
-    backgroundColor: '#ffffffff',
-    borderTopRightRadius: 26,
-    borderTopLeftRadius: 26,
-    shadowColor: '#000',
-    shadowRadius: 12,
-    shadowOffset: { height: -6 },
-    shadowOpacity: 0.10,
-    elevation: 6,
-    overflow: 'hidden',
-    zIndex: 2,
-  },
+footer: {
+  backgroundColor: '#ffffffff',
+  borderTopRightRadius: 26,
+  borderTopLeftRadius: 26,
+  shadowColor: '#000',
+  shadowRadius: 12,
+  shadowOffset: { height: -6 },
+  shadowOpacity: 0.10,
+  elevation: 6,
+  overflow: 'hidden',
+  zIndex: 30,
+
+  // Border color and width for top, left, and right
+  borderTopColor: '#d3d3d3',   // light grey
+  borderLeftColor: '#d3d3d3',
+  borderRightColor: '#d3d3d3',
+  borderTopWidth: 0.5,
+  borderLeftWidth: 0.5,
+  borderRightWidth: 0.5,
+},
   upArrowButton: {
     flexDirection: 'row',
     alignItems: 'center',

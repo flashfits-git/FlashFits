@@ -50,6 +50,8 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
       if (showLoader) setLoading(true);
       const cartData = await GetCart();
       const items = cartData.items || [];
+      console.log(cartData,'cartDatacartData');
+      
       setCartItems(items);
       setCartCount(items.length);    
       // Animate content entrance
@@ -165,7 +167,7 @@ const productData = cartItems.map((item) => {
 
     const handlePaymentComplete = async () => {
     try {
-      const orderData = await createOrder();
+       await createOrder();
       // console.log(orderData, 'orderData');
       //back to home
       router.replace('/');

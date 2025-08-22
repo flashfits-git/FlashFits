@@ -143,13 +143,22 @@ const StoreDetailPage = () => {
     </View>
 
 
-          {Object.entries(groupedProducts).map(([subCatName, products]) => (
-            <View key={subCatName} style={styles.categorySection}>
+        {Object.entries(groupedProducts).map(([subCatName, products]) => (
+          <View key={subCatName} style={styles.categorySection}>
+            <View style={styles.sectionHeader}>
               <Text style={styles.subTitle}>{subCatName}</Text>
-              <RecentlyViewed deataiPageproducts={products} />
+              <TouchableOpacity 
+                style={styles.viewAllButton}
+                onPress={() => handleViewAll(subCatName, products)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewAllText}>View All</Text>
+                <Ionicons name="chevron-forward" size={16} color="#56565bff" />
+              </TouchableOpacity>
             </View>
-          ))}
-
+            <RecentlyViewed deataiPageproducts={products} />
+          </View>
+        ))}
           <View style={styles.featuredSection}>
             <FeaturedDress />
           </View>
@@ -300,16 +309,28 @@ storeNameRow: {
   gap: 6,
 },
   categorySection: {
-    marginBottom: 12,
-    backgroundColor: 'white',
-    borderRadius: 15,
-    paddingVertical: 8,
-    paddingHorizontal: 5,
-    shadowColor: '#000000ff',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 5,
-    // elevation: 2,
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { 
+      width: 0, 
+      height: 2 
+    },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f5',
+  },
+    sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    // marginBottom: 10,
+    // paddingHorizontal: 2,
   },
   sectionCard: {
     backgroundColor: '#fff',
@@ -324,13 +345,129 @@ storeNameRow: {
     // elevation: 4,
   },
   subTitle: {
-    fontSize: 16.2,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1a1a2e',
+    letterSpacing: 0.3,
+    textTransform: 'capitalize',
+    flex: 1,
+    fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
+  },
+    viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8f7ff',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#535354ff',
+    shadowColor: '#3c3c3cff',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+    viewAllText: {
+    fontSize: 13,
     fontWeight: '600',
-    color: '#0e0e0fff',
-    // marginBottom: 6,
-    marginTop: 10,
-    paddingLeft: 10,
-    // paddingLeft: 3
+    color: '#5a595cff',
+    marginRight: 4,
+    letterSpacing: 0.2,
+  },
+    categorySection_dark: {
+    marginBottom: 20,
+    backgroundColor: '#454547ff',
+    borderRadius: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: '#000',
+    shadowOffset: { 
+      width: 0, 
+      height: 4 
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#3d3d5c',
+  },
+  subTitle_dark: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#ffffff',
+    letterSpacing: 0.3,
+    textTransform: 'capitalize',
+    flex: 1,
+  },
+
+  viewAllButton_dark: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4c4c6d',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#5d5d7a',
+  },
+
+  viewAllText_dark: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#b3b3ff',
+    marginRight: 4,
+    letterSpacing: 0.2,
+  },
+
+  // Premium gradient version
+  categorySection_premium: {
+    marginBottom: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 24,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    shadowColor: '#7B68EE',
+    shadowOffset: { 
+      width: 0, 
+      height: 6 
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    // Add gradient background if using react-native-linear-gradient
+    // backgroundGradient: ['#ffffff', '#fafafe'],
+  },
+
+  viewAllButton_premium: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', // Use LinearGradient component
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    shadowColor: '#667eea',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+
+  viewAllText_premium: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#ffffff',
+    marginRight: 6,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   featuredSection: {
     marginTop: 15,

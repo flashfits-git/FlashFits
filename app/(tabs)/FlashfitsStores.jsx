@@ -17,6 +17,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
 import {getMerchants, getProductsByMerchantId} from '../api/merchatApis/getMerchantHome'
 import Loader from '@/components/Loader/Loader';
+import Footer from '../../components/Footer'
+
 
 
 // import { useCart } from './Context';
@@ -135,6 +137,7 @@ export default function FlashfitsStores() {
       </ScrollView>
 
       <PopupCart isTabBarVisible={isTabBarVisible} />
+      <Footer/>
     </View>
   );
 }
@@ -174,6 +177,7 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 10,
   },
+  
   searchInput: {
     flex: 1,
     fontSize: 14,

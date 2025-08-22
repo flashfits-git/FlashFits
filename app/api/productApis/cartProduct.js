@@ -30,7 +30,7 @@ export const deleteCartItem = async (productId) => {
   console.log('Deleting item:', productId);
   try {
     const res = await api.delete(
-      `admin/cart/delete/${productId}`
+      `user/cart/delete/${productId}`
     );
     console.log(res.data);
     return res.data;

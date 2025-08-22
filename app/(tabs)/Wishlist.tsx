@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import Loader from '@/components/Loader/Loader';
+import Footer from '../../components/Footer'
+
 
 import WhishlistCard from '../../components/WhishlistComponents/WhishlistCard'
 import HeaderWishlist from '../../components/WhishlistComponents/HeaderWishlist'
@@ -46,6 +48,7 @@ export default function WishlistScreen() {
       <HeaderWishlist />
       <WhishlistCard product={newArrivalsProducts}/>
       {/* <ImageCardHome products={newArrivalsProducts}/> */}
+      <Footer/>
      </View>
   );
 }

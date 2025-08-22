@@ -2,8 +2,7 @@ import React,{useEffect, useState }from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
-import {getMerchants} from '../../app/api/merchatApis/getMerchantHome'
-import Loader from '@/components/Loader/Loader';
+import { Ionicons } from '@expo/vector-icons';
 
 const DUMMY_STORES = [
   { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
@@ -42,12 +41,15 @@ const NearbyStores = ({merchantData}) => {
   <View style={styles.leftBlock}>
     <Text style={styles.storeName}>{item.shopName}</Text>
     <Text style={styles.ratingText}>
-      {item.address ?? 'No address'}
+                {item.address
+                  ? [item.address.street, item.address.city, item.address.state, item.address.postalCode, item.address.country]
+                      .filter(Boolean)
+                      .join(', ')
+                  : 'No address'}
     </Text>
   </View>
-      <Text style={styles.ratingText}>
-        ⭐ {item.rating ?? 'No rating'}
-      </Text>
+  {/* <Ionicons name="time-outline" size={13} color="#000000ff" /> */}
+  <Text style={styles.timeText}>30 min</Text>
 </TouchableOpacity>
           <CardinStores merchantId={item._id} />
         </View>
@@ -77,6 +79,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
+  },
+    timeText: {
+    fontSize: 13,
+    color: '#000000ff',
+    marginLeft: 2,
+    fontWeight: '500',
   },
   storeName: {
     fontSize: 16,

@@ -51,25 +51,25 @@ function Loader() {
     <View style={styles.loadingContainer}>
 
 
-      <Image source={Logo} style={styles.logo} resizeMode="contain" />
+      {/* <Image source={Logo} style={styles.logo} resizeMode="contain" /> */}
       {/* <FlashFitsLogo/> */}
 
-      <Animated.View style={[styles.lineContainer, { width: lineWidth }]}>
+      {/* <Animated.View style={[styles.lineContainer, { width: lineWidth }]}>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.4)', 'black', 'rgba(0,0,0,0.4)', 'transparent']}
           style={styles.line}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         />
-      </Animated.View>
+      </Animated.View> */}
 
       <Animated.Text
         style={[
           styles.tagline,
-          {
-            transform: [{ translateY: taglineTranslateY }],
-            opacity: taglineOpacity,
-          },
+          // {
+          //   transform: [{ translateY: taglineTranslateY }],
+          //   opacity: taglineOpacity,
+          // },
         ]}
       >
         Fashion in a Flash !
@@ -87,14 +87,14 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   logo: {
-    width: 250,
-    height: 100,
+    width: 180,
+    height: 60,
   },
   tagline: {
-    fontSize: 20,
+    fontSize: 15,
     color: 'black',
     fontWeight: '400',
-    marginTop: 20,
+    marginTop: 10,
     letterSpacing: 1,
     fontFamily: 'Barrio',
     // opacity:.5

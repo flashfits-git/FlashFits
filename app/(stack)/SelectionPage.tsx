@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-  fontSize: 20,
+  fontSize: 15,
   fontWeight: 'bold',
   textTransform: 'uppercase',
   marginVertical: 12,     // Adds space above and below
@@ -535,7 +535,7 @@ filterGenderWrapper: {
   flexWrap: 'wrap',
   justifyContent: 'space-between',
   // gap: 10,
-  marginTop: 20,
+  marginTop: 5,
   marginBottom: 12,
   paddingHorizontal: 5,
 },

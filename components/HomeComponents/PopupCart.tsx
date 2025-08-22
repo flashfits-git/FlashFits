@@ -8,56 +8,20 @@ import {
   Animated,
   Dimensions,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import Colors from '../../assets/theme/Colors';
-// import * as SplashScreen from 'expo-splash-screen';
-
-
-// SplashScreen.preventAutoHideAsync(); // Prevent hiding until fonts are loaded
-
-
-const { width, height } = Dimensions.get('window');
-
-const TAB_BAR_HEIGHT = 70; // Assumed height of the hidden tab bar
-const OFFSET_FROM_BAR = 90; // Position when tab bar is visible
 
 const PopupCart = ({ isTabBarVisible }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(OFFSET_FROM_BAR)).current;
-const router = useRouter()
+  const router = useRouter();
 
   useEffect(() => {
-    if (isTabBarVisible) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          toValue: 30, // Drop down to the tab bar's hidden position
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(translateY, {
-          toValue: OFFSET_FROM_BAR, // Sit above the tab bar
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [isTabBarVisible]);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   return (
     <Animated.View
@@ -65,29 +29,27 @@ const router = useRouter()
         styles.cartContainer,
         {
           opacity: fadeAnim,
-          transform: [{ translateY }],
         },
       ]}
     >
-    <View style={styles.contentWrapper}>
-      <View style={styles.cartBox}>
-
-      <Image
-        source={{ uri: '' }}
-        style={styles.itemImage}
-      />
-      <View style={styles.details}>
-        <Text style={styles.itemText}>1 Item | ₹127</Text>
-        <Text style={styles.saveText}>You save ₹20</Text>      
-      </View>
-      <TouchableOpacity
+      <View style={styles.contentWrapper}>
+        <View style={styles.cartBox}>
+          <Image
+            source={{ uri: '' }}
+            style={styles.itemImage}
+          />
+          <View style={styles.details}>
+            <Text style={styles.itemText}>1 Item | ₹127</Text>
+            <Text style={styles.saveText}>You save ₹20</Text>
+          </View>
+          <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/(stack)/ShoppingBag')}
           >
             <Text style={styles.buttonText}>Track Order</Text>
           </TouchableOpacity>
+        </View>
       </View>
-    </View>
     </Animated.View>
   );
 };
@@ -97,13 +59,13 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 30,
+    bottom: 2, // fixed position from bottom
     paddingHorizontal: 16,
-    zIndex: 20,
-    margin:30,
+    // zIndex: 100,
+    margin: 30,
   },
   cartBox: {
-    backgroundColor: '#fff', // soft blue background
+    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 5,
     flexDirection: 'row',
@@ -113,14 +75,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
-    // width:4z00
   },
   contentWrapper: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    height:150
+    height: 150,
   },
   itemImage: {
     width: 50,
@@ -138,7 +99,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#000',
     marginBottom: 4,
-    width:100,
+    width: 100,
     fontFamily: 'Montserrat',
   },
   saveText: {
@@ -148,9 +109,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Montserrat',
   },
   button: {
-    backgroundColor: Colors.dark1, // blue button
+    backgroundColor: Colors.dark1,
     paddingVertical: 15,
-    paddingHorizontal:25,
+    paddingHorizontal: 25,
     borderRadius: 8,
     shadowColor: '#1E40AF',
     shadowOffset: { width: 0, height: 2 },
