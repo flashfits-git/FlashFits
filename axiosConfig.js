@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
   // baseURL: 'http://192.168.43.28:3000/api/',
-  baseURL: 'http://192.168.29.230:5000/api/',
+  baseURL: 'http://192.168.29.230:5git000/api/',
   timeout: 10000,
 });
 
