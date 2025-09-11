@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Animated, Vibratio
 import { useNavigation } from '@react-navigation/native';
 import { useLocalSearchParams } from 'expo-router';
 import { phoneLogin } from '@/app/api/auth';
-import { saveToken } from '@/app/utilities/secureStore';
+import { saveToken, saveUserId } from '@/app/utilities/secureStore';
 import { useRouter } from 'expo-router';
 
 const router = useRouter();
@@ -93,6 +93,7 @@ const OTPInput = () => {
       const response = await phoneLogin({ phoneNumber: phone });
       console.log(response);
       await saveToken('token', response.token);
+      await saveUserId('userId', response.userId);
       router.replace('/(tabs)');
     } catch (error) {
       console.error('OTP verification failed:', error);

@@ -1,11 +1,11 @@
 import api from '../../axiosConfig';
-import { getSocket } from '../config/socket';
+import { getSocket , initSocket } from '../config/socket';
 
 export const createOrder = async () => {
   try {
     const res = await api.post("/user/order/create");
     const order = res.data;
-
+    initSocket();
     // ✅ join the socket room for this order
     const socket = getSocket();
     if (socket) {

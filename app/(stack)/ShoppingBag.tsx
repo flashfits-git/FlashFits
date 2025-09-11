@@ -26,7 +26,8 @@ import { useRouter } from 'expo-router';
 import { useCart } from '../ContextParent';
 import eed from '../../assets/images/shoppingbag/lih.png';
 import { createOrder } from '../api/orderApis';
-
+import { getSocket } from '../config/socket';
+import {joinOrderRoom} from '../sockets/order.socket';
 const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
@@ -165,9 +166,14 @@ const productData = cartItems.map((item) => {
 
     const handlePaymentComplete = async () => {
     try {
+      
       const orderData = await createOrder();
-      // console.log(orderData, 'orderData');
+
+      console.log(orderData.order.id, 'orderData');
+      await joinOrderRoom(orderData.order.id);
+      console.log("📡 Joined room for order:", orderData.order.id);
       //back to home
+
       router.replace('/');
     } catch (error) {
       console.error('Error creating order:', error);
