@@ -1,12 +1,33 @@
-import React from 'react';
+import React ,{useEffect}from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useRouter } from 'expo-router';
 import HearderForProfileComponents from '../../components/ProfilePageComponents/HearderForProfileComponents'
-
+import {listenOrderUpdates,removeOrderListeners} from '../sockets/order.socket';
+import { getSocket } from '../config/socket';
 const OrdersScreen = () => {
+    
     const router = useRouter();
   const { title } = useLocalSearchParams<{ title: string }>();
+
+  useEffect(() => {
+    const socket = getSocket();
+    if (!socket) {
+      console.log("Socket not connected");
+      return;
+    }
+  
+    console.log("Listening for order updates");
+    listenOrderUpdates((updateData) => {
+      console.log("📦 Order update:", updateData);
+    });
+  
+    return () => {
+      console.log("Removing order update listener");
+      removeOrderListeners();
+    };
+  }, []);
+  
 
   return (<>
  <HearderForProfileComponents title={title}/>

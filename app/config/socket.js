@@ -1,17 +1,20 @@
 import { io } from "socket.io-client";
+import {getUserId} from "../utilities/secureStore";
 
 // Replace with your backend server URL
 const SOCKET_URL = "http://192.168.29.230:5000"; // use your local IP for device testing
 
 let socket;
 
-export const initSocket = (userId) => {
+export const initSocket = async () => {
+  const userId = await getUserId("userId"); 
+  const role ="user" 
   if (!socket) {
     socket = io(SOCKET_URL, {
       transports: ["websocket"],
-      query: { userId }, // optional: identify user
+      query: { userId: userId,role:role }, // optional: identify user
     });
-
+ 
     socket.on("connect", () => {
       console.log("✅ Socket connected:", socket.id);
     });

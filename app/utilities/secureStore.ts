@@ -4,6 +4,14 @@ export async function saveToken(key: string, value: string) {
   await SecureStore.setItemAsync(key, value);
 }
 
+export async function saveUserId(key: string, value: string) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+export async function getUserId(key: string): Promise<string | null> {
+  return await SecureStore.getItemAsync(key);
+}
+
 export async function getToken(key: string): Promise<string | null> {
   return await SecureStore.getItemAsync(key);
 }
