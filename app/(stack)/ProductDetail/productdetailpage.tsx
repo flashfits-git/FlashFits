@@ -13,6 +13,7 @@ import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
 import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
+import PopupCart from '../../../components/HomeComponents/PopupCart';
 import { useRoute } from '@react-navigation/native';
 import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
 import { getMerchantById } from '../../api/merchatApis/getMerchantHome'
@@ -489,6 +490,7 @@ const handleAddToCart = async () => {
             subSubCategoryId={products?.subSubCategoryId?._id}
           />
         </Animated.ScrollView>
+          <PopupCart />
 
         <View style={styles.fixedButton}>
           <TouchableOpacity style={styles.addToBagButton} onPress={() => modalizeRef.current?.open()}>
@@ -647,16 +649,31 @@ headerTitle: {
   description: { fontSize: 14, marginVertical: 10, color: '#444', fontFamily: 'Montserrat' },
   readMore: { color: '#007BFF', fontWeight: '500', fontFamily: 'Montserrat' },
 
-  fixedButton: {
-    position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
-    borderTopRightRadius: 40, borderTopLeftRadius: 40, borderTopWidth: 2,
-    borderRightWidth: 1, borderLeftWidth: 1, borderColor: '#eee',
-    paddingHorizontal: 16, paddingVertical: 10,
-  },
-  addToBagButton: {
-    height: 65, backgroundColor: '#000', borderRadius: 28,
-    justifyContent: 'center', alignItems: 'center',
-  },
+fixedButton: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  backgroundColor: '#fff',
+  borderTopRightRadius: 40,
+  borderTopLeftRadius: 40,
+  borderTopWidth: 2,
+  borderRightWidth: 1,
+  borderLeftWidth: 1,
+  borderColor: '#eee',
+  paddingHorizontal: 10,
+  paddingVertical: 5,
+  justifyContent: 'center',   // ✅ Center vertically
+  alignItems: 'center',       // ✅ Center horizontally
+},
+addToBagButton: {
+  height: 60,
+  backgroundColor: '#000',
+  borderRadius: 28,
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: '100%',
+},
   addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
 
   modal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 10 },

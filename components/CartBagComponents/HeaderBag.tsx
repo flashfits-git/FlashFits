@@ -12,7 +12,7 @@ const HeaderBag = () => {
         <Text style={styles.title}>Shopping Bag</Text>
       </View> */}
               <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
             <Ionicons name="chevron-back" size={24} color="#333" />
           </TouchableOpacity>
           <View style={styles.headerTitle}>

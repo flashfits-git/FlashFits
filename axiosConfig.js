@@ -4,12 +4,13 @@ import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
   // baseURL: 'http://192.168.0.106:5000/api/',
-  baseURL: 'https://2e5ed64cf91e.ngrok-free.app/api/',
+  baseURL: 'https://cdb173b651cd.ngrok-free.app/api/',
   timeout: 10000,
 });
 
 // Add interceptor to attach token to each request
 api.interceptors.request.use(
+  
   async (config) => {
     const token = await SecureStore.getItemAsync('token');
     if (token) {

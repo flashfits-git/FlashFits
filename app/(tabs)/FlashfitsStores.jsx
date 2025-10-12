@@ -35,7 +35,6 @@ export default function FlashfitsStores() {
 
   const [loading, setLoading] = useState(true);
   const [merchants, setMerchants] = useState([]);
-  
     useEffect(() => {
     const loadCategories = async () => {
     setLoading(true);

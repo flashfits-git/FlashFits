@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
 import { useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import React, { useState, useRef, useEffect } from 'react';
 import { fetchCategories } from '../api/categories.js';
 import Loader from '@/components/Loader/Loader';
@@ -20,11 +21,12 @@ import Loader from '@/components/Loader/Loader';
 
 const Categories = () => {
   const navigation = useNavigation();
+  const router = useRouter();
+
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [loading, setLoading] = useState(false);
-  // const { cartCount } = useCart();
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
@@ -66,7 +68,7 @@ const Categories = () => {
         const data = await fetchCategories();
         setCategoriesData(data);
       } catch (err) {
-        console.error("Error loading categories", err);
+        console.error('Error loading categories', err);
       } finally {
         setLoading(false);
       }
@@ -94,17 +96,31 @@ const Categories = () => {
     }
   }, [mainCategories]);
 
+  // ✅ MAIN FUNCTION — sends filters to SelectionPage
+  const handleViewAll = (subCatName, subCategoryId) => {
+    const filters = {
+      priceRange: [0, 2000],
+      selectedCategoryIds: [subCategoryId],
+      selectedColors: [],
+      selectedStores: [],
+      sortBy: [],
+    };
+
+    router.push({
+      pathname: '(stack)/SelectionPage',
+      params: {
+        filterss: JSON.stringify(filters),
+        subCatName,
+      },
+    });
+  };
+
   if (loading) {
-    return (
-     <Loader/>
-    );
+    return <Loader />;
   }
 
   return (
     <>
-      <CategoryTitleBar  />
-      
-      {/* Top Main Categories Scroll */}
       <View style={styles.categoryBarContainer}>
         <ScrollView
           horizontal
@@ -130,7 +146,6 @@ const Categories = () => {
         </ScrollView>
       </View>
 
-      {/* Sidebar + Products */}
       <View style={styles.mainContent}>
         <ScrollView style={styles.sidebar}>
           {subCategories.map(sub => (
@@ -165,7 +180,7 @@ const Categories = () => {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={styles.productCard}
-                onPress={() => navigation.navigate('(stack)/SelectionPage')}
+                onPress={() => handleViewAll(item.name, item._id)}
               >
                 <Image
                   source={{ uri: item.image?.url }}
@@ -182,6 +197,7 @@ const Categories = () => {
     </>
   );
 };
+
 
 const styles = StyleSheet.create({
   loadingContainer: {

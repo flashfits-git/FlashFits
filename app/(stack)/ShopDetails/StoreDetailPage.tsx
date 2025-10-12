@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  SafeAreaView,
   TouchableOpacity,
   ScrollView,
   Platform,
@@ -27,8 +26,27 @@ const StoreDetailPage = () => {
   const route = useRoute();
   const { merchantId } = route.params;
 
-  // console.log(merchantData?.merchant?.logo?.url,'merchantData?.merchant?.logo?.url');
+  console.log(merchantId);
   
+
+const handleViewAll = (subCatName, products) => {
+  const filters = {
+    priceRange: [0, 2000], // default
+    selectedCategoryIds: [products[0]?.subCategoryId?._id || ''],
+    selectedColors: [], // can be filled later
+    selectedStores: [merchantId], // merchant = store
+    sortBy: [], // optional
+  };
+
+  router.push({
+    pathname: '(stack)/SelectionPage',
+    params: {
+      filterss: JSON.stringify(filters), // ✅ renamed for consistency
+      subCatName, // optional if needed in header
+    },
+  });
+};
+
 
   useEffect(() => {
     if (!merchantId) return;
@@ -67,16 +85,13 @@ const StoreDetailPage = () => {
   if (loading) return <Loader />;
 
   const logoUrl = merchantData?.merchant?.logo?.url;
-// const hasLogo = typeof logoUrl === 'string' && !!logoUrl;
-// console.log('Typeod :',typeof(logoUrl),logoUrl);
-
 
   return (
     <LinearGradient
       colors={['#f9fafb', '#ffffffff']}
       style={styles.background}
     >
-      <SafeAreaView style={styles.safeArea}>
+      {/* <SafeAreaView style={styles.safeArea}> */}
         <View style={styles.headerContainer}>
           <View style={styles.headerContent}>
             <Image
@@ -147,23 +162,23 @@ const StoreDetailPage = () => {
           <View key={subCatName} style={styles.categorySection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.subTitle}>{subCatName}</Text>
-              <TouchableOpacity 
-                style={styles.viewAllButton}
-                onPress={() => handleViewAll(subCatName, products)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.viewAllText}>View All</Text>
-                <Ionicons name="chevron-forward" size={16} color="#56565bff" />
-              </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.viewAllButton}
+            onPress={() => handleViewAll(subCatName, products)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.viewAllText}>View All</Text>
+            <Ionicons name="chevron-forward" size={16} color="#56565bff" />
+          </TouchableOpacity>
             </View>
             <RecentlyViewed deataiPageproducts={products} />
           </View>
-        ))}
+        ))} 
           <View style={styles.featuredSection}>
             <FeaturedDress />
           </View>
         </ScrollView>
-      </SafeAreaView>
+      {/* </SafeAreaView> */}
     </LinearGradient>
   );
 };

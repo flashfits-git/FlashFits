@@ -1,695 +1,421 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  Dimensions,
-  Animated,
+  ScrollView,
+  StyleSheet,
+  RefreshControl 
 } from 'react-native';
-import MapView, { Marker, Polyline } from 'react-native-maps';
+import {
+  MapPin,
+  Package,
+  CheckCircle,
+  Clock,
+  Phone,
+  MessageCircle,
+  ChevronRight,
+} from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
-const { width, height } = Dimensions.get('window');
 
-// Order Header Component
-const OrderHeader = ({ orderData }) => {
+export default function OrderTrackingPage() {
+    const router = useRouter();
+    const [refreshing, setRefreshing] = useState(false);
+
+    const onRefresh = useCallback(() => {
+  setRefreshing(true);
+  setTimeout(() => {
+    setRefreshing(false);
+  }, 1000); // Simulate remount or reload delay
+}, []);
+    
+    
+    const [orderStatus] = useState({
+      current: 'in-transit',
+      estimatedTime: '8 Mins',
+      deliveryType: 'Express Delivery',
+      steps: [
+        { id: 'picked', label: 'Picked', completed: true },
+        { id: 'in-transit', label: 'In transit', completed: true },
+        { id: 'delivered', label: 'Delivered', completed: false },
+      ],
+    });
+
+    const [deliveryPerson] = useState({
+      name: 'Kylo Ren',
+      id: 'BF 70126',
+      avatar: '👤',
+    });
+
   return (
-    <View style={styles.headerContainer}>
-      <TouchableOpacity style={styles.backButton}>
-        <Text style={styles.backArrow}>←</Text>
-      </TouchableOpacity>
-      <View style={styles.headerContent}>
-        <Text style={styles.headerTitle}>Instamart order</Text>
-        <Text style={styles.headerSubtitle}>{orderData.orderTime} • {orderData.itemCount} items</Text>
-      </View>
-      <TouchableOpacity style={styles.menuButton}>
-        <Text style={styles.menuDots}>⋯</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
 
-// Delivery Status Component
-const DeliveryStatus = ({ currentStep, deliveryPartner, estimatedTime }) => {
-  const statusMessages = [
-    'Assigning Delivery Partner',
-    'Out for delivery',
-    'Reached Your Doorstep - Try & Buy Time!',
-    'Payment Complete',
-    'Return Process Complete'
-  ];
 
-  return (
-    <View style={styles.deliveryStatusContainer}>
-      <Text style={styles.deliveryStatusTitle}>{statusMessages[currentStep]}</Text>
-      <Text style={styles.deliveryStatusSubtitle}>
-        {currentStep === 1 && `${deliveryPartner} is on the way to deliver your order`}
-        {currentStep === 2 && 'Try your items and decide what to keep. Pay only for what you love!'}
-        {currentStep === 3 && 'Thank you for your payment. You can still return remaining items.'}
-        {currentStep === 4 && 'All processes completed successfully'}
-        {currentStep === 0 && 'We are finding the best delivery partner for you'}
-      </Text>
-      
-      {currentStep === 1 && (
-        <View style={styles.timeEstimateContainer}>
-          <Text style={styles.timeEstimate}>{estimatedTime}</Text>
-          <Text style={styles.timeLabel}>mins</Text>
+    <>      
+      <View style={styles.header}>
+        <View style={styles.headerInner} >
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Text style={styles.backArrow} >←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Track Order</Text>
         </View>
-      )}
-
-      <View style={styles.deliveryActions}>
-        <TouchableOpacity style={styles.viewItemsButton}>
-          <View style={styles.bagIcon} />
-          <Text style={styles.viewItemsText}>View item list</Text>
-        </TouchableOpacity>
-        
-        {deliveryPartner && currentStep <= 1 && (
-          <View style={styles.deliveryPartnerInfo}>
-            <View style={styles.partnerAvatar} />
-            <TouchableOpacity style={styles.callButton}>
-              <Text style={styles.callIcon}>📞</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
-    </View>
-  );
-};
-
-// Map Section Component with Route
-const MapSection = ({ userLocation, deliveryLocation, currentStep }) => {
-  const routeCoordinates = [
-    deliveryLocation,
-    { latitude: 10.0280, longitude: 76.3140 },
-    { latitude: 10.0270, longitude: 76.3135 },
-    userLocation,
-  ];
-
-  return (
-    <View style={styles.mapContainer}>
-      <MapView
-        style={styles.map}
-        initialRegion={{
-          latitude: (userLocation.latitude + deliveryLocation.latitude) / 2,
-          longitude: (userLocation.longitude + deliveryLocation.longitude) / 2,
-          latitudeDelta: 0.02,
-          longitudeDelta: 0.02,
-        }}
-      >
-        <Marker
-          coordinate={userLocation}
-          title="Your Location"
-          description="KACHAPPILLY HOME"
-        >
-          <View style={styles.homeMarker}>
-            <Text style={styles.homeMarkerText}>🏠</Text>
-          </View>
-        </Marker>
-        
-        <Marker
-          coordinate={deliveryLocation}
-          title="Delivery Partner"
-        >
-          <View style={styles.deliveryMarker}>
-            <Text style={styles.deliveryMarkerText}>🚗</Text>
-          </View>
-        </Marker>
-
-        <Polyline
-          coordinates={routeCoordinates}
-          strokeColor="#007AFF"
-          strokeWidth={4}
-          lineDashPattern={[5, 5]}
+    <ScrollView style={styles.container} 
+    showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#3b82f6']} // Android loader color
+          tintColor="#3b82f6" // iOS loader color
         />
-      </MapView>
-    </View>
-  );
-};
+      } 
+    >
 
-// Order Progress Steps Component
-const OrderProgress = ({ currentStep }) => {
-  const progressSteps = [
-    {
-      title: 'Assigning Delivery Partner',
-      description: 'Finding the best delivery partner',
-      icon: '👤'
-    },
-    {
-      title: 'Out for Delivery',
-      description: 'Your order is on the way',
-      icon: '🚗'
-    },
-    {
-      title: 'Reached Your Doorstep',
-      description: 'Try and keep what you love',
-      icon: '🏠'
-    },
-    {
-      title: 'Payment',
-      description: 'Complete payment for selected items',
-      icon: '💳'
-    },
-    {
-      title: 'Return Process',
-      description: 'Return unwanted items',
-      icon: '📦'
-    }
-  ];
 
-  return (
-    <View style={styles.progressContainer}>
-      {progressSteps.map((step, index) => (
-        <View key={index} style={styles.progressStep}>
-          <View style={styles.stepIndicatorContainer}>
-            <View style={[
-              styles.stepCircle,
-              index < currentStep ? styles.stepCompleted : 
-              index === currentStep ? styles.stepActive : styles.stepInactive
-            ]}>
-              <Text style={styles.stepIcon}>{step.icon}</Text>
+      {/* Map Section */}
+      <View style={styles.mapSection}>
+        <View style={styles.mapOverlay} />
+
+        <View style={[styles.marker, styles.startMarker]}>
+          <MapPin size={20} color="#fff" />
+        </View>
+
+        <View style={[styles.marker, styles.packageMarker]}>
+          <Package size={24} color="#111" />
+        </View>
+
+        <View style={[styles.marker, styles.endMarker]}>
+          <MapPin size={20} color="#fff" />
+        </View>
+
+        <Text style={styles.storeLabel}>Store</Text>
+        <Text style={styles.locationLabel}>Your Location</Text>
+      </View>
+
+      {/* Status Card */}
+      <View style={styles.statusCard}>
+        <View style={styles.statusHeader}>
+          <View style={styles.statusLeft}>
+            <View style={styles.packageIcon}>
+              <Package size={24} color="#b45309" />
             </View>
-            {index < progressSteps.length - 1 && (
-              <View style={[
-                styles.stepLine,
-                index < currentStep ? styles.lineCompleted : styles.lineInactive
-              ]} />
-            )}
+            <View>
+              <Text style={styles.arrivalText}>
+                Arriving in {orderStatus.estimatedTime}
+              </Text>
+              <Text style={styles.deliveryType}>{orderStatus.deliveryType}</Text>
+            </View>
           </View>
-          <View style={styles.stepContent}>
-            <Text style={[
-              styles.stepTitle,
-              index < currentStep ? styles.titleCompleted :
-              index === currentStep ? styles.titleActive : styles.titleInactive
-            ]}>
-              {step.title}
+          <TouchableOpacity>
+            <Text style={styles.menuDots}>⋮</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Steps */}
+        <View style={styles.stepsRow}>
+          {orderStatus.steps.map((step, index) => (
+            <React.Fragment key={step.id}>
+              <View style={styles.stepContainer}>
+                <View
+                  style={[
+                    styles.stepCircle,
+                    step.completed
+                      ? styles.stepCompleted
+                      : styles.stepIncomplete,
+                  ]}
+                >
+                  {step.completed ? (
+                    <CheckCircle size={18} color="#fff" />
+                  ) : (
+                    <Clock size={18} color="#9ca3af" />
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.stepLabel,
+                    step.completed
+                      ? styles.stepLabelActive
+                      : styles.stepLabelInactive,
+                  ]}
+                >
+                  {step.label}
+                </Text>
+              </View>
+              {index < orderStatus.steps.length - 1 && (
+                <View
+                  style={[
+                    styles.stepLine,
+                    step.completed ? styles.lineActive : styles.lineInactive,
+                  ]}
+                />
+              )}
+            </React.Fragment>
+          ))}
+        </View>
+      </View>
+
+      {/* Delivery Person */}
+      <View style={styles.deliveryCard}>
+        <View style={styles.deliveryRow}>
+          <View style={styles.deliveryLeft}>
+            <View style={styles.avatar}>{<Text style={styles.avatarIcon}>{deliveryPerson.avatar}</Text>}</View>
+            <View>
+              <Text style={styles.deliveryName}>{deliveryPerson.name}</Text>
+              <Text style={styles.deliveryId}>{deliveryPerson.id}</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.callButton}>
+            <Phone size={20} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Buttons */}
+      <TouchableOpacity style={styles.actionButton}>
+        <View style={styles.actionLeft}>
+          <Package size={20} color="#444" />
+          <Text style={styles.actionText}>View Package Information</Text>
+        </View>
+        <ChevronRight size={20} color="#9ca3af" />
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.actionButton}>
+        <View style={styles.actionLeft}>
+          <MessageCircle size={20} color="#444" />
+          <Text style={styles.actionText}>Facing issue? Chat with Senz Staff</Text>
+        </View>
+        <ChevronRight size={20} color="#9ca3af" />
+      </TouchableOpacity>
+
+      {/* Try & Buy */}
+      <View style={styles.tryBuy}>
+        <View style={styles.tryBuyRow}>
+          <View style={styles.tryBuyIcon}>
+            <CheckCircle size={20} color="#fff" />
+          </View>
+          <View>
+            <Text style={styles.tryBuyTitle}>Try & Buy Available</Text>
+            <Text style={styles.tryBuyDesc}>
+              Try your items at home before making the final decision. Return
+              unwanted items with the delivery partner.
             </Text>
-            <Text style={styles.stepDescription}>{step.description}</Text>
           </View>
         </View>
-      ))}
-    </View>
-  );
-};
-
-// Action Buttons Component
-const ActionButtons = ({ currentStep, onPayment, onFullReturn, onPartialReturn }) => {
-  return (
-    <View style={styles.actionButtonsContainer}>
-      {currentStep === 2 && (
-        <>
-          <TouchableOpacity style={styles.paymentButton} onPress={onPayment}>
-            <Text style={styles.paymentButtonText}>Pay for Items</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.fullReturnButton} onPress={onFullReturn}>
-            <Text style={styles.fullReturnButtonText}>Initiate Full Return</Text>
-          </TouchableOpacity>
-        </>
-      )}
-      
-      {currentStep === 3 && (
-        <TouchableOpacity style={styles.returnButton} onPress={onPartialReturn}>
-          <Text style={styles.returnButtonText}>Return Remaining Items</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-};
-
-// Promotional Banner Component
-const PromoBanner = () => {
-  return (
-    <View style={styles.promoBanner}>
-      <View style={styles.promoContent}>
-        <Text style={styles.promoTitle}>Loved ordering from us?</Text>
-        <Text style={styles.promoSubtitle}>Explore the new{'\n'}Instamart App</Text>
-        <TouchableOpacity style={styles.shopNowButton}>
-          <Text style={styles.shopNowText}>Shop Now</Text>
-        </TouchableOpacity>
       </View>
-      <View style={styles.promoIcons}>
-        <Text style={styles.promoIcon}>🍯</Text>
-        <Text style={styles.promoIcon}>🧴</Text>
-        <Text style={styles.promoIcon}>🌸</Text>
-      </View>
-    </View>
-  );
-};
-
-// Main Component
-const OrderPlacedPage = () => {
-  const [currentStep, setCurrentStep] = useState(1);
-
-  const userLocation = {
-    latitude: 10.0261,
-    longitude: 76.3127,
-  };
-
-  const deliveryLocation = {
-    latitude: 10.0300,
-    longitude: 76.3160,
-  };
-
-  const orderData = {
-    orderId: 'ORD-2025-08231534',
-    orderTime: '03:02 PM',
-    itemCount: '1',
-    deliveryPartner: 'AKASH P S',
-    estimatedTime: '6'
-  };
-
-  // Simulate order progress
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStep(prev => prev < 4 ? prev + 1 : prev);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const handlePayment = () => {
-    console.log('Payment completed for selected items');
-    setCurrentStep(3);
-  };
-
-  const handleFullReturn = () => {
-    console.log('Full return initiated - skipping payment');
-    setCurrentStep(4); // Skip payment phase
-  };
-
-  const handlePartialReturn = () => {
-    console.log('Partial return initiated for remaining items');
-    setCurrentStep(4);
-  };
-
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <OrderHeader orderData={orderData} />
-      
-      <MapSection 
-        userLocation={userLocation} 
-        deliveryLocation={deliveryLocation}
-        currentStep={currentStep}
-      />
-      
-      <DeliveryStatus 
-        currentStep={currentStep}
-        deliveryPartner={orderData.deliveryPartner}
-        estimatedTime={orderData.estimatedTime}
-      />
-
-      <View style={styles.deliveryPartnerBanner}>
-        <View style={styles.partnerBannerIcon} />
-        <Text style={styles.partnerBannerText}>
-          Delivery partner will drive safely to deliver your order superfast!
-        </Text>
-        <Text style={styles.partnerBannerArrow}>→</Text>
-      </View>
-
-      <View style={styles.whileYouWaitSection}>
-        <Text style={styles.whileYouWaitTitle}>WHILE YOU WAIT</Text>
-        <View style={styles.whileYouWaitLine} />
-      </View>
-
-      <PromoBanner />
-
-      <ActionButtons 
-        currentStep={currentStep}
-        onPayment={handlePayment}
-        onFullReturn={handleFullReturn}
-        onPartialReturn={handlePartialReturn}
-      />
     </ScrollView>
+    </>
   );
-};
+}
 
-// Enhanced Styles
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
 
-  // Header Styles
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingTop: 50,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+  header: {
+    backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    elevation: 2,
+  },
+  headerInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  backButton: { marginRight: 12 },
+  backArrow: { fontSize: 22, color: '#374151' },
+  headerTitle: { fontSize: 18, fontWeight: '600', color: '#111827' },
+
+  mapSection: {
+    marginTop: 16,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    height: 250,
+    backgroundColor: '#f3f4f6',
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  mapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#dbeafe',
+    opacity: 0.5,
+  },
+  marker: {
+    position: 'absolute',
+    borderWidth: 4,
+    borderColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
     elevation: 3,
   },
-  backButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backArrow: {
-    fontSize: 20,
-    color: '#333',
-  },
-  headerContent: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 2,
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuDots: {
-    fontSize: 18,
-    color: '#333',
-  },
-
-  // Map Styles
-  mapContainer: {
-    height: height * 0.45,
-    margin: 0,
-  },
-  map: {
-    flex: 1,
-  },
-  homeMarker: {
-    backgroundColor: '#FFFFFF',
+  startMarker: {
+    top: 40,
+    left: 60,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 8,
-    borderWidth: 2,
-    borderColor: '#007AFF',
+    backgroundColor: '#22c55e',
   },
-  homeMarkerText: {
-    fontSize: 16,
+  packageMarker: {
+    top: 110,
+    left: 120,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#facc15',
   },
-  deliveryMarker: {
-    backgroundColor: '#FF3B30',
+  endMarker: {
+    bottom: 50,
+    right: 40,
+    width: 40,
+    height: 40,
     borderRadius: 20,
-    padding: 8,
+    backgroundColor: '#22c55e',
   },
-  deliveryMarkerText: {
-    fontSize: 16,
-  },
-
-  // Delivery Status Styles
-  deliveryStatusContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    marginTop: -20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  deliveryStatusTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#333',
-    marginBottom: 8,
-  },
-  deliveryStatusSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 16,
-  },
-  timeEstimateContainer: {
+  storeLabel: {
     position: 'absolute',
-    right: 20,
-    top: 20,
-    backgroundColor: '#34C759',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  timeEstimate: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  timeLabel: {
-    fontSize: 12,
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  deliveryActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  viewItemsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 25,
-    flex: 1,
-    marginRight: 12,
-  },
-  bagIcon: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#333',
-    borderRadius: 10,
-    marginRight: 12,
-  },
-  viewItemsText: {
-    fontSize: 16,
-    color: '#333',
+    top: 90,
+    left: 40,
+    backgroundColor: '#fff',
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
     fontWeight: '500',
   },
-  deliveryPartnerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  partnerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FF9500',
-    marginRight: 12,
-  },
-  callButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#34C759',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  callIcon: {
-    fontSize: 16,
+  locationLabel: {
+    position: 'absolute',
+    bottom: 80,
+    right: 20,
+    backgroundColor: '#fff',
+    fontSize: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    fontWeight: '500',
   },
 
-  // Delivery Partner Banner
-  deliveryPartnerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F4FF',
-    margin: 16,
+  statusCard: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    borderRadius: 20,
     padding: 16,
-    borderRadius: 12,
+    backgroundColor: '#fde68a',
   },
-  partnerBannerIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#FF9500',
-    borderRadius: 16,
-    marginRight: 12,
-  },
-  partnerBannerText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-  },
-  partnerBannerArrow: {
-    fontSize: 16,
-    color: '#007AFF',
-  },
-
-  // While You Wait Section
-  whileYouWaitSection: {
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  whileYouWaitTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-    letterSpacing: 1,
-  },
-  whileYouWaitLine: {
-    width: 60,
-    height: 2,
-    backgroundColor: '#007AFF',
-    marginTop: 8,
-  },
-
-  // Promo Banner
-  promoBanner: {
+  statusHeader: {
     flexDirection: 'row',
-    backgroundColor: 'linear-gradient(135deg, #007AFF 0%, #FF3B30 100%)',
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-    overflow: 'hidden',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
-  promoContent: {
-    flex: 1,
+  statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  packageIcon: {
+    backgroundColor: '#fff',
+    borderRadius: 24,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  promoTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  promoSubtitle: {
-    fontSize: 14,
-    color: '#FFFFFF',
-    opacity: 0.9,
-    marginBottom: 16,
-  },
-  shopNowButton: {
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
-  },
-  shopNowText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  promoIcons: {
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  promoIcon: {
-    fontSize: 24,
-    marginVertical: 4,
-  },
+  arrivalText: { fontSize: 16, fontWeight: '700', color: '#111' },
+  deliveryType: { fontSize: 13, fontWeight: '500', color: '#444' },
+  menuDots: { fontSize: 20, color: '#444' },
 
-  // Progress Styles
-  progressContainer: {
-    backgroundColor: '#FFFFFF',
-    margin: 16,
-    borderRadius: 16,
-    padding: 20,
-  },
-  progressStep: {
+  stepsRow: {
+    marginTop: 20,
     flexDirection: 'row',
-    marginBottom: 24,
-  },
-  stepIndicatorContainer: {
     alignItems: 'center',
-    marginRight: 16,
+    justifyContent: 'space-between',
   },
+  stepContainer: { alignItems: 'center' },
   stepCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
   },
-  stepCompleted: {
-    backgroundColor: '#34C759',
-    borderColor: '#34C759',
-  },
-  stepActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  stepInactive: {
-    backgroundColor: '#F8F9FA',
-    borderColor: '#E9ECEF',
-  },
-  stepIcon: {
-    fontSize: 16,
-  },
-  stepLine: {
-    width: 2,
-    height: 30,
-    marginTop: 8,
-  },
-  lineCompleted: {
-    backgroundColor: '#34C759',
-  },
-  lineInactive: {
-    backgroundColor: '#E9ECEF',
-  },
-  stepContent: {
-    flex: 1,
-    paddingTop: 8,
-  },
-  stepTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  titleCompleted: {
-    color: '#34C759',
-  },
-  titleActive: {
-    color: '#007AFF',
-  },
-  titleInactive: {
-    color: '#999',
-  },
-  stepDescription: {
-    fontSize: 14,
-    color: '#666',
-  },
+  stepCompleted: { backgroundColor: '#3b82f6' },
+  stepIncomplete: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db' },
+  stepLabel: { marginTop: 6, fontSize: 11, fontWeight: '500' },
+  stepLabelActive: { color: '#111' },
+  stepLabelInactive: { color: '#6b7280' },
+  stepLine: { flex: 1, height: 2, marginHorizontal: 6, borderRadius: 2 },
+  lineActive: { backgroundColor: '#3b82f6' },
+  lineInactive: { backgroundColor: '#e5e7eb' },
 
-  // Action Buttons
-  actionButtonsContainer: {
+  deliveryCard: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 20,
     padding: 16,
-    paddingBottom: 32,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  paymentButton: {
-    backgroundColor: '#34C759',
-    paddingVertical: 16,
-    borderRadius: 12,
+  deliveryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  deliveryLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#facc15',
     alignItems: 'center',
-    marginBottom: 12,
+    justifyContent: 'center',
   },
-  paymentButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-  returnButton: {
-    backgroundColor: '#FF9500',
-    paddingVertical: 16,
-    borderRadius: 12,
+  avatarIcon: { fontSize: 22 },
+  deliveryName: { fontSize: 16, fontWeight: '700', color: '#111' },
+  deliveryId: { fontSize: 13, color: '#6b7280' },
+  callButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#22c55e',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  returnButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
-});
 
-export default OrderPlacedPage;
+  actionButton: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+  actionLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  actionText: { fontWeight: '600', color: '#111' },
+
+  tryBuy: {
+    marginTop: 20,
+    marginHorizontal: 16,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e9d5ff',
+    backgroundColor: '#faf5ff',
+  },
+  tryBuyRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  tryBuyIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#a855f7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tryBuyTitle: { fontWeight: '700', color: '#6b21a8', marginBottom: 4 },
+  tryBuyDesc: { fontSize: 13, color: '#7e22ce' },
+});

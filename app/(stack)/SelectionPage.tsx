@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ScrollView, // ✅ Added
+  ScrollView,
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -18,152 +18,224 @@ import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
 import { fetchCategories } from '../api/categories';
-import { getMerchants} from '../api/merchatApis/getMerchantHome'
+import { getMerchants } from '../api/merchatApis/getMerchantHome';
 import { FontAwesome } from '@expo/vector-icons';
-
-
 
 export default function SelectionPage() {
   const router = useRouter();
-    const { cartItems, cartCount } = useCart();
+  const route = useRoute();
+  const { cartItems, cartCount } = useCart();
+  const { type, filterss } = route.params || {};
+
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
-  const [selectedGender, setSelectedGender] = useState("");
-  const [filters, setFilters] = useState({
-  priceRange: [0, 2000],
-  selectedCategoryIds: [],
-  selectedColors: [],
-  selectedStores: [],
-  sortBy:[],
-});
-  const route = useRoute();
-  const { type } = route.params;
-
-useEffect(() => {
-  console.log("Filters updated:", filters);
-}, [filters]);
-
+  const [selectedGender, setSelectedGender] = useState('');
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [merchants, setMerchants] = useState([]);
-  const mainCategories = categoriesData.filter(cat => cat.level === 0);
-  const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
-  const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
-
-  const handleMainCategoryChange = (id) => {
-    setSelectedMainId(id);
-    const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
-    if (firstSub){
-      setSelectedSubId(firstSub._id)
-      console.log("working");
-      
-      setFilters(prev => ({
-        ...prev,
-        selectedCategoryIds: [id],
-      })) ;
-    } 
-  };
-
-  const handleSubCategoryChange = (id) => {
-    setSelectedSubId(id);
-    setFilters(prev => ({
-      ...prev,
-      selectedCategoryIds: [id],
-    }));
-  };
-
-  const toggleCategoryCheckbox = (id) => {
-  setFilters(prev => ({
-    ...prev,
-    selectedCategoryIds: prev.selectedCategoryIds.includes(id)
-      ? prev.selectedCategoryIds.filter(i => i !== id)
-      : [...prev.selectedCategoryIds, id],
-  }));
-};
-// Function to toggle colors
-const toggleColor = (color) => {
-  setFilters(prev => ({
-    ...prev,
-    selectedColors: prev.selectedColors.includes(color)
-      ? prev.selectedColors.filter(c => c !== color)
-      : [...prev.selectedColors, color],
-  }));
-};
-
-// Function to toggle store selection
-const toggleStore = (store) => {
-  setFilters(prev => ({
-    ...prev,
-    selectedStores: prev.selectedStores.includes(store)
-      ? prev.selectedStores.filter(s => s !== store)
-      : [...prev.selectedStores, store],
-  }));
-};
-
-
-  // ✅ Only ONE useEffect for loading categories
-useEffect(() => {
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchCategories();
-      const merchantResponse = await getMerchants();
-
-      // console.log('Returned merchants:', merchantResponse);
-
-      // ✅ FIX: access the nested `merchants` array
-      setCategoriesData(data);
-      setMerchants(Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : []);
-    } catch (err) {
-      console.error("Error loading categories or merchants", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadCategories();
-}, []);
-
-
-  useEffect(() => {
-    if (mainCategories.length > 0 && !selectedMainId) {
-      handleMainCategoryChange(mainCategories[0]._id);
-    }
-  }, [mainCategories]);
+  
+  // ✅ FIX 1: Use individual state values instead of object
+  const [priceRange, setPriceRange] = useState([0, 2000]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
+  const [selectedColors, setSelectedColors] = useState([]);
+  const [selectedStores, setSelectedStores] = useState([]);
+  const [sortBy, setSortBy] = useState([]);
 
   const sortModalRef = useRef(null);
   const genderModalRef = useRef(null);
   const filterModalRef = useRef(null);
+  
 
+  // ✅ FIX 2: Memoize the filters object to prevent unnecessary recreations
+  const filters = useMemo(() => ({
+    priceRange,
+    selectedCategoryIds,
+    selectedColors,
+    selectedStores,
+    sortBy,
+  }), [priceRange, selectedCategoryIds, selectedColors, selectedStores, sortBy]);
 
-  const openSortModal = () => sortModalRef.current?.open();
-  const openGengerModal = () => genderModalRef.current?.open();
-  const openFilterModal = () => filterModalRef.current?.open();
-
-useEffect(() => {
-    const fetch = async () => {
-      // const filters = { merchant, type, category, subCategory, subSubCategory, tag };
+  // ✅ FIX 3: Parse filters from params only once
+  useEffect(() => {
+    console.log(filterss, 'filterssfilterss');
+    
+    if (filterss) {
       try {
-        console.log("called");
-        console.log(filters);
+        const parsed = JSON.parse(filterss);
+        console.log('Received Filters:', parsed);
         
-        
-        const res =await getFilteredProducts(filters);
-        console.log(res);
-        
-        setProducts([...res.products]);
+        // Update individual state values
+        if (parsed.priceRange) setPriceRange(parsed.priceRange);
+        if (parsed.selectedCategoryIds) setSelectedCategoryIds(parsed.selectedCategoryIds);
+        if (parsed.selectedColors) setSelectedColors(parsed.selectedColors);
+        if (parsed.selectedStores) setSelectedStores(parsed.selectedStores);
+        if (parsed.sortBy) setSortBy(parsed.sortBy);
       } catch (err) {
-        console.error("Error fetching:", err);
+        console.error('Error parsing filters:', err);
+      }
+    }
+  }, [filterss]); // ✅ Only depend on filterss, not filters object
+
+  // ✅ FIX 4: Fetch categories and merchants (uncomment if needed)
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const [data, merchantsRes] = await Promise.all([
+          fetchCategories(),
+          getMerchants(),
+        ]);
+        setCategoriesData(data);
+        setMerchants(merchantsRes?.merchants || []);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
       }
     };
-    fetch();
-  }, [filters]);
+    load();
+  }, []); // ✅ Empty dependency array - runs only once
+
+  const mainCategories = categoriesData.filter(c => c.level === 0);
+  const subCategories = categoriesData.filter(
+    c => c.level === 1 && c.parentId === selectedMainId
+  );
+  const subSubCategories = categoriesData.filter(
+    c => c.level === 2 && c.parentId === selectedSubId
+  );
+
+  // ✅ Default category load
+  // useEffect(() => {
+  //   if (mainCategories.length > 0 && !selectedMainId) {
+  //     const firstMain = mainCategories[0]._id;
+  //     setSelectedMainId(firstMain);
+  //     const firstSub = categoriesData.find(
+  //       c => c.parentId === firstMain && c.level === 1
+  //     );
+  //     if (firstSub) {
+  //       setSelectedSubId(firstSub._id);
+  //       setSelectedCategoryIds([firstMain]); // ✅ Update individual state
+  //     }
+  //   }
+  // }, [mainCategories, selectedMainId, categoriesData]);
+
+  // ✅ FIX 5: Use useCallback to prevent function recreation
+  const handleMainCategoryChange = useCallback((id) => {
+    setSelectedMainId(id);
+    const firstSub = categoriesData.find(
+      c => c.parentId === id && c.level === 1
+    );
+    if (firstSub) setSelectedSubId(firstSub._id);
+    setSelectedCategoryIds([id]); // ✅ Update individual state
+  }, [categoriesData]);
+
+  const handleSubCategoryChange = useCallback((id) => {
+    setSelectedSubId(id);
+    setSelectedCategoryIds([id]); // ✅ Update individual state
+  }, []);
+
+  // ✅ FIX 6: Add loading state and prevent multiple calls
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  // ✅ FIX 7: Optimized fetch with proper dependencies
+  // useEffect(() => {
+  //   const fetchFiltered = async () => {
+  //     // Prevent multiple simultaneous calls
+  //     if (isLoadingProducts) return;
+      
+  //     try {
+  //       setIsLoadingProducts(true);
+  //       console.log('Fetching products with filters:', filters);
+  //       const res = await getFilteredProducts(filters);
+  //       setProducts(res?.products || []);
+  //     } catch (err) {
+  //       console.error('Error fetching filtered products:', err);
+  //     } finally {
+  //       setIsLoadingProducts(false);
+  //     }
+  //   };
+
+  //   // Only fetch if we have meaningful filter data
+  //   const hasFilters = priceRange.length === 2 || 
+  //                     selectedCategoryIds.length > 0 || 
+  //                     selectedColors.length > 0 || 
+  //                     selectedStores.length > 0 || 
+  //                     sortBy.length > 0;
+
+  //   if (hasFilters) {
+  //     fetchFiltered();
+  //   }
+  // }, []); // ✅ Depend on individual values 
+  // priceRange, selectedCategoryIds, selectedColors, selectedStores, sortBy, isLoadingProducts
+
+const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+  const fetchFiltered = async () => {
+    if (isLoadingProducts) return;
+
+    try {
+      setIsLoadingProducts(true);
+      console.log('Fetching products with filters:', filters);
+      const res = await getFilteredProducts(filters);
+      setProducts(res?.products || []);
+    } catch (err) {
+      console.error('Error fetching filtered products:', err);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  };
+
+  const hasFilters =
+    priceRange.length === 2 ||
+    selectedCategoryIds.length > 0 ||
+    selectedColors.length > 0 ||
+    selectedStores.length > 0 ||
+    sortBy.length > 0;
+
+  if (!hasFilters) return;
+
+  // 🔥 Compare with previous filters
+  const filtersChanged =
+    JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
+
+  if (filtersChanged && !isLoadingProducts) {
+    prevFiltersRef.current = filters;
+    fetchFiltered();
+  }
+}, [filters]);
+
+const toggleColor = (color) => {
+  setSelectedColors((prev) =>
+    prev.includes(color)
+      ? prev.filter((c) => c !== color)
+      : [...prev, color]
+  );
+};
+
+const toggleStore = (store) => {
+  setSelectedStores((prev) =>
+    prev.includes(store)
+      ? prev.filter((s) => s !== store)
+      : [...prev, store]
+  );
+};
+
+const toggleCategoryCheckbox = (id) => {
+  setSelectedCategoryIds((prev) =>
+    prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+  );
+};
 
 
-  if (loading) return <Loader />;
-
-  const renderItem = ({ item }) => <Card product={item} />;
+  
+  if (loading) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Loader />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -173,67 +245,47 @@ useEffect(() => {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{type}</Text>
+          <Text style={styles.headerTitle}>{type || 'Products'}</Text>
           <View style={styles.headerIcons}>
             <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
-              <Ionicons name="search" size={22} color="black" style={styles.icon} />
+              <Ionicons name="search" size={22} color="black" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/ShoppingBag')}>
               <Ionicons name="bag-handle-outline" size={22} color="black" />
-                      {cartCount > 0 && (
-                        <View style={styles.badge}>
-                          <Text style={styles.badgeText}>{cartCount}</Text>
-                        </View>
-                      )}
+              {cartCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
             </TouchableOpacity>
           </View>
         </View>
 
-{/* COMBINED WRAPPER FOR FILTER, SORT, AND GENDER */}
-<View style={styles.filterGenderWrapper}>
-  {/* FILTER BUTTON */}
-  <TouchableOpacity
-    onPress={openFilterModal}
-    style={[styles.filterButton, styles.filterButtonLeft]}
-  >
-    <Text style={styles.filterText}>FILTER</Text>
-  </TouchableOpacity>
+        {/* Filter / Sort / Gender */}
+        <View style={styles.filterGenderWrapper}>
+          <TouchableOpacity onPress={() => filterModalRef.current?.open()} style={styles.filterButton}>
+            <Text style={styles.filterText}>FILTER</Text>
+          </TouchableOpacity>
 
-  {/* SORT BUTTON */}
-  <TouchableOpacity
-    onPress={openSortModal}
-    style={[styles.filterButton1]}
-  >
-    <Text style={styles.filterText}>SORT</Text>
-  </TouchableOpacity>
+          <TouchableOpacity onPress={() => sortModalRef.current?.open()} style={styles.filterButton1}>
+            <Text style={styles.filterText}>SORT</Text>
+          </TouchableOpacity>
 
-  {/* GENDER BUTTON */}
-  <TouchableOpacity
-    onPress={openGengerModal}
-    style={styles.genderButton}
-  >
-    <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
-  </TouchableOpacity>
-</View>
-
-
-
+          <TouchableOpacity onPress={() => genderModalRef.current?.open()} style={styles.genderButton}>
+            <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
+          </TouchableOpacity>
+        </View>
 
         {/* Product List */}
-
         <FlatList
-  data={products}
-  extraData={products} // 👈 this tells FlatList to re-render on data change
-  renderItem={renderItem}
-  keyExtractor={(item) => item._id?.toString()}
-
-  numColumns={2}
-  showsVerticalScrollIndicator={false}
-  columnWrapperStyle={styles.row}
-  contentContainerStyle={styles.cardList}
-/>
-
-
+          data={products}
+          renderItem={({ item }) => <Card product={item} />}
+          keyExtractor={item => item._id?.toString()}
+          numColumns={2}
+          showsVerticalScrollIndicator={false}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.cardList}
+        />
       </View>
 
       {/* FILTER Modal */}
@@ -244,22 +296,18 @@ useEffect(() => {
     {/* PRICE RANGE */}
 <Text style={styles.sectionTitle}>PRICE RANGE</Text>
 <View style={{ alignItems: 'center', marginBottom: 20 }}>
-  <MultiSlider
-    values={filters.priceRange}
-    sliderLength={300}
-    min={0}
-    max={10000}
-    step={500}
-onValuesChange={(values) =>
-  setFilters(prev => ({ ...prev, priceRange: values }))
-}
-    selectedStyle={{ backgroundColor: '#000' }}
-    unselectedStyle={{ backgroundColor: '#ccc' }}
-    markerStyle={{ backgroundColor: '#000' }}
-  />
-<Text style={styles.priceLabel}>
-  ₹{filters.priceRange[0]} - ₹{filters.priceRange[1]}
-</Text>
+<MultiSlider
+  values={priceRange}
+  sliderLength={300}
+  min={0}
+  max={10000}
+  step={500}
+  onValuesChange={(values) => setPriceRange(values)}
+  selectedStyle={{ backgroundColor: '#000' }}
+  unselectedStyle={{ backgroundColor: '#ccc' }}
+  markerStyle={{ backgroundColor: '#000' }}
+/>
+<Text style={styles.priceLabel}>₹{priceRange[0]} - ₹{priceRange[1]}</Text>
 </View>
 
     {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
@@ -387,7 +435,7 @@ onValuesChange={(values) =>
           borderBottomColor: '#eee',
         }}
         onPress={() => {
-          setFilters(prev => ({ ...prev, sortBy: option }));
+          setSortBy(option);
           sortModalRef.current?.close();
         }}
       >
@@ -427,26 +475,13 @@ onValuesChange={(values) =>
           borderBottomColor: '#eee',
         }}
         onPress={() => {
-          // 👇 Select category and trigger subcategory display
           setSelectedGender(cat.name);
           setSelectedMainId(cat._id);
-          setFilters(prev => ({ ...prev, selectedCategoryIds: [cat._id] }));
-           // First set all selected categories
-  const newFilters = {
-    selectedCategoryIds: [cat._id],
-    // any other filter properties you use
-  };
+          setSelectedCategoryIds([cat._id]);
 
-  setFilters((prev) => {
-    const isSame =
-      JSON.stringify(prev.selectedCategoryIds) ===
-      JSON.stringify(newFilters.selectedCategoryIds);
-
-    if (isSame) return prev; // Don't update if no change
-    return { ...prev, ...newFilters }; // New reference
-  });
           const firstSub = categoriesData.find(c => c.parentId === cat._id && c.level === 1);
           if (firstSub) setSelectedSubId(firstSub._id);
+
           genderModalRef.current?.close();
         }}
       >
@@ -467,6 +502,7 @@ onValuesChange={(values) =>
     </GestureHandlerRootView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
