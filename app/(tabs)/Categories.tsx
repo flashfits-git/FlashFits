@@ -97,23 +97,25 @@ const Categories = () => {
   }, [mainCategories]);
 
   // ✅ MAIN FUNCTION — sends filters to SelectionPage
-  const handleViewAll = (subCatName, subCategoryId) => {
-    const filters = {
-      priceRange: [0, 2000],
-      selectedCategoryIds: [subCategoryId],
-      selectedColors: [],
-      selectedStores: [],
-      sortBy: [],
-    };
-
-    router.push({
-      pathname: '(stack)/SelectionPage',
-      params: {
-        filterss: JSON.stringify(filters),
-        subCatName,
-      },
-    });
+const handleViewAll = (subCatName, subCategoryId, subSubCategoryId = null) => {
+  const filters = {
+    priceRange: [0, 10000],
+    // ✅ Include main, sub, and sub-sub category IDs
+    selectedCategoryIds: [selectedMainId, subCategoryId, subSubCategoryId].filter(Boolean),
+    selectedColors: [],
+    selectedStores: [],
+    sortBy: [],
   };
+
+  router.push({
+    pathname: '(stack)/SelectionPage',
+    params: {
+      filterss: JSON.stringify(filters),
+      subCatName,
+    },
+  });
+};
+
 
   if (loading) {
     return <Loader />;
@@ -121,7 +123,7 @@ const Categories = () => {
 
   return (
     <>
-      <CategoryTitleBar/>
+    <CategoryTitleBar  />
       <View style={styles.categoryBarContainer}>
         <ScrollView
           horizontal

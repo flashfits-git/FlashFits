@@ -42,7 +42,7 @@ const handleViewAll = (subCatName, products) => {
     pathname: '(stack)/SelectionPage',
     params: {
       filterss: JSON.stringify(filters), // ✅ renamed for consistency
-      subCatName, // optional if needed in header
+      type:'Max', // optional if needed in header
     },
   });
 };

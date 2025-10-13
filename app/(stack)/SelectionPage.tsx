@@ -12,7 +12,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import MultiSlider from '@ptomasroos/react-native-multi-slider';
+// import MultiSlider from '@ptomasroos/react-native-multi-slider';
+import SmoothSlider from '../../components/HomeComponents/SmoothSlider'
 import { fetchnewArrivalsProductsData, getFilteredProducts } from '../api/productApis/products';
 import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
@@ -21,11 +22,24 @@ import { fetchCategories } from '../api/categories';
 import { getMerchants } from '../api/merchatApis/getMerchantHome';
 import { FontAwesome } from '@expo/vector-icons';
 
+
+const useThrottle = (callback, delay) => {
+  const lastCall = useRef(0);
+
+  return (...args) => {
+    const now = Date.now();
+    if (now - lastCall.current >= delay) {
+      lastCall.current = now;
+      callback(...args);
+    }
+  };
+};
+
 export default function SelectionPage() {
   const router = useRouter();
   const route = useRoute();
+  const { subCatName, filterss, categoryPath } = route.params || {};
   const { cartItems, cartCount } = useCart();
-  const { type, filterss } = route.params || {};
 
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
@@ -35,8 +49,8 @@ export default function SelectionPage() {
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [merchants, setMerchants] = useState([]);
   
-  // ✅ FIX 1: Use individual state values instead of object
-  const [priceRange, setPriceRange] = useState([0, 2000]);
+  // ✅ Use individual state values instead of object
+  const [priceRange, setPriceRange] = useState([0, 10000]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [selectedStores, setSelectedStores] = useState([]);
@@ -46,8 +60,10 @@ export default function SelectionPage() {
   const genderModalRef = useRef(null);
   const filterModalRef = useRef(null);
   
+  // ✅ Loading state for products
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-  // ✅ FIX 2: Memoize the filters object to prevent unnecessary recreations
+  // ✅ Memoize the filters object to prevent unnecessary recreations
   const filters = useMemo(() => ({
     priceRange,
     selectedCategoryIds,
@@ -56,28 +72,123 @@ export default function SelectionPage() {
     sortBy,
   }), [priceRange, selectedCategoryIds, selectedColors, selectedStores, sortBy]);
 
-  // ✅ FIX 3: Parse filters from params only once
-  useEffect(() => {
-    console.log(filterss, 'filterssfilterss');
-    
-    if (filterss) {
-      try {
-        const parsed = JSON.parse(filterss);
-        console.log('Received Filters:', parsed);
-        
-        // Update individual state values
-        if (parsed.priceRange) setPriceRange(parsed.priceRange);
-        if (parsed.selectedCategoryIds) setSelectedCategoryIds(parsed.selectedCategoryIds);
-        if (parsed.selectedColors) setSelectedColors(parsed.selectedColors);
-        if (parsed.selectedStores) setSelectedStores(parsed.selectedStores);
-        if (parsed.sortBy) setSortBy(parsed.sortBy);
-      } catch (err) {
-        console.error('Error parsing filters:', err);
-      }
-    }
-  }, [filterss]); // ✅ Only depend on filterss, not filters object
+  // ✅ Parse and set initial filters from params
+useEffect(() => {
+  if (filterss) {
+    try {
+      const parsedFilters = JSON.parse(filterss);
+      setPriceRange(parsedFilters.priceRange || [0, 10000]);
+      setSelectedCategoryIds(parsedFilters.selectedCategoryIds || []);
+      setSelectedColors(parsedFilters.selectedColors || []);
+      setSelectedStores(parsedFilters.selectedStores || []);
+      setSortBy(parsedFilters.sortBy || []);
 
-  // ✅ FIX 4: Fetch categories and merchants (uncomment if needed)
+      const catIds = parsedFilters.selectedCategoryIds || [];
+
+      if (catIds.length > 0) {
+        // 🧠 mainCategoryId is always the first, subCategoryId second (based on your router push)
+        const mainId = catIds[0];
+        const subId = catIds[1];
+        const subSubId = catIds[2];
+
+        if (mainId) {
+          setSelectedMainId(mainId);
+          const mainCat = categoriesData.find(c => c._id === mainId);
+          if (mainCat) setSelectedGender(mainCat.name);
+        }
+
+        if (subId) {
+          setSelectedSubId(subId);
+          // ✅ Additional logic for sub category: ensure main is set and gender
+          if (!mainId) {
+            const subCat = categoriesData.find(c => c._id === subId);
+            if (subCat && subCat.parentId) {
+              const parentMainId = subCat.parentId;
+              setSelectedMainId(parentMainId);
+              const mainCat = categoriesData.find(c => c._id === parentMainId);
+              if (mainCat) setSelectedGender(mainCat.name);
+            }
+          }
+        }
+
+        // ✅ Auto-select the sub-subcategory if it exists
+        if (subSubId) {
+          setSelectedCategoryIds(catIds); // includes all three
+          // ✅ Additional logic for sub-sub category: ensure hierarchy is set
+          if (!subId) {
+            const subSubCat = categoriesData.find(c => c._id === subSubId);
+            if (subSubCat && subSubCat.parentId) {
+              const parentSubId = subSubCat.parentId;
+              setSelectedSubId(parentSubId);
+              const subCat = categoriesData.find(c => c._id === parentSubId);
+              if (subCat && subCat.parentId && !mainId) {
+                const parentMainId = subCat.parentId;
+                setSelectedMainId(parentMainId);
+                const mainCat = categoriesData.find(c => c._id === parentMainId);
+                if (mainCat) setSelectedGender(mainCat.name);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing filters from params:', error);
+    }
+  } else {
+    setPriceRange([0, 10000]);
+  }
+}, [filterss, categoriesData]);
+
+
+  // Utility: Throttle function calls
+  const fetchFiltered = useCallback(async () => {
+    if (isLoadingProducts) return;
+    try {
+      setIsLoadingProducts(true);
+      // ✅ Use only the last category ID for fetching products
+      const apiFilters = {
+        ...filters,
+        selectedCategoryIds: selectedCategoryIds.length > 0 ? [selectedCategoryIds[selectedCategoryIds.length - 1]] : []
+      };
+      console.log('Fetching products with filters:', apiFilters);
+      const res = await getFilteredProducts(apiFilters);
+      setProducts(res?.products || []);
+    } catch (err) {
+      console.error('Error fetching filtered products:', err);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [filters, isLoadingProducts, selectedCategoryIds]);
+
+  const throttledFetch = useThrottle(fetchFiltered, 3000);
+
+  // ✅ Fetch filtered products when filters change (consolidated)
+  const prevFiltersRef = useRef(filters);
+  useEffect(() => {
+    const hasFilters =
+      priceRange.length === 2 ||
+      selectedCategoryIds.length > 0 ||
+      selectedColors.length > 0 ||
+      selectedStores.length > 0 ||
+      sortBy.length > 0;
+
+    if (!hasFilters) return;
+
+    // 🔥 Compare with previous filters
+    const filtersChanged =
+      JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
+
+    if (filtersChanged && !isLoadingProducts) {
+      prevFiltersRef.current = filters;
+      fetchFiltered();
+    }
+
+    // Optional: Set up interval for periodic refresh
+    const intervalId = setInterval(throttledFetch, 20000);
+    return () => clearInterval(intervalId);
+  }, [filters]);
+
+  // ✅ Fetch categories and merchants (runs once)
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -95,7 +206,7 @@ export default function SelectionPage() {
       }
     };
     load();
-  }, []); // ✅ Empty dependency array - runs only once
+  }, []);
 
   const mainCategories = categoriesData.filter(c => c.level === 0);
   const subCategories = categoriesData.filter(
@@ -105,22 +216,7 @@ export default function SelectionPage() {
     c => c.level === 2 && c.parentId === selectedSubId
   );
 
-  // ✅ Default category load
-  // useEffect(() => {
-  //   if (mainCategories.length > 0 && !selectedMainId) {
-  //     const firstMain = mainCategories[0]._id;
-  //     setSelectedMainId(firstMain);
-  //     const firstSub = categoriesData.find(
-  //       c => c.parentId === firstMain && c.level === 1
-  //     );
-  //     if (firstSub) {
-  //       setSelectedSubId(firstSub._id);
-  //       setSelectedCategoryIds([firstMain]); // ✅ Update individual state
-  //     }
-  //   }
-  // }, [mainCategories, selectedMainId, categoriesData]);
-
-  // ✅ FIX 5: Use useCallback to prevent function recreation
+  // ✅ Use useCallback to prevent function recreation
   const handleMainCategoryChange = useCallback((id) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(
@@ -135,100 +231,28 @@ export default function SelectionPage() {
     setSelectedCategoryIds([id]); // ✅ Update individual state
   }, []);
 
-  // ✅ FIX 6: Add loading state and prevent multiple calls
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-
-  // ✅ FIX 7: Optimized fetch with proper dependencies
-  // useEffect(() => {
-  //   const fetchFiltered = async () => {
-  //     // Prevent multiple simultaneous calls
-  //     if (isLoadingProducts) return;
-      
-  //     try {
-  //       setIsLoadingProducts(true);
-  //       console.log('Fetching products with filters:', filters);
-  //       const res = await getFilteredProducts(filters);
-  //       setProducts(res?.products || []);
-  //     } catch (err) {
-  //       console.error('Error fetching filtered products:', err);
-  //     } finally {
-  //       setIsLoadingProducts(false);
-  //     }
-  //   };
-
-  //   // Only fetch if we have meaningful filter data
-  //   const hasFilters = priceRange.length === 2 || 
-  //                     selectedCategoryIds.length > 0 || 
-  //                     selectedColors.length > 0 || 
-  //                     selectedStores.length > 0 || 
-  //                     sortBy.length > 0;
-
-  //   if (hasFilters) {
-  //     fetchFiltered();
-  //   }
-  // }, []); // ✅ Depend on individual values 
-  // priceRange, selectedCategoryIds, selectedColors, selectedStores, sortBy, isLoadingProducts
-
-const prevFiltersRef = useRef(filters);
-  useEffect(() => {
-  const fetchFiltered = async () => {
-    if (isLoadingProducts) return;
-
-    try {
-      setIsLoadingProducts(true);
-      console.log('Fetching products with filters:', filters);
-      const res = await getFilteredProducts(filters);
-      setProducts(res?.products || []);
-    } catch (err) {
-      console.error('Error fetching filtered products:', err);
-    } finally {
-      setIsLoadingProducts(false);
-    }
+  const toggleColor = (color) => {
+    setSelectedColors((prev) =>
+      prev.includes(color)
+        ? prev.filter((c) => c !== color)
+        : [...prev, color]
+    );
   };
 
-  const hasFilters =
-    priceRange.length === 2 ||
-    selectedCategoryIds.length > 0 ||
-    selectedColors.length > 0 ||
-    selectedStores.length > 0 ||
-    sortBy.length > 0;
+  const toggleStore = (storeId) => {
+    setSelectedStores((prev) =>
+      prev.includes(storeId)
+        ? prev.filter((s) => s !== storeId)
+        : [...prev, storeId]
+    );
+  };
 
-  if (!hasFilters) return;
+  const toggleCategoryCheckbox = (id) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
+    );
+  };
 
-  // 🔥 Compare with previous filters
-  const filtersChanged =
-    JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
-
-  if (filtersChanged && !isLoadingProducts) {
-    prevFiltersRef.current = filters;
-    fetchFiltered();
-  }
-}, [filters]);
-
-const toggleColor = (color) => {
-  setSelectedColors((prev) =>
-    prev.includes(color)
-      ? prev.filter((c) => c !== color)
-      : [...prev, color]
-  );
-};
-
-const toggleStore = (storeId) => {
-  setSelectedStores((prev) =>
-    prev.includes(storeId)
-      ? prev.filter((s) => s !== storeId)
-      : [...prev, storeId]
-  );
-};
-
-const toggleCategoryCheckbox = (id) => {
-  setSelectedCategoryIds((prev) =>
-    prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-  );
-};
-
-
-  
   if (loading) {
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
@@ -245,7 +269,7 @@ const toggleCategoryCheckbox = (id) => {
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color="black" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{type || 'Products'}</Text>
+          <Text style={styles.headerTitle}>{subCatName || 'Products'}</Text>
           <View style={styles.headerIcons}>
             <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
               <Ionicons name="search" size={22} color="black" />
@@ -285,224 +309,218 @@ const toggleCategoryCheckbox = (id) => {
           showsVerticalScrollIndicator={false}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.cardList}
+          refreshing={isLoadingProducts}
+          onRefresh={fetchFiltered}
         />
       </View>
 
       {/* FILTER Modal */}
-<Modalize ref={filterModalRef} adjustToContentHeight>
-  <View style={{ padding: 20, backgroundColor: '#fff' }}>
-    <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Filter Options</Text>
+      <Modalize ref={filterModalRef} adjustToContentHeight>
+        <View style={{ padding: 20, backgroundColor: '#fff' }}>
+          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Filter Options</Text>
 
-    {/* PRICE RANGE */}
-<Text style={styles.sectionTitle}>PRICE RANGE</Text>
-<View style={{ alignItems: 'center', marginBottom: 20 }}>
-<MultiSlider
-  values={priceRange}
-  sliderLength={300}
-  min={0}
-  max={10000}
-  step={500}
-  onValuesChange={(values) => setPriceRange(values)}
-  selectedStyle={{ backgroundColor: '#000' }}
-  unselectedStyle={{ backgroundColor: '#ccc' }}
-  markerStyle={{ backgroundColor: '#000' }}
-/>
-<Text style={styles.priceLabel}>₹{priceRange[0]} - ₹{priceRange[1]}</Text>
-</View>
+          {/* PRICE RANGE */}
+          <Text style={styles.sectionTitle}>PRICE RANGE</Text>
+          <View style={{ alignItems: 'center', marginBottom: 20 }}>
+            <SmoothSlider
+              initialValues={priceRange}
+              onChange={(values) => setPriceRange(values)}
+            />
+            {/* <Text style={styles.priceLabel}>₹{priceRange[0]} - ₹{priceRange[1]}</Text> */}
+          </View>
 
-    {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
-    <Text style={styles.sectionTitle}>CATEGORY</Text>
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-      {subCategories.map(sub => (
-        <TouchableOpacity
-          key={sub._id}
-          style={[
-            styles.pill,
-            selectedSubId === sub._id && styles.pillActive
-          ]}
-          onPress={() => handleSubCategoryChange(sub._id)}
-        >
-          <Text style={[
-            styles.pillText,
-            selectedSubId === sub._id && styles.pillTextActive
-          ]}>
-            {sub.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </View>
+          {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
+          <Text style={styles.sectionTitle}>CATEGORY</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+            {subCategories.map(sub => (
+              <TouchableOpacity
+                key={sub._id}
+                style={[
+                  styles.pill,
+                  selectedSubId === sub._id && styles.pillActive
+                ]}
+                onPress={() => handleSubCategoryChange(sub._id)}
+              >
+                <Text style={[
+                  styles.pillText,
+                  selectedSubId === sub._id && styles.pillTextActive
+                ]}>
+                  {sub.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-<View style={{ flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-  {subSubCategories.map(item => (
-    <TouchableOpacity
-      key={item._id}
-      onPress={() => toggleCategoryCheckbox(item._id)}
-      style={styles.checkboxRow}
-    >
-      <View style={[
-        styles.checkbox,
-        filters.selectedCategoryIds.includes(item._id) && styles.checkboxSelected
-      ]}>
-        {filters.selectedCategoryIds.includes(item._id) && (
-          <FontAwesome name="check" size={14} color="#fff" />
-        )}
-      </View>
-      <Text>{item.name}</Text>
-    </TouchableOpacity>
-  ))}
-</View>
+          <View style={{ flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+            {subSubCategories.map(item => (
+              <TouchableOpacity
+                key={item._id}
+                onPress={() => toggleCategoryCheckbox(item._id)}
+                style={styles.checkboxRow}
+              >
+                <View style={[
+                  styles.checkbox,
+                  filters.selectedCategoryIds.includes(item._id) && styles.checkboxSelected
+                ]}>
+                  {filters.selectedCategoryIds.includes(item._id) && (
+                    <FontAwesome name="check" size={14} color="#fff" />
+                  )}
+                </View>
+                <Text>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-{/* COLOR */}
-<Text style={styles.sectionTitle}>COLOR</Text>
-<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-  {['Black', 'Red', 'Green', 'Blue', 'Yellow'].map((color) => (
-    <TouchableOpacity
-      key={color}
-      onPress={() => toggleColor(color)}
-      style={[
-        styles.colorPill,
-        filters.selectedColors.includes(color) && styles.colorPillSelected,
-      ]}
-    >
-      <Text
-        style={[
-          styles.colorPillText,
-          filters.selectedColors.includes(color) && styles.colorPillTextSelected,
-        ]}
-      >
-        {color}
-      </Text>
-    </TouchableOpacity>
-  ))}
-</View>
+          {/* COLOR */}
+          <Text style={styles.sectionTitle}>COLOR</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+            {['Black', 'Red', 'Green', 'Blue', 'Yellow'].map((color) => (
+              <TouchableOpacity
+                key={color}
+                onPress={() => toggleColor(color)}
+                style={[
+                  styles.colorPill,
+                  filters.selectedColors.includes(color) && styles.colorPillSelected,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.colorPillText,
+                    filters.selectedColors.includes(color) && styles.colorPillTextSelected,
+                  ]}
+                >
+                  {color}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-{/* STORE */}
-<Text style={styles.sectionTitle}>STORE</Text>
-<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-{Array.isArray(merchants) && merchants.map(merchant => (
-  <TouchableOpacity
-    key={merchant._id}
-    onPress={() => toggleStore(merchant._id)} // ✅ use store ID instead of name
-    style={[
-      styles.storePill,
-      filters.selectedStores.includes(merchant._id) && styles.storePillSelected
-    ]}
-  >
-    <Text style={[
-      styles.storeText,
-      filters.selectedStores.includes(merchant._id) && styles.storeTextSelected
-    ]}>
-      {merchant.shopName}
-    </Text>
-  </TouchableOpacity>
-))}
-</View>
+          {/* STORE */}
+          <Text style={styles.sectionTitle}>STORE</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+            {Array.isArray(merchants) && merchants.map(merchant => (
+              <TouchableOpacity
+                key={merchant._id}
+                onPress={() => toggleStore(merchant._id)} // ✅ use store ID instead of name
+                style={[
+                  styles.storePill,
+                  filters.selectedStores.includes(merchant._id) && styles.storePillSelected
+                ]}
+              >
+                <Text style={[
+                  styles.storeText,
+                  filters.selectedStores.includes(merchant._id) && styles.storeTextSelected
+                ]}>
+                  {merchant.shopName}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-    {/* APPLY BUTTON */}
-    <TouchableOpacity style={styles.applyButton}
-    onPress={() => filterModalRef.current?.close()}
-    >
-      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apply Filters</Text>
-    </TouchableOpacity>
-  </View>
-</Modalize>
+          {/* APPLY BUTTON */}
+          <TouchableOpacity style={styles.applyButton}
+            onPress={() => filterModalRef.current?.close()}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apply Filters</Text>
+          </TouchableOpacity>
+        </View>
+      </Modalize>
       {/* SORT Modal */}
-<Modalize ref={sortModalRef} adjustToContentHeight>
-  <View style={{ paddingVertical: 12 }}>
-    <Text style={{
-      fontSize: 14,
-      fontWeight: '500',
-      color: '#888',
-      paddingHorizontal: 20,
-      marginBottom: 8,
-    }}>
-      SORT BY
-    </Text>
+      <Modalize ref={sortModalRef} adjustToContentHeight>
+        <View style={{ paddingVertical: 12 }}>
+          <Text style={{
+            fontSize: 14,
+            fontWeight: '500',
+            color: '#888',
+            paddingHorizontal: 20,
+            marginBottom: 8,
+          }}>
+            SORT BY
+          </Text>
 
-    {[
-      "newest",
-      'priceLowToHigh',
-      'priceHighToLow',
-      'discount',
-      'customerRating',
-    ].map((option, index) => (
-      <TouchableOpacity
-        key={option}
-        style={{
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          borderBottomWidth: index === 5 ? 0 : 1,
-          borderBottomColor: '#eee',
-        }}
-        onPress={() => {
-          setSortBy(option);
-          sortModalRef.current?.close();
-        }}
-      >
-        <Text style={{
-          fontSize: 16,
-          color: '#222',
-          fontWeight: option === 'customerRating' ? '700' : '400'
-        }}>
-          {option}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</Modalize>
+          {[
+            "newest",
+            'priceLowToHigh',
+            'priceHighToLow',
+            'discount',
+            'customerRating',
+          ].map((option, index) => (
+            <TouchableOpacity
+              key={option}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 20,
+                borderBottomWidth: index === 4 ? 0 : 1,
+                borderBottomColor: '#eee',
+              }}
+              onPress={() => {
+                setSortBy(option);
+                sortModalRef.current?.close();
+              }}
+            >
+              <Text style={{
+                fontSize: 16,
+                color: '#222',
+                fontWeight: sortBy === option ? '700' : '400'
+              }}>
+                {option.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modalize>
       {/* GENDER Modal */}
-<Modalize ref={genderModalRef} adjustToContentHeight>
-  <View style={{ paddingVertical: 12 }}>
-    <Text
-      style={{
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#888',
-        paddingHorizontal: 20,
-        marginBottom: 8,
-      }}
-    >
-      GENDER
-    </Text> 
-    
-    {mainCategories.map((cat) => (
-      <TouchableOpacity
-        key={cat._id}
-        style={{
-          paddingVertical: 14,
-          paddingHorizontal: 20,
-          borderBottomWidth: 1,
-          borderBottomColor: '#eee',
-        }}
-        onPress={() => {
-          setSelectedGender(cat.name);
-          setSelectedMainId(cat._id);
-          setSelectedCategoryIds([cat._id]);
+      <Modalize ref={genderModalRef} adjustToContentHeight>
+        <View style={{ paddingVertical: 12 }}>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: '500',
+              color: '#888',
+              paddingHorizontal: 20,
+              marginBottom: 8,
+            }}
+          >
+            GENDER
+          </Text> 
+          
+          {mainCategories.map((cat) => (
+            <TouchableOpacity
+              key={cat._id}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 20,
+                borderBottomWidth: 1,
+                borderBottomColor: '#eee',
+              }}
+              onPress={() => {
+                setSelectedGender(cat.name);
+                setSelectedMainId(cat._id);
+                setSelectedCategoryIds([cat._id]);
 
-          const firstSub = categoriesData.find(c => c.parentId === cat._id && c.level === 1);
-          if (firstSub) setSelectedSubId(firstSub._id);
+                const firstSub = categoriesData.find(c => c.parentId === cat._id && c.level === 1);
+                if (firstSub) setSelectedSubId(firstSub._id);
 
-          genderModalRef.current?.close();
-        }}
-      >
-        <Text
-          style={{
-            fontSize: 16,
-            color: '#222',
-            fontWeight: cat.name === selectedGender ? '700' : '400',
-          }}
-        >
-          {cat.name}
-        </Text>
-      </TouchableOpacity>
-    ))}
-  </View>
-</Modalize>
+                genderModalRef.current?.close();
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 16,
+                  color: '#222',
+                  fontWeight: selectedGender === cat.name ? '700' : '400',
+                }}
+              >
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modalize>
 
     </GestureHandlerRootView>
   );
 }
-
 
 const styles = StyleSheet.create({
   container: {
