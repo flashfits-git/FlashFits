@@ -16,6 +16,7 @@ import {
   MessageCircle,
   ChevronRight,
 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
 
@@ -42,11 +43,14 @@ export default function OrderTrackingPage() {
       ],
     });
 
-    const [deliveryPerson] = useState({
-      name: 'Kylo Ren',
-      id: 'BF 70126',
-      avatar: '👤',
-    });
+    // const [deliveryPerson] = useState({
+    //   name: 'Kylo Ren',
+    //   id: 'BF 70126',
+    //   avatar: '👤',
+    // });
+
+    
+    const [deliveryPerson] = useState(false);
 
   return (
 
@@ -91,14 +95,19 @@ export default function OrderTrackingPage() {
 
         <Text style={styles.storeLabel}>Store</Text>
         <Text style={styles.locationLabel}>Your Location</Text>
-      </View>
+      
 
       {/* Status Card */}
-      <View style={styles.statusCard}>
+          <LinearGradient
+      colors={['#fff', '#fff', '#fff']} // black gradient shades
+      start={{ x: 0, y: 1 }}
+      end={{ x: 0, y: 0 }}
+      style={styles.statusCard}
+    >
         <View style={styles.statusHeader}>
           <View style={styles.statusLeft}>
             <View style={styles.packageIcon}>
-              <Package size={24} color="#b45309" />
+              <Package size={24} color="#fff" />
             </View>
             <View>
               <Text style={styles.arrivalText}>
@@ -128,7 +137,7 @@ export default function OrderTrackingPage() {
                   {step.completed ? (
                     <CheckCircle size={18} color="#fff" />
                   ) : (
-                    <Clock size={18} color="#9ca3af" />
+                    <Clock size={18} color="#fff" />
                   )}
                 </View>
                 <Text
@@ -153,9 +162,14 @@ export default function OrderTrackingPage() {
             </React.Fragment>
           ))}
         </View>
+      </LinearGradient>
+
       </View>
 
       {/* Delivery Person */}
+      
+      {
+        deliveryPerson ?
       <View style={styles.deliveryCard}>
         <View style={styles.deliveryRow}>
           <View style={styles.deliveryLeft}>
@@ -169,7 +183,18 @@ export default function OrderTrackingPage() {
             <Phone size={20} color="#fff" />
           </TouchableOpacity>
         </View>
+      </View> 
+      :
+      <View style={styles.deliveryCard}>
+        <View style={styles.deliveryRow}>
+          <View style={styles.deliveryLeft}>
+              <Text style={styles.deliveryName}>Assining Delivery Partner Soon</Text>
+          </View>
+        </View>
       </View>
+
+      }
+
 
       {/* Buttons */}
       <TouchableOpacity style={styles.actionButton}>
@@ -231,7 +256,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 20,
-    height: 250,
+    height: 480,
     backgroundColor: '#f3f4f6',
     overflow: 'hidden',
     position: 'relative',
@@ -299,31 +324,37 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  statusCard: {
-    marginTop: 20,
-    marginHorizontal: 16,
-    borderRadius: 20,
-    padding: 16,
-    backgroundColor: '#fde68a',
-  },
-  statusHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
+statusCard: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  // borderTopLeftRadius: 20,
+  // borderTopRightRadius: 20,
+  borderRadius:20,
+  padding: 18,
+  paddingBottom: 26,
+  backgroundColor: '#000',
+  shadowColor: '#000',
+  shadowOpacity: 0.3,
+  shadowRadius: 6,
+  elevation: 8,
+  margin:8
+},
+statusHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'flex-start',
+},
   statusLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  packageIcon: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    padding: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  arrivalText: { fontSize: 16, fontWeight: '700', color: '#111' },
-  deliveryType: { fontSize: 13, fontWeight: '500', color: '#444' },
-  menuDots: { fontSize: 20, color: '#444' },
+packageIcon: {
+  backgroundColor: '#333',
+  borderRadius: 24,
+  padding: 8,
+},
+arrivalText: { fontSize: 16, fontWeight: '700', color: '#3D3D3D' },
+deliveryType: { fontSize: 13, fontWeight: '500', color: '#3D3D3D' },
+menuDots: { fontSize: 20, color: '#d1d5db' },
 
   stepsRow: {
     marginTop: 20,
@@ -339,14 +370,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepCompleted: { backgroundColor: '#3b82f6' },
-  stepIncomplete: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db' },
-  stepLabel: { marginTop: 6, fontSize: 11, fontWeight: '500' },
-  stepLabelActive: { color: '#111' },
-  stepLabelInactive: { color: '#6b7280' },
-  stepLine: { flex: 1, height: 2, marginHorizontal: 6, borderRadius: 2 },
-  lineActive: { backgroundColor: '#3b82f6' },
-  lineInactive: { backgroundColor: '#e5e7eb' },
+  stepLine: {
+  flex: 1,
+  height: 3,
+  marginHorizontal: 4,
+  borderRadius: 2,
+  alignSelf: 'center',
+},
+stepCompleted: { backgroundColor: '#50C878' },
+stepIncomplete: { backgroundColor: '#333' },
+stepLabelActive: { color: '#50C878' },
+stepLabelInactive: { color: '#9ca3af' },
+lineActive: { backgroundColor: '#50C878' },
+lineInactive: { backgroundColor: '#3f3f46' },
 
   deliveryCard: {
     marginTop: 20,

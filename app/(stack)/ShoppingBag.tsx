@@ -169,14 +169,15 @@ const productData = cartItems.map((item) => {
     const handlePaymentComplete = async () => {
     try {
       
-      // const orderData = await createOrder();
-
-      // console.log(orderData.order.id, 'orderData');
-      // await joinOrderRoom(orderData.order.id);
-      // console.log("📡 Joined room for order:", orderData.order.id);
+      const orderData = await createOrder();
+      console.log(orderData.order.id, 'orderData');
+      await joinOrderRoom(orderData.order.id);
+      console.log("📡 Joined room for order:", orderData.order.id);
       //back to home
-
-      router.replace('/(stack)/OrderDetail/OrderPlacedPage');
+      router.replace({
+      pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+      params: { order: JSON.stringify(orderData) }, // must stringify objects
+    });
     } catch (error) {
       console.error('Error creating order:', error);
     }

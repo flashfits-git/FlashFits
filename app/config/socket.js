@@ -1,8 +1,8 @@
 import { io } from "socket.io-client";
-import {getUserId} from "../utilities/secureStore";
+import { getUserId } from "../utilities/secureStore";
 
 // Replace with your backend server URL
-const SOCKET_URL = "https://cdb173b651cd.ngrok-free.app"; // use your local IP for device testing
+const SOCKET_URL = "https://55a299101e7c.ngrok-free.app"; // use your local IP for device testing
 
 let socket;
 

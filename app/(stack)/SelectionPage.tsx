@@ -213,11 +213,11 @@ const toggleColor = (color) => {
   );
 };
 
-const toggleStore = (store) => {
+const toggleStore = (storeId) => {
   setSelectedStores((prev) =>
-    prev.includes(store)
-      ? prev.filter((s) => s !== store)
-      : [...prev, store]
+    prev.includes(storeId)
+      ? prev.filter((s) => s !== storeId)
+      : [...prev, storeId]
   );
 };
 
@@ -379,23 +379,23 @@ const toggleCategoryCheckbox = (id) => {
 {/* STORE */}
 <Text style={styles.sectionTitle}>STORE</Text>
 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-  {Array.isArray(merchants) && merchants.map(merchant => (
-    <TouchableOpacity
-      key={merchant._id}
-      onPress={() => toggleStore(merchant.shopName)}
-      style={[
-        styles.storePill,
-        filters.selectedStores.includes(merchant.shopName) && styles.storePillSelected
-      ]}
-    >
-      <Text style={[
-        styles.storeText,
-        filters.selectedStores.includes(merchant.shopName) && styles.storeTextSelected
-      ]}>
-        {merchant.shopName}
-      </Text>
-    </TouchableOpacity>
-  ))}
+{Array.isArray(merchants) && merchants.map(merchant => (
+  <TouchableOpacity
+    key={merchant._id}
+    onPress={() => toggleStore(merchant._id)} // ✅ use store ID instead of name
+    style={[
+      styles.storePill,
+      filters.selectedStores.includes(merchant._id) && styles.storePillSelected
+    ]}
+  >
+    <Text style={[
+      styles.storeText,
+      filters.selectedStores.includes(merchant._id) && styles.storeTextSelected
+    ]}>
+      {merchant.shopName}
+    </Text>
+  </TouchableOpacity>
+))}
 </View>
 
     {/* APPLY BUTTON */}
