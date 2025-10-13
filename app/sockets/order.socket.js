@@ -4,6 +4,9 @@ import { getSocket, initSocket } from "../config/socket";
 // Join order room after placing order
 export const joinOrderRoom = async (orderId) => {
   const socket = await initSocket();
+  if (!socket.connected) {
+    socket.connect();
+  }
   console.log("Socket id is:", socket.id);
   if (socket && socket.connected) {
     socket.emit("joinOrderRoom", orderId);
@@ -14,6 +17,8 @@ export const joinOrderRoom = async (orderId) => {
 // Listen for order updates
 export const listenOrderUpdates = (callback) => {
   const socket = getSocket();
+  socket.off("orderUpdate");
+
   console.log("Socket id is:", socket.id);
   if (socket) {
     socket.on("orderUpdate", (updateData) => {

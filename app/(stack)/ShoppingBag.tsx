@@ -170,13 +170,14 @@ const productData = cartItems.map((item) => {
     try {
       
       const orderData = await createOrder();
-      console.log(orderData.order.id, 'orderData');
-      await joinOrderRoom(orderData.order.id);
-      console.log("📡 Joined room for order:", orderData.order.id);
+
+      // console.log(orderData.order._id, 'orderData');
+      await joinOrderRoom(orderData.order._id);
+      console.log("📡 Joined room for order:", orderData.order._id);
       //back to home
       router.replace({
       pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-      params: { order: JSON.stringify(orderData) }, // must stringify objects
+      params: { orderId: JSON.stringify(orderData.order._id) }, // must stringify objects
     });
     } catch (error) {
       console.error('Error creating order:', error);

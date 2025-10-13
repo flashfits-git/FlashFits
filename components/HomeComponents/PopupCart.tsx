@@ -44,7 +44,7 @@ const PopupCart = ({ isTabBarVisible }) => {
           </View>
           <TouchableOpacity
             style={styles.button}
-            onPress={() => router.push('/(stack)/ShoppingBag')}
+            onPress={() => router.push('/(stack)/OrderDetail/OrderTrackingPage')}
           >
             <Text style={styles.buttonText}>Track Order</Text>
           </TouchableOpacity>

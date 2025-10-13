@@ -121,6 +121,7 @@ const Categories = () => {
 
   return (
     <>
+      <CategoryTitleBar/>
       <View style={styles.categoryBarContainer}>
         <ScrollView
           horizontal

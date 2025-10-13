@@ -17,10 +17,15 @@ import {
   ChevronRight,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { listenOrderUpdates } from '@/app/sockets/order.socket';
+
 
 
 export default function OrderTrackingPage() {
+  const { orderId } = useLocalSearchParams();
+  console.log(orderId);
+  
     const router = useRouter();
     const [refreshing, setRefreshing] = useState(false);
 
@@ -43,14 +48,14 @@ export default function OrderTrackingPage() {
       ],
     });
 
-    // const [deliveryPerson] = useState({
-    //   name: 'Kylo Ren',
-    //   id: 'BF 70126',
-    //   avatar: '👤',
-    // });
+    const [deliveryPerson] = useState({
+      name: 'Kylo Ren',
+      id: 'BF 70126',
+      avatar: '👤',
+    });
 
     
-    const [deliveryPerson] = useState(false);
+    // const [deliveryPerson] = useState(false);
 
   return (
 
@@ -61,7 +66,7 @@ export default function OrderTrackingPage() {
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Text style={styles.backArrow} >←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Track Order</Text>
+          <Text style={styles.headerTitle}>Track OrderId_{orderId.slice(-5).toUpperCase()} </Text>
         </View>
       </View>
     <ScrollView style={styles.container} 
