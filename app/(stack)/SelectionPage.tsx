@@ -12,8 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-// import MultiSlider from '@ptomasroos/react-native-multi-slider';
-import SmoothSlider from '../../components/HomeComponents/SmoothSlider'
+import SmoothSlider from '../../components/HomeComponents/SmoothSlider';
 import { fetchnewArrivalsProductsData, getFilteredProducts } from '../api/productApis/products';
 import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
@@ -21,7 +20,6 @@ import Loader from '@/components/Loader/Loader';
 import { fetchCategories } from '../api/categories';
 import { getMerchants } from '../api/merchatApis/getMerchantHome';
 import { FontAwesome } from '@expo/vector-icons';
-
 
 const useThrottle = (callback, delay) => {
   const lastCall = useRef(0);
@@ -48,22 +46,18 @@ export default function SelectionPage() {
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
   const [merchants, setMerchants] = useState([]);
-  
-  // ✅ Use individual state values instead of object
   const [priceRange, setPriceRange] = useState([0, 10000]);
   const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
   const [selectedColors, setSelectedColors] = useState([]);
   const [selectedStores, setSelectedStores] = useState([]);
   const [sortBy, setSortBy] = useState([]);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+// console.log(selectedCategoryIds,'selectedCategoryIds');
 
   const sortModalRef = useRef(null);
   const genderModalRef = useRef(null);
   const filterModalRef = useRef(null);
-  
-  // ✅ Loading state for products
-  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
 
-  // ✅ Memoize the filters object to prevent unnecessary recreations
   const filters = useMemo(() => ({
     priceRange,
     selectedCategoryIds,
@@ -72,9 +66,10 @@ export default function SelectionPage() {
     sortBy,
   }), [priceRange, selectedCategoryIds, selectedColors, selectedStores, sortBy]);
 
-  // ✅ Parse and set initial filters from params
-useEffect(() => {
-  if (filterss) {
+  // Parse and set initial filters from params
+  useEffect(() => {
+    if (!filterss || !categoriesData.length) return; // Wait for categoriesData to be loaded
+
     try {
       const parsedFilters = JSON.parse(filterss);
       setPriceRange(parsedFilters.priceRange || [0, 10000]);
@@ -84,71 +79,71 @@ useEffect(() => {
       setSortBy(parsedFilters.sortBy || []);
 
       const catIds = parsedFilters.selectedCategoryIds || [];
+      if (catIds.length === 0) return;
 
-      if (catIds.length > 0) {
-        // 🧠 mainCategoryId is always the first, subCategoryId second (based on your router push)
-        const mainId = catIds[0];
-        const subId = catIds[1];
-        const subSubId = catIds[2];
+      // Handle main and sub category IDs
+      const mainId = catIds[0];
+      const subId = catIds[1];
+      const subSubId = catIds[2];
 
-        if (mainId) {
+      
+
+      // Set main category and gender
+      if (mainId) {
+        const mainCat = categoriesData.find(c => c._id === mainId);
+        if (mainCat) {
+          // console.log(mainCat.name,'mainCat.name');
+          
           setSelectedMainId(mainId);
-          const mainCat = categoriesData.find(c => c._id === mainId);
-          if (mainCat) setSelectedGender(mainCat.name);
+          setSelectedGender(mainCat.name);
         }
+      }
 
-        if (subId) {
+      // Set subcategory
+      if (subId) {
+        const subCat = categoriesData.find(c => c._id === subId);
+          console.log(subCat.name, subCat._id, 'mainCat.name');
+        if (subCat) {
           setSelectedSubId(subId);
-          // ✅ Additional logic for sub category: ensure main is set and gender
-          if (!mainId) {
-            const subCat = categoriesData.find(c => c._id === subId);
-            if (subCat && subCat.parentId) {
-              const parentMainId = subCat.parentId;
-              setSelectedMainId(parentMainId);
-              const mainCat = categoriesData.find(c => c._id === parentMainId);
-              if (mainCat) setSelectedGender(mainCat.name);
-            }
-          }
-        }
-
-        // ✅ Auto-select the sub-subcategory if it exists
-        if (subSubId) {
-          setSelectedCategoryIds(catIds); // includes all three
-          // ✅ Additional logic for sub-sub category: ensure hierarchy is set
-          if (!subId) {
-            const subSubCat = categoriesData.find(c => c._id === subSubId);
-            if (subSubCat && subSubCat.parentId) {
-              const parentSubId = subSubCat.parentId;
-              setSelectedSubId(parentSubId);
-              const subCat = categoriesData.find(c => c._id === parentSubId);
-              if (subCat && subCat.parentId && !mainId) {
-                const parentMainId = subCat.parentId;
-                setSelectedMainId(parentMainId);
-                const mainCat = categoriesData.find(c => c._id === parentMainId);
-                if (mainCat) setSelectedGender(mainCat.name);
-              }
+          // Ensure main category is set if not provided
+          if (!mainId && subCat.parentId) {
+            const parentMainCat = categoriesData.find(c => c._id === subCat.parentId);
+            if (parentMainCat) {
+              setSelectedMainId(parentMainCat._id);
+              setSelectedGender(parentMainCat.name);
             }
           }
         }
       }
+
+      // Handle sub-subcategory if present
+      // if (subSubId) {
+      //   const subSubCat = categoriesData.find(c => c._id === subSubId);
+      //   if (subSubCat && subSubCat.parentId) {
+      //     setSelectedSubId(subSubCat.parentId); // Set parent subcategory
+      //     const parentSubCat = categoriesData.find(c => c._id === subSubCat.parentId);
+      //     if (parentSubCat && parentSubCat.parentId && !mainId) {
+      //       const parentMainCat = categoriesData.find(c => c._id === parentSubCat.parentId);
+      //       if (parentMainCat) {
+      //         setSelectedMainId(parentMainCat._id);
+      //         setSelectedGender(parentMainCat.name);
+      //       }
+      //     }
+      //   }
+      // }
     } catch (error) {
       console.error('Error parsing filters from params:', error);
     }
-  } else {
-    setPriceRange([0, 10000]);
-  }
-}, [filterss, categoriesData]);
+  }, [filterss, categoriesData]);
 
-
-  // Utility: Throttle function calls
+  // Fetch filtered products
   const fetchFiltered = useCallback(async () => {
     if (isLoadingProducts) return;
     try {
       setIsLoadingProducts(true);
-      // ✅ Use only the last category ID for fetching products
       const apiFilters = {
         ...filters,
-        selectedCategoryIds: selectedCategoryIds.length > 0 ? [selectedCategoryIds[selectedCategoryIds.length - 1]] : []
+        selectedCategoryIds: selectedCategoryIds.length > 0 ? [selectedCategoryIds[selectedCategoryIds.length - 1]] : [],
       };
       console.log('Fetching products with filters:', apiFilters);
       const res = await getFilteredProducts(apiFilters);
@@ -162,7 +157,7 @@ useEffect(() => {
 
   const throttledFetch = useThrottle(fetchFiltered, 3000);
 
-  // ✅ Fetch filtered products when filters change (consolidated)
+  // Fetch filtered products when filters change
   const prevFiltersRef = useRef(filters);
   useEffect(() => {
     const hasFilters =
@@ -174,21 +169,17 @@ useEffect(() => {
 
     if (!hasFilters) return;
 
-    // 🔥 Compare with previous filters
-    const filtersChanged =
-      JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
-
+    const filtersChanged = JSON.stringify(filters) !== JSON.stringify(prevFiltersRef.current);
     if (filtersChanged && !isLoadingProducts) {
       prevFiltersRef.current = filters;
       fetchFiltered();
     }
 
-    // Optional: Set up interval for periodic refresh
     const intervalId = setInterval(throttledFetch, 20000);
     return () => clearInterval(intervalId);
-  }, [filters]);
+  }, [filters, fetchFiltered, isLoadingProducts]);
 
-  // ✅ Fetch categories and merchants (runs once)
+  // Fetch categories and merchants
   useEffect(() => {
     const load = async () => {
       setLoading(true);
@@ -209,41 +200,34 @@ useEffect(() => {
   }, []);
 
   const mainCategories = categoriesData.filter(c => c.level === 0);
-  const subCategories = categoriesData.filter(
-    c => c.level === 1 && c.parentId === selectedMainId
-  );
-  const subSubCategories = categoriesData.filter(
-    c => c.level === 2 && c.parentId === selectedSubId
-  );
+  const subCategories = categoriesData.filter(c => c.level === 1 && c.parentId === selectedMainId);
+  const subSubCategories = categoriesData.filter(c => c.level === 2 && c.parentId === selectedSubId);
 
-  // ✅ Use useCallback to prevent function recreation
   const handleMainCategoryChange = useCallback((id) => {
     setSelectedMainId(id);
-    const firstSub = categoriesData.find(
-      c => c.parentId === id && c.level === 1
-    );
-    if (firstSub) setSelectedSubId(firstSub._id);
-    setSelectedCategoryIds([id]); // ✅ Update individual state
+    const firstSub = categoriesData.find(c => c.parentId === id && c.level === 1);
+    if (firstSub) {
+      setSelectedSubId(firstSub._id);
+      setSelectedCategoryIds([id, firstSub._id]);
+    } else {
+      setSelectedCategoryIds([id]);
+    }
   }, [categoriesData]);
 
   const handleSubCategoryChange = useCallback((id) => {
     setSelectedSubId(id);
-    setSelectedCategoryIds([id]); // ✅ Update individual state
-  }, []);
+    setSelectedCategoryIds([selectedMainId, id].filter(Boolean));
+  }, [selectedMainId]);
 
   const toggleColor = (color) => {
     setSelectedColors((prev) =>
-      prev.includes(color)
-        ? prev.filter((c) => c !== color)
-        : [...prev, color]
+      prev.includes(color) ? prev.filter((c) => c !== color) : [...prev, color]
     );
   };
 
   const toggleStore = (storeId) => {
     setSelectedStores((prev) =>
-      prev.includes(storeId)
-        ? prev.filter((s) => s !== storeId)
-        : [...prev, storeId]
+      prev.includes(storeId) ? prev.filter((s) => s !== storeId) : [...prev, storeId]
     );
   };
 
@@ -290,11 +274,9 @@ useEffect(() => {
           <TouchableOpacity onPress={() => filterModalRef.current?.open()} style={styles.filterButton}>
             <Text style={styles.filterText}>FILTER</Text>
           </TouchableOpacity>
-
           <TouchableOpacity onPress={() => sortModalRef.current?.open()} style={styles.filterButton1}>
             <Text style={styles.filterText}>SORT</Text>
           </TouchableOpacity>
-
           <TouchableOpacity onPress={() => genderModalRef.current?.open()} style={styles.genderButton}>
             <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
           </TouchableOpacity>
@@ -326,7 +308,6 @@ useEffect(() => {
               initialValues={priceRange}
               onChange={(values) => setPriceRange(values)}
             />
-            {/* <Text style={styles.priceLabel}>₹{priceRange[0]} - ₹{priceRange[1]}</Text> */}
           </View>
 
           {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
@@ -401,7 +382,7 @@ useEffect(() => {
             {Array.isArray(merchants) && merchants.map(merchant => (
               <TouchableOpacity
                 key={merchant._id}
-                onPress={() => toggleStore(merchant._id)} // ✅ use store ID instead of name
+                onPress={() => toggleStore(merchant._id)}
                 style={[
                   styles.storePill,
                   filters.selectedStores.includes(merchant._id) && styles.storePillSelected
@@ -418,13 +399,15 @@ useEffect(() => {
           </View>
 
           {/* APPLY BUTTON */}
-          <TouchableOpacity style={styles.applyButton}
+          <TouchableOpacity
+            style={styles.applyButton}
             onPress={() => filterModalRef.current?.close()}
           >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Apply Filters</Text>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Filters</Text>
           </TouchableOpacity>
         </View>
       </Modalize>
+
       {/* SORT Modal */}
       <Modalize ref={sortModalRef} adjustToContentHeight>
         <View style={{ paddingVertical: 12 }}>
@@ -437,7 +420,6 @@ useEffect(() => {
           }}>
             SORT BY
           </Text>
-
           {[
             "newest",
             'priceLowToHigh',
@@ -454,14 +436,14 @@ useEffect(() => {
                 borderBottomColor: '#eee',
               }}
               onPress={() => {
-                setSortBy(option);
+                setSortBy([option]); // Use array for consistency
                 sortModalRef.current?.close();
               }}
             >
               <Text style={{
                 fontSize: 16,
                 color: '#222',
-                fontWeight: sortBy === option ? '700' : '400'
+                fontWeight: sortBy.includes(option) ? '700' : '400'
               }}>
                 {option.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
               </Text>
@@ -469,6 +451,7 @@ useEffect(() => {
           ))}
         </View>
       </Modalize>
+
       {/* GENDER Modal */}
       <Modalize ref={genderModalRef} adjustToContentHeight>
         <View style={{ paddingVertical: 12 }}>
@@ -482,8 +465,7 @@ useEffect(() => {
             }}
           >
             GENDER
-          </Text> 
-          
+          </Text>
           {mainCategories.map((cat) => (
             <TouchableOpacity
               key={cat._id}
@@ -495,12 +477,7 @@ useEffect(() => {
               }}
               onPress={() => {
                 setSelectedGender(cat.name);
-                setSelectedMainId(cat._id);
-                setSelectedCategoryIds([cat._id]);
-
-                const firstSub = categoriesData.find(c => c.parentId === cat._id && c.level === 1);
-                if (firstSub) setSelectedSubId(firstSub._id);
-
+                handleMainCategoryChange(cat._id);
                 genderModalRef.current?.close();
               }}
             >
@@ -517,7 +494,6 @@ useEffect(() => {
           ))}
         </View>
       </Modalize>
-
     </GestureHandlerRootView>
   );
 }

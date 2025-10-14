@@ -20,6 +20,18 @@ export const getMerchantById = async (id: string) => {
   }
 };
 
+export const getProductsBatch = async (merchantIds) => {
+
+  try {
+  const response = await api.post('user/products/batch', { merchantIds });
+  return response.data; // Returns { merchantId1: [products], ... }    
+  } catch (error) {
+    console.error(`Failed to fetch :`, error);
+    throw error;
+  }
+
+};
+
 export const getProductsByMerchantId = async (merchantId: string) => {
   try {
     const response = await api.get(`user/products/merchant/${merchantId}`);

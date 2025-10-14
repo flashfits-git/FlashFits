@@ -15,47 +15,49 @@ import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import React, { useState, useRef, useEffect } from 'react';
 import PopupCart from '../../components/HomeComponents/PopupCart';
-import {getMerchants, getProductsByMerchantId} from '../api/merchatApis/getMerchantHome'
+import { getMerchants, getProductsBatch } from '../api/merchatApis/getMerchantHome';
 import Loader from '@/components/Loader/Loader';
-import Footer from '../../components/Footer'
-
-
-
-// import { useCart } from './Context';
+import Footer from '../../components/Footer';
 
 export default function FlashfitsStores() {
-  // const [selectedMainCategory, setSelectedMainCategory] = useState('mens');
-  // const [selectedSideCategory, setSelectedSideCategory] = useState('1');
   const navigation = useNavigation();
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [showStickySearch, setShowStickySearch] = useState(false);
-  // const { cartCount } = useCart();
-
   const [loading, setLoading] = useState(true);
   const [merchants, setMerchants] = useState([]);
-    useEffect(() => {
-    const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const merchantResponse = await getMerchants();
-      // console.log(merchantResponse);
-      setMerchants(Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : []);
-    } catch (err) {
-      console.error("Error loading categories or merchants", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-  loadCategories();
-}, []);
+  const [productsByMerchant, setProductsByMerchant] = useState({}); // New state for batch products
+  // console.log(productsByMerchant,'productsByMerchant');
+  
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        // Fetch merchants
+        const merchantResponse = await getMerchants();
+        const merchantsArray = Array.isArray(merchantResponse.merchants) ? merchantResponse.merchants : [];
+        setMerchants(merchantsArray);
+
+        // Extract unique merchant IDs and fetch products in batch
+        const merchantIds = [...new Set(merchantsArray.map(m => m._id))]; // Dedupe IDs
+        if (merchantIds.length > 0) {
+          const productsResponse = await getProductsBatch(merchantIds);
+          setProductsByMerchant(productsResponse || {});
+        }
+      } catch (err) {
+        console.error("Error loading merchants or products", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
-
-      // Show sticky search bar after scroll passes 60px
       setShowStickySearch(clampedValue > 60);
 
       if (clampedValue < currentOffset.current - 5) {
@@ -90,12 +92,10 @@ export default function FlashfitsStores() {
 
   if (loading) return <Loader />;
 
-
   return (
     <View style={styles.container}>
-      <NearbyHeaderBar  />
+      <NearbyHeaderBar />
 
-      {/* Sticky search bar appears only when scrolled past original */}
       {showStickySearch && (
         <View style={styles.stickySearchContainer}>
           <View style={styles.searchContainer}>
@@ -118,7 +118,6 @@ export default function FlashfitsStores() {
         )}
         scrollEventThrottle={16}
       >
-        {/* Normal search bar (scrolls with content) */}
         <View style={styles.searchContainer}>
           <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
           <TextInput
@@ -129,14 +128,14 @@ export default function FlashfitsStores() {
         </View>
 
         <Text style={styles.sectionTitle}>Stores Near You</Text>
-        <NearbyStores merchantData={merchants} />
+        <NearbyStores merchantData={merchants} productsByMerchant={productsByMerchant} />
 
         <Text style={styles.sectionTitle}>Popular Stores</Text>
-        <PopularStores merchantData={merchants} />
+        {/* <PopularStores merchantData={merchants} productsByMerchant={productsByMerchant} /> */}
       </ScrollView>
 
       <PopupCart isTabBarVisible={isTabBarVisible} />
-      <Footer/>
+      <Footer />
     </View>
   );
 }

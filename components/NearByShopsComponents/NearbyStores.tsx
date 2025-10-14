@@ -1,24 +1,13 @@
-import React,{useEffect, useState }from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const DUMMY_STORES = [
-  { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
-  { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
-  { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
-  { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
-];
-
-
-const NearbyStores = ({merchantData}) => {
-
-  
-  // console.log(merchantData,"3e3e3");
-  
+const NearbyStores = ({ merchantData, productsByMerchant }) => {
   const navigation = useNavigation();
 
+   
 
   return (
     <FlatList
@@ -29,29 +18,27 @@ const NearbyStores = ({merchantData}) => {
       contentContainerStyle={styles.listContent}
       renderItem={({ item }) => (
         <View style={styles.storeCard}>
-          {/* TouchableOpacity ONLY on header */}
           <TouchableOpacity
             style={styles.header}
             onPress={() =>
               navigation.navigate('(stack)/ShopDetails/StoreDetailPage', {
-                merchantId: item._id, // item represents each merchant from your data array
+                merchantId: item._id,
               })
             }
           >
-  <View style={styles.leftBlock}>
-    <Text style={styles.storeName}>{item.shopName}</Text>
-    <Text style={styles.ratingText}>
+            <View style={styles.leftBlock}>
+              <Text style={styles.storeName}>{item.shopName}</Text>
+              <Text style={styles.ratingText}>
                 {item.address
                   ? [item.address.street, item.address.city, item.address.state, item.address.postalCode, item.address.country]
                       .filter(Boolean)
                       .join(', ')
                   : 'No address'}
-    </Text>
-  </View>
-  {/* <Ionicons name="time-outline" size={13} color="#000000ff" /> */}
-  <Text style={styles.timeText}>30 min</Text>
-</TouchableOpacity>
-          <CardinStores merchantId={item._id} />
+              </Text>
+            </View>
+            <Text style={styles.timeText}>30 min</Text>
+          </TouchableOpacity>
+          <CardinStores merchantId={item._id} products={productsByMerchant[item._id] || []} />
         </View>
       )}
     />

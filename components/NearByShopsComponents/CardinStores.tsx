@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from 'react-native';
 import { useNavigation } from 'expo-router';
-import { getProductsByMerchantId } from '../../app/api/merchatApis/getMerchantHome';
 
 const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId }) => {
   const navigation = useNavigation();
@@ -43,42 +42,29 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId
   );
 };
 
-export default function CardinStores({ merchantId }) {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function CardinStores({ merchantId, products }) {
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!merchantId) return;
-      try {
-        const result = await getProductsByMerchantId(merchantId);
-        // console.log(result, 'Fetched Products');
-        setProducts(result);
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, [merchantId]);
-
+  console.log(products,'products');
+  
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {products.map((product) => (
-          <DressCard
-            key={product._id}
-            image={product.images?.[0]?.url || 'https://via.placeholder.com/140'}
-            title={product.name}
-            price={product.price}
-            oldPrice={product.mrp || product.price + 100}
-            discount={`${product.discount || 0}%`}
-            rating={product.ratings || '4.5'}
-            merchantId={product.merchant}
-          />
-        ))}
+        {products.length > 0 ? (
+          products.map((product) => (
+            <DressCard
+              key={product._id}
+              image={product.images?.[0]?.url || 'https://via.placeholder.com/140'}
+              title={product.name}
+              price={product.price}
+              oldPrice={product.mrp || product.price + 100}
+              discount={'0%'}
+              rating={product.ratings || '4.5'}
+              merchantId={product.merchantId}
+            />
+          ))
+        ) : (
+          <Text style={styles.noProductsText}>No products available</Text>
+        )}
       </ScrollView>
     </View>
   );
