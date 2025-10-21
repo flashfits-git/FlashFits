@@ -5,29 +5,32 @@ import { getSocket, initSocket } from "../config/socket";
 export const joinOrderRoom = async (orderId) => {
   const socket = await initSocket();
   if (!socket.connected) {
-    socket.connect();
+    return new Promise((resolve) => {
+      socket.once("connect", () => {
+        console.log("Socket connected, joining room:", orderId);
+        socket.emit("joinOrderRoom", orderId);
+        console.log(`📢 Joined order room: order_${orderId}`);
+        resolve();
+      });
+      socket.connect();
+    });
   }
-  console.log("Socket id is:", socket.id);
-  if (socket && socket.connected) {
-    socket.emit("joinOrderRoom", orderId);
-    console.log(`📢 Joined order room: order_${orderId}`);
-  }
+  socket.emit("joinOrderRoom", orderId);
+  console.log(`📢 Joined order room: order_${orderId}`);
 };
 
 // Listen for order updates
-export const listenOrderUpdates = (callback) => {
-  const socket = getSocket();
-  socket.off("orderUpdate");
-
+export const listenOrderUpdates = async (callback) => {
+  const socket = await initSocket(); // Ensure socket is initialized
+  socket.off("orderUpdate"); // Remove previous listeners
   console.log("Socket id is:", socket.id);
   if (socket) {
     socket.on("orderUpdate", (updateData) => {
       console.log("📦 Order update:", updateData);
-      callback(updateData); // pass to component
+      callback(updateData);
     });
-  }
-  else{
-    console.log("Socket not connected");
+  } else {
+    console.error("Socket not initialized");
   }
 };
 

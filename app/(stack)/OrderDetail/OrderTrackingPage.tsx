@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,8 @@ import {
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { listenOrderUpdates } from '@/app/sockets/order.socket';
+import { joinOrderRoom, listenOrderUpdates } from '@/app/sockets/order.socket';
+import { removeOrderListeners } from '@/app/sockets/order.socket';
 
 
 
@@ -35,6 +36,41 @@ export default function OrderTrackingPage() {
     setRefreshing(false);
   }, 1000); // Simulate remount or reload delay
 }, []);
+
+useEffect(() => {
+  // Join order room and listen for updates
+  joinOrderRoom(orderId).then(() => {
+    listenOrderUpdates((updateData) => {
+      setOrderStatus((prev) => ({
+        ...prev,
+        current: updateData.status || prev.current,
+        estimatedTime: updateData.estimatedTime || prev.estimatedTime,
+        steps: prev.steps.map((step) => ({
+          ...step,
+          completed: updateData.completedSteps?.includes(step.id) || step.completed,
+        })),
+      }));
+    });
+  });
+
+  // Cleanup on unmount
+  return () => {
+    removeOrderListeners();
+  };
+}, [orderId]);
+
+// const onRefresh = useCallback(async () => {
+//   setRefreshing(true);
+//   try {
+//     // Optionally fetch updated order data via API
+//     // const response = await axios.get(`https://your-api/orders/${orderId}`);
+//     // setOrderStatus(...);
+//   } catch (error) {
+//     console.error("Failed to refresh order:", error);
+//   } finally {
+//     setRefreshing(false);
+//   }
+// }, [orderId]);
     
     
     const [orderStatus] = useState({

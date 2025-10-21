@@ -4,12 +4,7 @@ import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-const DUMMY_STORES = [
-  { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
-  { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
-  { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
-  { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
-];
+
 
 
 const NearbyStores = ({merchantData}) => {
