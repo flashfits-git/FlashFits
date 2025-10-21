@@ -97,23 +97,28 @@ const Categories = () => {
   }, [mainCategories]);
 
   // ✅ MAIN FUNCTION — sends filters to SelectionPage
-  const handleViewAll = (subCatName, subCategoryId) => {
-    const filters = {
-      priceRange: [0, 2000],
-      selectedCategoryIds: [subCategoryId],
-      selectedColors: [],
-      selectedStores: [],
-      sortBy: [],
-    };
+const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
 
-    router.push({
-      pathname: '(stack)/SelectionPage',
-      params: {
-        filterss: JSON.stringify(filters),
-        subCatName,
-      },
-    });
+  console.log(subSubCategoryId,'subSubCategoryId');
+  
+  const filters = {
+    priceRange: [0, 10000],
+    // ✅ Include main, sub, and sub-sub category IDs
+    selectedCategoryIds: [selectedMainId, subCategoryId, subSubCategoryId].filter(Boolean),
+    selectedColors: [],
+    selectedStores: [],
+    sortBy: [],
   };
+
+  router.push({
+    pathname: '(stack)/SelectionPage',
+    params: {
+      filterss: JSON.stringify(filters),
+      subCatName,
+    },
+  });
+};
+
 
   if (loading) {
     return <Loader />;
@@ -121,7 +126,7 @@ const Categories = () => {
 
   return (
     <>
-      <CategoryTitleBar/>
+    <CategoryTitleBar  />
       <View style={styles.categoryBarContainer}>
         <ScrollView
           horizontal
@@ -179,18 +184,18 @@ const Categories = () => {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.productCard}
-                onPress={() => handleViewAll(item.name, item._id)}
-              >
-                <Image
-                  source={{ uri: item.image?.url }}
-                  style={styles.productImage}
-                />
-                <Text style={styles.productTitle} numberOfLines={2}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.productCard}
+            onPress={() => handleViewAll(item.name, selectedSubId, item._id)} // Pass selectedSubId and item._id
+          >
+            <Image
+              source={{ uri: item.image?.url }}
+              style={styles.productImage}
+            />
+            <Text style={styles.productTitle} numberOfLines={2}>
+              {item.name}
+            </Text>
+          </TouchableOpacity>
             )}
           />
         </View>

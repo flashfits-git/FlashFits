@@ -26,23 +26,27 @@ const StoreDetailPage = () => {
   const route = useRoute();
   const { merchantId } = route.params;
 
-  console.log(merchantId);
   
 
 const handleViewAll = (subCatName, products) => {
   const filters = {
-    priceRange: [0, 2000], // default
-    selectedCategoryIds: [products[0]?.subCategoryId?._id || ''],
-    selectedColors: [], // can be filled later
-    selectedStores: [merchantId], // merchant = store
-    sortBy: [], // optional
+    
+    priceRange: [0, 10000], // default price range
+    selectedCategoryIds: [
+      products[0]?.categoryId?._id || '', // Main category ID
+      products[0]?.subCategoryId?._id || '' // Subcategory IDnull, // Sub-subcategory ID (optional)
+    ].filter(Boolean), // Remove falsy values
+    selectedColors: [], // Can be filled later
+    selectedStores: [merchantId], // Filter by merchant/store
+    sortBy: [], // Optional sorting
   };
 
   router.push({
     pathname: '(stack)/SelectionPage',
     params: {
-      filterss: JSON.stringify(filters), // ✅ renamed for consistency
-      subCatName, // optional if needed in header
+      filterss: JSON.stringify(filters),
+      subCatName, // Pass subCatName for display or filtering
+      type: 'Max', // Optional, retained for header if needed
     },
   });
 };

@@ -11,7 +11,7 @@ export const initSocket = async () => {
   const userId = await getUserId("userId"); 
   const role ="user" 
   if (!socket) {
-    socket = io(SOCKET_URL, {
+    socket = io(BACKEND_URL, {
       transports: ["websocket"],
       query: { userId: userId,role:role }, // optional: identify user
     });
