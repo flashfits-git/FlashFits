@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 
 
-const NearbyStores = ({merchantData}) => {
+const NearbyStores = ({merchantData,productsByMerchant}) => {
 
   
   // console.log(merchantData,"3e3e3");

@@ -15,7 +15,7 @@ export default {
       backgroundColor: "#ffffff",
     },
     extra: {
-      BACKEND_URL: 'https://03430b25ab5a.ngrok-free.app',
+      BACKEND_URL: 'https://8e07274ed203.ngrok-free.app',
     },
   },
 };

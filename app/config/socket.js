@@ -14,6 +14,9 @@ export const initSocket = async () => {
     socket = io(BACKEND_URL, {
       transports: ["websocket"],
       query: { userId: userId,role:role }, // optional: identify user
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
  
     socket.on("connect", () => {

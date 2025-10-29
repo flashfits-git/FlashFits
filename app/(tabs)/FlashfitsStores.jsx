@@ -44,6 +44,7 @@ export default function FlashfitsStores() {
         const merchantIds = [...new Set(merchantsArray.map(m => m._id))]; // Dedupe IDs
         if (merchantIds.length > 0) {
           const productsResponse = await getProductsBatch(merchantIds);
+          // console.log(productsResponse,'productsResponse');
           setProductsByMerchant(productsResponse || {});
         }
       } catch (err) {

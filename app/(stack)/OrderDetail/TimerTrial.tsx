@@ -6,8 +6,6 @@ import {
   ScrollView,
   StyleSheet,
   RefreshControl,
-  Image,
-  TextInput,
 } from 'react-native';
 import {
   MapPin,
@@ -21,10 +19,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { joinOrderRoom, listenOrderUpdates, removeOrderListeners } from '@/app/sockets/order.socket';
-import { getSocket } from '../../config/socket';
 
 // Helper function to format time (MM:SS)
-const formatTime = (seconds: number) => {
+const formatTime = (seconds) => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -35,10 +32,11 @@ const TrialPhaseTimer = ({ trialPhaseStart, trialPhaseDuration }) => {
   const [timeLeft, setTimeLeft] = useState(0);
 
   useEffect(() => {
+    // Calculate initial time left
     const startTime = new Date(trialPhaseStart).getTime();
     const durationSeconds = trialPhaseDuration * 60; // Convert minutes to seconds
     const endTime = startTime + durationSeconds * 1000;
-
+    
     const updateTimer = () => {
       const now = Date.now();
       const secondsLeft = Math.max(0, Math.floor((endTime - now) / 1000));
@@ -48,64 +46,17 @@ const TrialPhaseTimer = ({ trialPhaseStart, trialPhaseDuration }) => {
       }
     };
 
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    updateTimer(); // Initial call
+    const interval = setInterval(updateTimer, 1000); // Update every second
+
+    return () => clearInterval(interval); // Cleanup interval
   }, [trialPhaseStart, trialPhaseDuration]);
 
-  if (timeLeft <= 0) return null;
+  if (timeLeft <= 0) return null; // Hide timer when time is up
 
   return (
     <View style={styles.timerContainer}>
       <Text style={styles.timerText}>Trial Phase: {formatTime(timeLeft)}</Text>
-    </View>
-  );
-};
-
-// Item Selection Component
-const ItemSelection = ({ items, onUpdateItem }) => {
-  return (
-    <View style={styles.itemSelectionContainer}>
-      <Text style={styles.itemSelectionTitle}>Select Items to Keep or Return</Text>
-      {items.map((item, index) => (
-        <View key={item._id} style={styles.itemCard}>
-          <Image source={{ uri: item.image }} style={styles.itemImage} />
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemSize}>Size: {item.size}</Text>
-            <Text style={styles.itemPrice}>₹{item.price} x {item.quantity}</Text>
-            <View style={styles.itemActions}>
-              <TouchableOpacity
-                style={[
-                  styles.itemButton,
-                  item.tryStatus === 'keep' && styles.itemButtonSelected,
-                ]}
-                onPress={() => onUpdateItem(index, 'keep', null)}
-              >
-                <Text style={styles.itemButtonText}>Keep</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.itemButton,
-                  item.tryStatus === 'return' && styles.itemButtonSelected,
-                ]}
-                onPress={() => onUpdateItem(index, 'return', item.returnReason)}
-              >
-                <Text style={styles.itemButtonText}>Return</Text>
-              </TouchableOpacity>
-            </View>
-            {item.tryStatus === 'return' && (
-              <TextInput
-                style={styles.returnReasonInput}
-                placeholder="Enter return reason"
-                placeholderTextColor="#9ca3af"
-                value={item.returnReason || ''}
-                onChangeText={(text) => onUpdateItem(index, 'return', text)}
-              />
-            )}
-          </View>
-        </View>
-      ))}
     </View>
   );
 };
@@ -115,15 +66,19 @@ const statusToSteps = (orderStatus) => {
   const steps = [
     { id: 'picked', label: 'Picked', completed: false },
     { id: 'in-transit', label: 'In transit', completed: false },
-    { id: 'Arrived', label: 'Arrived', completed: false },
+    { id: 'delivered', label: 'Delivered', completed: false },
   ];
 
+  // Update step completion based on orderStatus
   switch (orderStatus) {
-    case 'arrived at delivery':
+    case 'delivered':
       steps[2].completed = true;
-    case 'out_for_delivery':
+    // Fall through to set previous steps
+    case 'in-transit':
+    case 'try phase':
       steps[1].completed = true;
-    case 'packed':
+    // Fall through to set previous steps
+    case 'picked':
       steps[0].completed = true;
       break;
     default:
@@ -153,83 +108,32 @@ export default function OrderTrackingPage() {
     trialPhaseStart: null,
     trialPhaseDuration: 0,
   });
-  const [otp  ,setOtp] = useState('');
-  const [items, setItems] = useState([]);
-  const [finalBilling, setFinalBilling] = useState({
-    baseAmount: 0,
-    deliveryCharge: 0,
-    tryAndBuyFee: 0,
-    gst: 0,
-    discount: 0,
-    totalPayable: 0,
-  });
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
       setRefreshing(false);
-    }, 1000);
+    }, 1000); // Simulate remount or reload delay
   }, []);
-
-  // Update billing based on selected items and trial phase duration
-  const updateBilling = useCallback((items, deliveryCharge, trialPhaseStart, trialPhaseDuration) => {
-    const baseAmount = items
-      .filter((item) => item.tryStatus === 'keep')
-      .reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
-    // Calculate waiting charge (e.g., ₹10 per minute of trial phase)
-    let tryAndBuyFee = 0;
-    if (trialPhaseStart && trialPhaseDuration > 0) {
-      const startTime = new Date(trialPhaseStart).getTime();
-      const currentTime = Date.now();
-      const elapsedMinutes = Math.floor((currentTime - startTime) / 1000 / 60);
-      tryAndBuyFee = Math.min(elapsedMinutes, trialPhaseDuration) * 10; // ₹10 per minute
-    }
-
-    const totalPayable = baseAmount + deliveryCharge + tryAndBuyFee;
-
-    setFinalBilling({
-      baseAmount,
-      deliveryCharge,
-      tryAndBuyFee,
-      gst: 0, // Add GST logic if needed
-      discount: 0, // Add discount logic if needed
-      totalPayable,
-    });
-  }, []);
-
-  // Handle item status update
-  const handleUpdateItem = (index, tryStatus, returnReason) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], tryStatus, returnReason };
-    setItems(updatedItems);
-    updateBilling(updatedItems, finalBilling.deliveryCharge, trialPhase.trialPhaseStart, trialPhase.trialPhaseDuration);
-  };
-
-  // Handle submission (Return or Payment)
-  const handleSubmit = (action) => {
-    const socket = getSocket();
-    socket.emit('submitTrialSelection', {
-      orderId,
-      items,
-      finalBilling,
-      action, // 'return' or 'payment'
-    });
-  };
 
   useEffect(() => {
     console.log('Joining order room for orderId:', orderId);
 
+    // Join order room and listen for updates
     joinOrderRoom(orderId).then(() => {
-      listenOrderUpdates((updateData:any) => {
-        // console.log('Received order update:', updateData);
-        setOtp(updateData?.otp);
-        console.log('Otp is:', updateData?.otp);
+      // Listen for order updates
+      listenOrderUpdates((updateData) => {
+        console.log('Received order update:', updateData);
+
+        // Map backend order status to steps
         const steps = statusToSteps(updateData.orderStatus);
+
+        // Estimate time
         const estimatedTime = updateData.deliveryDistance
           ? `${Math.round(updateData.deliveryDistance * 2)} Mins`
           : 'N/A';
 
+        // Update order status state
         setOrderStatus({
           current: updateData.orderStatus || 'pending',
           estimatedTime,
@@ -237,6 +141,7 @@ export default function OrderTrackingPage() {
           steps,
         });
 
+        // Update delivery person
         setDeliveryPerson({
           name: updateData.deliveryRiderId
             ? `Rider ${updateData.deliveryRiderId.slice(-4)}`
@@ -245,15 +150,7 @@ export default function OrderTrackingPage() {
           avatar: '👤',
         });
 
-        if (updateData.items) {
-          setItems(updateData.items.map((item) => ({
-            ...item,
-            tryStatus: item.tryStatus || 'pending',
-            returnReason: item.returnReason || null,
-          })));
-          updateBilling(updateData.items, updateData.deliveryCharge, updateData.trialPhaseStart, updateData.trialPhaseDuration);
-        }
-
+        // Update trial phase if duration is provided
         if (updateData.trialPhaseDuration > 0 && updateData.trialPhaseStart) {
           setTrialPhase({
             isActive: true,
@@ -263,30 +160,28 @@ export default function OrderTrackingPage() {
         }
       });
 
+      // Listen for trialPhaseStart event
       const socket = getSocket();
       socket.on('trialPhaseStart', (data) => {
-        console.log('Received trialPhaseStartdsfdss:', data);
-        // console.log('Order id is:', orderId);
+        console.log('Received trialPhaseStart:', data);
         if (data.orderId === orderId) {
           setTrialPhase({
             isActive: true,
             trialPhaseStart: data.trialPhaseStart,
             trialPhaseDuration: data.trialPhaseDuration,
           });
-          updateBilling(items, finalBilling.deliveryCharge, data.trialPhaseStart, data.trialPhaseDuration);
         }
       });
     });
 
+    // Cleanup on unmount
     return () => {
       console.log('Cleaning up order listeners for orderId:', orderId);
       const socket = getSocket();
       socket.off('trialPhaseStart');
       removeOrderListeners();
     };
-  }, [orderId, items, finalBilling.deliveryCharge, updateBilling]);
-
-  const hasReturnItems = items.some((item) => item.tryStatus === 'return');
+  }, [orderId]);
 
   return (
     <>
@@ -312,7 +207,7 @@ export default function OrderTrackingPage() {
           />
         }
       >
-        {/* Map Section - Now separate from status card */}
+        {/* Map Section */}
         <View style={styles.mapSection}>
           <View style={styles.mapOverlay} />
           <View style={[styles.marker, styles.startMarker]}>
@@ -326,129 +221,84 @@ export default function OrderTrackingPage() {
           </View>
           <Text style={styles.storeLabel}>Store</Text>
           <Text style={styles.locationLabel}>Your Location</Text>
+
+          {/* Status Card */}
+          <LinearGradient
+            colors={['#000', '#000', '#000']}
+            start={{ x: 0, y: 1 }}
+            end={{ x: 0, y: 0 }}
+            style={styles.statusCard}
+          >
+            <View style={styles.statusHeader}>
+              <View style={styles.statusLeft}>
+                <View style={styles.packageIcon}>
+                  <Package size={24} color="#fff" />
+                </View>
+                <View>
+                  <Text style={styles.arrivalText}>
+                    Arriving in {orderStatus.estimatedTime}
+                  </Text>
+                  <Text style={styles.deliveryType}>{orderStatus.deliveryType}</Text>
+                </View>
+              </View>
+              <TouchableOpacity>
+                <Text style={styles.menuDots}>⋮</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Steps */}
+            <View style={styles.stepsRow}>
+              {orderStatus.steps.map((step, index) => (
+                <React.Fragment key={step.id}>
+                  <View style={styles.stepContainer}>
+                    <View
+                      style={[
+                        styles.stepCircle,
+                        step.completed
+                          ? styles.stepCompleted
+                          : styles.stepIncomplete,
+                      ]}
+                    >
+                      {step.completed ? (
+                        <CheckCircle size={18} color="#fff" />
+                      ) : (
+                        <Clock size={18} color="#fff" />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        styles.stepLabel,
+                        step.completed
+                          ? styles.stepLabelActive
+                          : styles.stepLabelInactive,
+                      ]}
+                    >
+                      {step.label}
+                    </Text>
+                  </View>
+                  {index < orderStatus.steps.length - 1 && (
+                    <View
+                      style={[
+                        styles.stepLine,
+                        step.completed ? styles.lineActive : styles.lineInactive,
+                      ]}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
+
+            {/* Trial Phase Timer */}
+            {trialPhase.isActive && (
+              <TrialPhaseTimer
+                trialPhaseStart={trialPhase.trialPhaseStart}
+                trialPhaseDuration={trialPhase.trialPhaseDuration}
+              />
+            )}
+          </LinearGradient>
         </View>
 
-        {/* Status Card - Now independent with auto height */}
-        <LinearGradient
-          colors={['#000', '#000', '#000']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.statusCard}
-        >
-          <View style={styles.statusHeader}>
-            <View style={styles.statusLeft}>
-              <View style={styles.packageIcon}>
-                <Package size={24} color="#fff" />
-              </View>
-              <View>
-                <Text style={styles.arrivalText}>
-                  Arriving in {orderStatus.estimatedTime}
-                </Text>
-                <Text style={styles.deliveryType}>{orderStatus.deliveryType}</Text>
-              </View>
-            </View>
-            <TouchableOpacity>
-              <Text style={styles.menuDots}>⋮</Text>
-            </TouchableOpacity>
-          </View>
-      
-          <View style={styles.stepsRow}>
-            {orderStatus.steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <View style={styles.stepContainer}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      step.completed
-                        ? styles.stepCompleted
-                        : styles.stepIncomplete,
-                    ]}
-                  >
-                    {step.completed ? (
-                      <CheckCircle size={18} color="#fff" />
-                    ) : (
-                      <Clock size={18} color="#fff" />
-                    )}
-                  </View>
-                  <Text
-                    style={[
-                      styles.stepLabel,
-                      step.completed
-                        ? styles.stepLabelActive
-                        : styles.stepLabelInactive,
-                    ]}
-                  >
-                    {step.label}
-                  </Text>
-                </View>
-                {index < orderStatus.steps.length - 1 && (
-                  <View
-                    style={[
-                      styles.stepLine,
-                      step.completed ? styles.lineActive : styles.lineInactive,
-                    ]}
-                  />
-                )}
-              </React.Fragment>
-            ))}
-          </View>
-
-          {trialPhase.isActive && (
-            <TrialPhaseTimer
-              trialPhaseStart={trialPhase.trialPhaseStart}
-              trialPhaseDuration={trialPhase.trialPhaseDuration}
-            />
-          )}
-
-          {trialPhase.isActive && items.length > 0 && (
-            <>
-              <ItemSelection items={items} onUpdateItem={handleUpdateItem} />
-              <View style={styles.billingContainer}>
-                <Text style={styles.billingTitle}>Billing Summary</Text>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Base Amount:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.baseAmount}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Delivery Charge:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.deliveryCharge}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Try & Buy Fee:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.tryAndBuyFee}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Payable:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.totalPayable}</Text>
-                </View>
-              </View>
-              {/* //show otp only if return is there*/}
-              {hasReturnItems && (
-                <View  style={styles.billingContainer}>
-                  <Text  style={styles.billingTitle}>Return OTP:  {otp}</Text>
-                </View>
-              )}
-             
-              <View style={styles.actionButtonsContainer}>
-                {hasReturnItems && (
-                  <TouchableOpacity
-                    style={styles.actionButtonPrimary}
-                    onPress={() => handleSubmit('return')}
-                  >
-                    <Text style={styles.actionButtonText}>Return Items</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={styles.actionButtonPrimary}
-                  onPress={() => handleSubmit('payment')}
-                >
-                  <Text style={styles.actionButtonText}>Proceed to Payment</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </LinearGradient>
-
+        {/* Delivery Person */}
         {deliveryPerson ? (
           <View style={styles.deliveryCard}>
             <View style={styles.deliveryRow}>
@@ -478,6 +328,7 @@ export default function OrderTrackingPage() {
           </View>
         )}
 
+        {/* Buttons */}
         <TouchableOpacity style={styles.actionButton}>
           <View style={styles.actionLeft}>
             <Package size={20} color="#444" />
@@ -494,6 +345,7 @@ export default function OrderTrackingPage() {
           <ChevronRight size={20} color="#9ca3af" />
         </TouchableOpacity>
 
+        {/* Try & Buy */}
         {orderStatus.deliveryType === 'Try & Buy' && (
           <View style={styles.tryBuy}>
             <View style={styles.tryBuyRow}>
@@ -515,6 +367,7 @@ export default function OrderTrackingPage() {
   );
 }
 
+// Your provided styles with timer styles added
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   header: {
@@ -536,7 +389,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 20,
-    height: 250, // Reduced height since status card is now separate
+    height: 480,
     backgroundColor: '#f3f4f6',
     overflow: 'hidden',
     position: 'relative',
@@ -604,8 +457,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statusCard: {
-    marginTop: 16, // Changed from position: absolute
-    marginHorizontal: 16,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     borderRadius: 20,
     padding: 18,
     paddingBottom: 26,
@@ -614,6 +469,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
+    margin: 8,
   },
   statusHeader: {
     flexDirection: 'row',
@@ -626,8 +482,8 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 8,
   },
-  arrivalText: { fontSize: 16, fontWeight: '700', color: '#fff' },
-  deliveryType: { fontSize: 13, fontWeight: '500', color: '#9ca3af' },
+  arrivalText: { fontSize: 16, fontWeight: '700', color: '#3D3D3D' },
+  deliveryType: { fontSize: 13, fontWeight: '500', color: '#3D3D3D' },
   menuDots: { fontSize: 20, color: '#d1d5db' },
   stepsRow: {
     marginTop: 20,
@@ -652,7 +508,6 @@ const styles = StyleSheet.create({
   },
   stepCompleted: { backgroundColor: '#50C878' },
   stepIncomplete: { backgroundColor: '#333' },
-  stepLabel: { fontSize: 12, marginTop: 6, fontWeight: '600' },
   stepLabelActive: { color: '#50C878' },
   stepLabelInactive: { color: '#9ca3af' },
   lineActive: { backgroundColor: '#50C878' },
@@ -708,7 +563,6 @@ const styles = StyleSheet.create({
   tryBuy: {
     marginTop: 20,
     marginHorizontal: 16,
-    marginBottom: 20,
     borderRadius: 20,
     padding: 16,
     borderWidth: 2,
@@ -726,6 +580,7 @@ const styles = StyleSheet.create({
   },
   tryBuyTitle: { fontWeight: '700', color: '#6b21a8', marginBottom: 4 },
   tryBuyDesc: { fontSize: 13, color: '#7e22ce' },
+  // Timer styles
   timerContainer: {
     marginTop: 16,
     backgroundColor: '#333',
@@ -738,120 +593,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#50C878',
-  },
-  // Item selection styles
-  itemSelectionContainer: {
-    marginTop: 16,
-  },
-  itemSelectionTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#50C878',
-    marginBottom: 12,
-  },
-  itemCard: {
-    flexDirection: 'row',
-    backgroundColor: '#333',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-  },
-  itemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  itemSize: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 4,
-  },
-  itemPrice: {
-    fontSize: 12,
-    color: '#9ca3af',
-    marginTop: 4,
-  },
-  itemActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 8,
-  },
-  itemButton: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: '#3f3f46',
-    alignItems: 'center',
-  },
-  itemButtonSelected: {
-    backgroundColor: '#50C878',
-  },
-  itemButtonText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  returnReasonInput: {
-    marginTop: 8,
-    backgroundColor: '#3f3f46',
-    borderRadius: 8,
-    padding: 8,
-    color: '#fff',
-    fontSize: 12,
-  },
-  // Billing styles
-  billingContainer: {
-    marginTop: 16,
-    backgroundColor: '#333',
-    borderRadius: 12,
-    padding: 12,
-  },
-  billingTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#50C878',
-    marginBottom: 12,
-  },
-  billingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  billingLabel: {
-    fontSize: 14,
-    color: '#9ca3af',
-  },
-  billingValue: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  // Action buttons
-  actionButtonsContainer: {
-    marginTop: 16,
-    flexDirection: 'row',
-    gap: 12,
-    justifyContent: 'center',
-  },
-  actionButtonPrimary: {
-    flex: 1,
-    backgroundColor: '#50C878',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#fff',
   },
 });
