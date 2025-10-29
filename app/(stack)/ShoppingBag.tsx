@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
+import RazorpayCheckout from 'react-native-razorpay';
 import { 
   View, 
   ScrollView, 
@@ -170,7 +171,7 @@ const productData = cartItems.map((item) => {
     try {
       
       const orderData = await createOrder();
-
+      console.log(orderData,"orderData");
       // console.log(orderData.order._id, 'orderData');
       await joinOrderRoom(orderData.order._id);
       console.log("📡 Joined room for order:", orderData.order._id);

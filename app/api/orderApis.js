@@ -3,7 +3,8 @@ import { getSocket , initSocket } from '../config/socket';
 
 export const createOrder = async () => {
   try {
-    const res = await api.post("/user/order/create");
+    let deliveryCharge = 500;
+    const res = await api.post("/user/order/create", { deliveryCharge });
     const order = res.data;
     // initSocket();
     // // ✅ join the socket room for this order
@@ -12,7 +13,7 @@ export const createOrder = async () => {
     //   socket.emit("joinOrderRoom", order._id);
     //   console.log(`Joined order room: order_${order._id}`);
     // }
-
+    console.log(order,"order");
     return order;
   } catch (error) {
     console.error("Axios error:", error);
