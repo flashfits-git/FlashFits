@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { joinOrderRoom, listenOrderUpdates, removeOrderListeners } from '@/app/sockets/order.socket';
 import { getSocket } from '../../config/socket';
+import ConfirmSelectionModal from './ConfirmSelectionModal';
+import { Modalize } from 'react-native-modalize';
+
 
 // Helper function to format time (MM:SS)
 const formatTime = (seconds: number) => {
@@ -69,47 +72,64 @@ const ItemSelection = ({ items, onUpdateItem }) => {
       <Text style={styles.itemSelectionTitle}>Select Items to Keep or Return</Text>
       {items.map((item, index) => (
         <View key={item._id} style={styles.itemCard}>
-          <Image source={{ uri: item.image }} style={styles.itemImage} />
-          <View style={styles.itemDetails}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.itemSize}>Size: {item.size}</Text>
-            <Text style={styles.itemPrice}>₹{item.price} x {item.quantity}</Text>
-            <View style={styles.itemActions}>
-              <TouchableOpacity
-                style={[
-                  styles.itemButton,
-                  item.tryStatus === 'keep' && styles.itemButtonSelected,
-                ]}
-                onPress={() => onUpdateItem(index, 'keep', null)}
-              >
-                <Text style={styles.itemButtonText}>Keep</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.itemButton,
-                  item.tryStatus === 'return' && styles.itemButtonSelected,
-                ]}
-                onPress={() => onUpdateItem(index, 'return', item.returnReason)}
-              >
-                <Text style={styles.itemButtonText}>Return</Text>
-              </TouchableOpacity>
+          {/* Image and Title Section */}
+          <View style={styles.itemHeader}>
+            <Image source={{ uri: item.image }} style={styles.itemImage} />
+            <View style={styles.itemInfo}>
+              <Text style={styles.itemName} numberOfLines={2}>{item.name}</Text>
+              <Text style={styles.itemSize}>Size: {item.size}</Text>
+              <Text style={styles.itemPrice}>₹{item.price} × {item.quantity}</Text>
             </View>
-            {item.tryStatus === 'return' && (
-              <TextInput
-                style={styles.returnReasonInput}
-                placeholder="Enter return reason"
-                placeholderTextColor="#9ca3af"
-                value={item.returnReason || ''}
-                onChangeText={(text) => onUpdateItem(index, 'return', text)}
-              />
-            )}
           </View>
+
+          {/* Action Buttons Section */}
+          <View style={styles.itemActions}>
+            <TouchableOpacity
+              style={[
+                styles.itemButton,
+                item.tryStatus === 'keep' && styles.itemButtonKeep,
+              ]}
+              onPress={() => onUpdateItem(index, 'keep', null)}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.itemButtonText,
+                item.tryStatus === 'keep' && styles.itemButtonTextActive
+              ]}>✓ Keep</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.itemButton,
+                item.tryStatus === 'return' && styles.itemButtonReturn,
+              ]}
+              onPress={() => onUpdateItem(index, 'return', item.returnReason)}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.itemButtonText,
+                item.tryStatus === 'return' && styles.itemButtonTextActive
+              ]}>↩ Return</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Return Reason Input */}
+          {item.tryStatus === 'return' && (
+            <TextInput
+              style={styles.returnReasonInput}
+              placeholder="Why are you returning this item?"
+              placeholderTextColor="#6b7280"
+              value={item.returnReason || ''}
+              onChangeText={(text) => onUpdateItem(index, 'return', text)}
+              multiline
+              numberOfLines={2}
+            />
+          )}
         </View>
       ))}
     </View>
   );
 };
-
 // Define mapping for order statuses to steps
 const statusToSteps = (orderStatus) => {
   const steps = [
@@ -134,6 +154,7 @@ const statusToSteps = (orderStatus) => {
 };
 
 export default function OrderTrackingPage() {
+  const modalRef = useRef<Modalize>(null);
   const { orderId } = useLocalSearchParams();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -153,7 +174,7 @@ export default function OrderTrackingPage() {
     trialPhaseStart: null,
     trialPhaseDuration: 0,
   });
-  const [otp  ,setOtp] = useState('');
+  const [otp, setOtp] = useState('');
   const [items, setItems] = useState([]);
   const [finalBilling, setFinalBilling] = useState({
     baseAmount: 0,
@@ -176,7 +197,7 @@ export default function OrderTrackingPage() {
     const baseAmount = items
       .filter((item) => item.tryStatus === 'keep')
       .reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
+
     // Calculate waiting charge (e.g., ₹10 per minute of trial phase)
     let tryAndBuyFee = 0;
     if (trialPhaseStart && trialPhaseDuration > 0) {
@@ -221,7 +242,7 @@ export default function OrderTrackingPage() {
     console.log('Joining order room for orderId:', orderId);
 
     joinOrderRoom(orderId).then(() => {
-      listenOrderUpdates((updateData:any) => {
+      listenOrderUpdates((updateData: any) => {
         // console.log('Received order update:', updateData);
         setOtp(updateData?.otp);
         console.log('Otp is:', updateData?.otp);
@@ -287,6 +308,7 @@ export default function OrderTrackingPage() {
   }, [orderId, items, finalBilling.deliveryCharge, updateBilling]);
 
   const hasReturnItems = items.some((item) => item.tryStatus === 'return');
+  const allItemsSelected = items.length > 0 && items.every(item => item.tryStatus === 'keep' || item.tryStatus === 'return');
 
   return (
     <>
@@ -351,7 +373,7 @@ export default function OrderTrackingPage() {
               <Text style={styles.menuDots}>⋮</Text>
             </TouchableOpacity>
           </View>
-      
+
           <View style={styles.stepsRow}>
             {orderStatus.steps.map((step, index) => (
               <React.Fragment key={step.id}>
@@ -424,26 +446,43 @@ export default function OrderTrackingPage() {
               </View>
               {/* //show otp only if return is there*/}
               {hasReturnItems && (
-                <View  style={styles.billingContainer}>
-                  <Text  style={styles.billingTitle}>Return OTP:  {otp}</Text>
+                <View style={styles.billingContainer}>
+                  <Text style={styles.billingTitle}>Return OTP:  {otp}</Text>
                 </View>
               )}
-             
               <View style={styles.actionButtonsContainer}>
+                {/* Show Return button if there are return items */}
                 {hasReturnItems && (
                   <TouchableOpacity
-                    style={styles.actionButtonPrimary}
-                    onPress={() => handleSubmit('return')}
+                    style={[
+                      styles.actionButtonPrimary,
+                      !allItemsSelected && { opacity: 0.5 }, // visually show disabled
+                    ]}
+                    onPress={() => {
+                      if (allItemsSelected) {
+                        modalRef.current?.open(); // Open OTP confirmation modal
+                        handleSubmit("return");   // Proceed with return submission logic
+                      }
+                    }}
+                    disabled={!allItemsSelected}
                   >
                     <Text style={styles.actionButtonText}>Return Items</Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                  style={styles.actionButtonPrimary}
-                  onPress={() => handleSubmit('payment')}
-                >
-                  <Text style={styles.actionButtonText}>Proceed to Payment</Text>
-                </TouchableOpacity>
+
+                {/* Show Payment button only if there are no return items */}
+                {!hasReturnItems && (
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButtonPrimary,
+                      !allItemsSelected && { opacity: 0.5 },
+                    ]}
+                    onPress={() => allItemsSelected && handleSubmit('payment')}
+                    disabled={!allItemsSelected}
+                  >
+                    <Text style={styles.actionButtonText}>Proceed to Payment</Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           )}
@@ -511,6 +550,14 @@ export default function OrderTrackingPage() {
           </View>
         )}
       </ScrollView>
+      <ConfirmSelectionModal
+        ref={modalRef}
+        otp={otp}
+        onConfirm={() => {
+          handleSubmit("return");
+          modalRef.current?.close();
+        }}
+      />
     </>
   );
 }
@@ -536,7 +583,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 20,
-    height: 250, // Reduced height since status card is now separate
+    height: 250,
     backgroundColor: '#f3f4f6',
     overflow: 'hidden',
     position: 'relative',
@@ -604,7 +651,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   statusCard: {
-    marginTop: 16, // Changed from position: absolute
+    marginTop: 16,
     marginHorizontal: 16,
     borderRadius: 20,
     padding: 18,
@@ -739,7 +786,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#50C878',
   },
-  // Item selection styles
+  // Item selection styles - UPDATED
   itemSelectionContainer: {
     marginTop: 16,
   },
@@ -750,63 +797,83 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   itemCard: {
-    flexDirection: 'row',
     backgroundColor: '#333',
     borderRadius: 12,
     padding: 12,
-    marginBottom: 8,
+    marginBottom: 12,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    marginBottom: 12,
   },
   itemImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginRight: 12,
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: '#3f3f46',
   },
-  itemDetails: {
+  itemInfo: {
     flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
   },
   itemName: {
     fontSize: 14,
     fontWeight: '600',
     color: '#fff',
+    marginBottom: 4,
   },
   itemSize: {
     fontSize: 12,
     color: '#9ca3af',
-    marginTop: 4,
+    marginTop: 2,
   },
   itemPrice: {
-    fontSize: 12,
-    color: '#9ca3af',
+    fontSize: 13,
+    color: '#fff',
+    fontWeight: '600',
     marginTop: 4,
   },
   itemActions: {
     flexDirection: 'row',
     gap: 8,
-    marginTop: 8,
+    marginBottom: 8,
   },
   itemButton: {
     flex: 1,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
     backgroundColor: '#3f3f46',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
   },
-  itemButtonSelected: {
-    backgroundColor: '#50C878',
+  itemButtonKeep: {
+    backgroundColor: '#1a3a2a',
+    borderColor: '#50C878',
+  },
+  itemButtonReturn: {
+    backgroundColor: '#3a1a1a',
+    borderColor: '#ef4444',
   },
   itemButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
+    color: '#9ca3af',
+  },
+  itemButtonTextActive: {
     color: '#fff',
   },
   returnReasonInput: {
-    marginTop: 8,
     backgroundColor: '#3f3f46',
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: 10,
+    padding: 10,
     color: '#fff',
-    fontSize: 12,
+    fontSize: 13,
+    minHeight: 60,
+    textAlignVertical: 'top',
+    borderWidth: 1,
+    borderColor: '#ef4444',
   },
   // Billing styles
   billingContainer: {
