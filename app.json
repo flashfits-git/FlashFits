@@ -1,36 +1,36 @@
 {
   "expo": {
-    "name": "flashfits-clean",
-    "slug": "flashfits-clean",
+    "name": "FlashFits",
+    "slug": "FlashFits",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "flashfitsclean",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/fevicon.jpg",
+    "scheme": "flashfits",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
+      "bundleIdentifier": "com.flashfits.app",
       "supportsTablet": true
     },
     "android": {
+      "package": "com.flashfits.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "foregroundImage": "./assets/images/fevicon.jpg",
+        "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/fevicon.jpg"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/fevicon.jpg",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -38,11 +38,24 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
+    "splash": {
+      "image": "./assets/images/fevicon.jpg",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "extra": {
+      "BACKEND_URL": "https://ff-api-web.onrender.com",
+      "eas": {
+        "projectId": "5ffa6730-d676-4b63-a03d-df1db41ca12b"
+      }
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "efron"
   }
 }

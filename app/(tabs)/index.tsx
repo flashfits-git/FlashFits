@@ -1,98 +1,219 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  Animated,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useState, useRef, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from 'expo-router';
+import PopupCart from '../../components/HomeComponents/PopupCart';
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
+import Card from '../../components/HomeComponents/Card';
+import Carousel from '@/components/HomeComponents/Carousel';
+import Banner from '@/components/HomeComponents/Banner';
+import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
+import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
+import Colors from '../../assets/theme/Colors';
+import {fetchnewArrivalsProductsData} from '../api/productApis/products'
+import Footer from '../../components/Footer'
+import Loader from '@/components/Loader/Loader';
+import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
+import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops'
+import TopCategory from '../../components/HomeComponents/TopCategory'
+import FootwearSection from '../../components/HomeComponents/FootwearSection'
+// import { useCart } from './Context';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
 
-export default function HomeScreen() {
+
+export default function Home() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const navigation = useNavigation();
+  const scrollOffset = useRef(new Animated.Value(0)).current;
+  const currentOffset = useRef(0);
+  const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  // const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
+  // const [merchantData, setMerchnatData] = useState()
+    const [loading, setLoading] = useState(true);
+    
+  useEffect(() => {
+    getNewArrivalsProducts()
+    // getMerchantsData()
+    setLoading(false)
+  }, [])
+
+  const getNewArrivalsProducts = async () => {
+    try {
+      const response = await fetchnewArrivalsProductsData()
+      setNewArrivalsProducts(response)
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  };
+
+  useEffect(() => {
+    const listener = scrollOffset.addListener(({ value }) => {
+      const clampedValue = Math.max(0, value);
+
+      if (clampedValue < currentOffset.current - 5) {
+        setIsTabBarVisible(true);
+        navigation.setOptions({
+          tabBarStyle: {
+            position: 'absolute',
+            height: Platform.OS === 'ios' ? 70 : 70,
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 5 },
+            shadowOpacity: 0.1,
+            shadowRadius: 10,
+            elevation: 5,
+            paddingTop: Platform.OS === 'ios' ? 18 : 10,
+          },
+        });
+      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
+        setIsTabBarVisible(false);
+        navigation.setOptions({
+          tabBarStyle: { display: 'none' },
+        });
+      }
+      currentOffset.current = clampedValue;
+    });
+
+    return () => {
+      scrollOffset.removeListener(listener);
+    };
+  }, []);
+
+  useEffect(() => {
+  const loadRecentlyViewed = async () => {
+    try {
+      const data = await getPreviouslyViewed();
+      
+      setRecentlyViewed(data);
+      // console.log(data);
+      
+    } catch (error) {
+      console.error('Error loading previously viewed:', error);
+    }
+  };
+
+  loadRecentlyViewed();
+}, []);
+
+  if (loading) return <Loader />;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <View style={styles.container}>
+      <Banner />
+      <View style={styles.header}>
+        <View style={styles.locationWrapper}>
+          <View style={styles.locationIcon}>
+            <Ionicons name="location-sharp" size={26} color={Colors.dark1} />
+          </View>
+          <View style={styles.locationTextWrapper}>
+            <View style={styles.locationRow}>
+              <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
+                New York, USA
+              </Text>
+              <Ionicons name="chevron-down-outline" size={16} color="black" />
+            </View>
+            <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
+              Explore trending styles around you!
+            </Text>
+          </View>
+        </View>
+        <View style={styles.notificationIcon}>
+          <SearchCartProfileButton/>
+        </View>
+      </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <Animated.FlatList
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+        ListHeaderComponent={
+          <>
+            <Carousel />
+            <HomeCategorySwitcherShops />
+            {newArrivalsProducts.length > 0 && (
+    <RecentlyViewed product={recentlyViewed}/>
+)}
+    <ParentCategoryIndexing products={newArrivalsProducts} />
+    <TopCategory/>
+    {/* <FootwearSection/> */}
+          </>
+        }
+      />
+      <PopupCart isTabBarVisible={isTabBarVisible} />
+      <Footer/>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+header: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: 4,
+  height: 70,
+  borderBottomLeftRadius: 10,
+  borderBottomRightRadius: 10,
+},
+  locationWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    padding: 6,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  locationIcon: {
+    width: 32,
+    height: 32,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 5,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  locationTextWrapper: {
+    paddingRight: 14,
+    width: 200,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cityText: {
+    fontSize: 14,
+    color: Colors.dark1,
+    marginRight: 8,
+    maxWidth: 200,
+    fontWeight: '400',
+    fontFamily: 'Montserrat',
+  },
+  subText: {
+    fontSize: 10,
+    color: Colors.dark2,
+    lineHeight: 20,
+    fontWeight: '300',
+    fontFamily: 'Montserrat',
+  },
+  notificationIcon: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
   },
 });
