@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Platform, StyleSheet, Animated, Easing } from 'react-native';
+import { Text, Platform, StyleSheet, Animated, Easing, View, StatusBar } from 'react-native';
 import Colors from '../../assets/theme/Colors';
 // import { GetCart } from '../api/productApis/cartProduct';
 // import { storeCartLocally } from '../utilities/cartItemsData';
@@ -82,7 +82,7 @@ function TabsWithCart() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        animation: 'none', 
+        animation: 'none',
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
@@ -128,6 +128,16 @@ function TabsWithCart() {
 
 export default function TabLayout() {
   return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: '#fff',
+        // ✅ Top padding without SafeAreaView
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
+      }}
+    >
       <TabsWithCart />
+    </View>
+
   );
 }

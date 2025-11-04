@@ -2,7 +2,7 @@ import { Stack } from "expo-router";
 import React, { useEffect, useState } from 'react';
 import './global.css';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider,  } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Font from 'expo-font';
@@ -70,15 +70,15 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
+      {/* <SafeAreaProvider> */}
         <CartProvider>
           <InitializeCart />
-          <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'left', 'right', 'bottom']}>
+          {/* <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['top', 'left', 'right', 'bottom']}> */}
             <StatusBar style="inverted" />
             <Stack screenOptions={{ headerShown: false }} />
-          </SafeAreaView>
+          {/* </SafeAreaView> */}
         </CartProvider>
-      </SafeAreaProvider>
+      {/* </SafeAreaProvider> */}
     </GestureHandlerRootView>
   );
 }

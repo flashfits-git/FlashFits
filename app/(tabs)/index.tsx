@@ -24,8 +24,6 @@ import Footer from '../../components/Footer'
 import Loader from '@/components/Loader/Loader';
 import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
 import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops'
-import TopCategory from '../../components/HomeComponents/TopCategory'
-import FootwearSection from '../../components/HomeComponents/FootwearSection'
 // import { useCart } from './Context';
 
 
@@ -115,20 +113,23 @@ export default function Home() {
       <Banner />
       <View style={styles.header}>
         <View style={styles.locationWrapper}>
-          <View style={styles.locationIcon}>
-            <Ionicons name="location-sharp" size={26} color={Colors.dark1} />
-          </View>
-          <View style={styles.locationTextWrapper}>
-            <View style={styles.locationRow}>
-              <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
-                New York, USA
-              </Text>
-              <Ionicons name="chevron-down-outline" size={16} color="black" />
-            </View>
-            <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
-              Explore trending styles around you!
-            </Text>
-          </View>
+<View style={styles.timeBox}>
+  <Text style={styles.timeText1}>10</Text>
+  <Text style={styles.timeText}>min</Text>
+</View>
+
+<View style={styles.locationTextWrapper}>
+  <View style={styles.locationRow}>
+    <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
+      Kadavanthra, Kochi
+    </Text>
+    <Ionicons name="chevron-down-outline" size={16} color="black" />
+  </View>
+  <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
+    Explore trending styles around you!
+  </Text>
+</View>
+
         </View>
         <View style={styles.notificationIcon}>
           <SearchCartProfileButton/>
@@ -146,11 +147,11 @@ export default function Home() {
             <Carousel />
             <HomeCategorySwitcherShops />
             {newArrivalsProducts.length > 0 && (
+  <>
     <RecentlyViewed product={recentlyViewed}/>
-)}
     <ParentCategoryIndexing products={newArrivalsProducts} />
-    <TopCategory/>
-    {/* <FootwearSection/> */}
+  </>
+)}
           </>
         }
       />
@@ -192,6 +193,25 @@ header: {
     paddingRight: 14,
     width: 200,
   },
+  timeBox: {
+  width: 40,
+  height: 40,
+  backgroundColor: 'black',
+  borderRadius: 10,
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginRight: 10,
+},
+timeText: {
+  color: 'white',
+  fontSize: 12,
+  fontWeight: '600',
+},
+timeText1: {
+  color: 'white',
+  fontSize: 15,
+  fontWeight: '600',
+},
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',

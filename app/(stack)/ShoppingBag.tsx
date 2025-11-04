@@ -12,7 +12,8 @@ import {
   PanResponder,
   Dimensions,
   StatusBar,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import BagProduct from '../../components/CartBagComponents/BagProduct';
 import HeaderBag from '@/components/CartBagComponents/HeaderBag';
@@ -673,7 +674,11 @@ const SlideToPay = ({ label, onComplete }) => {
 
 const styles = StyleSheet.create({
   // Base Container
-  container: { flex: 1, backgroundColor: '#fff' },
+container: {
+  flex: 1,
+  backgroundColor: '#fff',
+  paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50, // ✅ dynamic safe spacing
+},
 
   // Empty Cart States
   emptyCartContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 32 },
@@ -714,7 +719,7 @@ const styles = StyleSheet.create({
 },
 fixedDeliveryBar: {
   position: 'absolute',
-  top: 120, // or StatusBar.currentHeight + Header height
+  top: 180, // or StatusBar.currentHeight + Header height
   left: 0,
   right: 0,
   zIndex: 800,
@@ -780,7 +785,8 @@ fixedDeliveryBar: {
   flexRow: { flexDirection: 'row', alignItems: 'center' },
 
   // Payment Method
-  paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
+  slideToPayContainer:{marginBottom: 20},
+  paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0', },
   paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   paymentMethodLeft: { flexDirection: 'row', alignItems: 'center' },
   googlePayIcon: { marginRight: 12 },

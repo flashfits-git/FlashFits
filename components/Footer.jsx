@@ -38,8 +38,8 @@ const steps = [
 ];
 
 const Footer = () => {
-  const COLLAPSED_HEIGHT = 60
-  const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.2
+  const COLLAPSED_HEIGHT = 70
+  const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.5
 
   const animatedHeight = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -56,7 +56,6 @@ const Footer = () => {
     }).start();
     setIsExpanded(true);
   };
-
   const collapseFooter = () => {
     Animated.timing(animatedHeight, {
       toValue: COLLAPSED_HEIGHT,
@@ -149,17 +148,11 @@ const Footer = () => {
 };
 
 const styles = StyleSheet.create({
-  absoluteFooter: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-
-  },
-  // overlay: {
-  //   // ...StyleSheet.absoluteFillObject,
-  //   backgroundColor: 'rgba(113, 113, 113, 0.38)',
-  //   zIndex: 1,
-  // },
+absoluteFooter: {
+  position: 'absolute',
+  bottom: 0,
+  width: '100%',
+},
 footer: {
   backgroundColor: '#ffffffff',
   borderTopRightRadius: 26,
@@ -171,7 +164,6 @@ footer: {
   elevation: 6,
   overflow: 'hidden',
   zIndex: 30,
-
   // Border color and width for top, left, and right
   borderTopColor: '#d3d3d3',   // light grey
   borderLeftColor: '#d3d3d3',
@@ -179,6 +171,8 @@ footer: {
   borderTopWidth: 0.5,
   borderLeftWidth: 0.5,
   borderRightWidth: 0.5,
+  paddingBottom: 20,
+  height:200
 },
   upArrowButton: {
     flexDirection: 'row',
@@ -187,8 +181,6 @@ footer: {
     paddingVertical: 10,
     backgroundColor: '#ffffffff',
     justifyContent: 'space-between',
-    // borderTopWidth: 1,
-    // borderTopColor: '#ffffffff',
   },
   textContainer: {
     flexDirection: 'row',

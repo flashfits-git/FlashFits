@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  ScrollView,
+  Platform
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -13,7 +13,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import SmoothSlider from '../../components/HomeComponents/SmoothSlider';
-import { fetchnewArrivalsProductsData, getFilteredProducts } from '../api/productApis/products';
+import {getFilteredProducts } from '../api/productApis/products';
 import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
@@ -512,12 +512,11 @@ const fetchFiltered = useCallback(async () => {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    paddingTop: 20,
-    paddingHorizontal: 16,
-  },
+container: {
+  flex: 1,
+  backgroundColor: '#fff',
+  // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50, // ✅ dynamic safe spacing
+},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
