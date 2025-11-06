@@ -1,30 +1,30 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  RefreshControl,
-  Image,
-  TextInput,
-} from 'react-native';
-import {
-  MapPin,
-  Package,
-  CheckCircle,
-  Clock,
-  Phone,
-  MessageCircle,
-  ChevronRight,
-} from 'lucide-react-native';
-import * as SecureStore from 'expo-secure-store';
+import { joinOrderRoom, listenOrderUpdates, removeOrderListeners } from '@/app/sockets/order.socket';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { joinOrderRoom, listenOrderUpdates, removeOrderListeners } from '@/app/sockets/order.socket';
+import * as SecureStore from 'expo-secure-store';
+import {
+  CheckCircle,
+  ChevronRight,
+  Clock,
+  MapPin,
+  MessageCircle,
+  Package,
+  Phone,
+} from 'lucide-react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Modalize } from 'react-native-modalize';
 import { getSocket } from '../../config/socket';
 import ConfirmSelectionModal from './ConfirmSelectionModal';
-import { Modalize } from 'react-native-modalize';
 
 
 // Helper function to format time (MM:SS)

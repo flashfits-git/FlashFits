@@ -1,35 +1,31 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-// import RazorpayCheckout from 'react-native-razorpay';
-import { 
-  View, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
-  Animated,
-  PanResponder,
-  Dimensions,
-  StatusBar,
-  Alert,
-  Platform
-} from 'react-native';
-import BagProduct from '../../components/CartBagComponents/BagProduct';
 import HeaderBag from '@/components/CartBagComponents/HeaderBag';
-import BillSection from '@/components/CartBagComponents/BillSection';
-import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectAddressBottomSheet';
-import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { clearCart, UpdateCartQuantity } from '../api/productApis/cartProduct';
 import Loader from '@/components/Loader/Loader';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useCart } from '../ContextParent';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  PanResponder,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
 import eed from '../../assets/images/shoppingbag/lih.png';
+import BagProduct from '../../components/CartBagComponents/BagProduct';
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { createOrder } from '../api/orderApis';
-import { getSocket } from '../config/socket';
-import {joinOrderRoom} from '../sockets/order.socket';
+import { clearCart, deleteCartItem, GetCart } from '../api/productApis/cartProduct';
+import { useCart } from '../ContextParent';
+import { joinOrderRoom } from '../sockets/order.socket';
 const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
@@ -173,14 +169,48 @@ const productData = cartItems.map((item) => {
       
       const orderData = await createOrder();
       console.log(orderData,"orderData");
-      // console.log(orderData.order._id, 'orderData');
+      console.log(orderData.order._id, 'orderData');
       await joinOrderRoom(orderData.order._id);
       console.log("📡 Joined room for order:", orderData.order._id);
       //back to home
-      router.replace({
-      pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-      params: { orderId: JSON.stringify(orderData.order._id) }, // must stringify objects
-    });
+      const options ={
+        name:"FlashFits",
+         description: `Delivery charge`,
+        order_id: orderData.razorpayOrder.id,
+        key: 'rzp_live_RZGUnS7NLvApuL', // Replace with your actual Razorpay key
+        amount: Math.round(orderData.razorpayOrder.amount * 100), // Convert to paise
+        currency: 'INR',
+        theme: { color: '#4CAF50' }
+      }
+       console.log('Opening Razorpay checkout with options:', options);
+
+
+       RazorpayCheckout.open(options)
+        .then((success) => {
+          console.log('Payment success:', success);
+          // TODO: Add payment verification with backend if needed
+          Alert.alert('Success', 'Payment completed successfully!');
+          router.replace({
+            pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+            params: { orderId: JSON.stringify(orderData.order._id) }, // must stringify objects
+          });
+        })
+        .catch((error) => {
+          console.error('Razorpay error:', error);
+          
+          if (error.code === 0) {
+            Alert.alert('Payment Status', 'Payment completed. Verifying...');
+          } else if (error.code === 1) {
+            Alert.alert('Payment Failed', error.description || 'Payment could not be completed');
+          } else if (error.code === 2) {
+            console.log('Payment cancelled by user');
+          } else {
+            Alert.alert('Payment Error', error.description || 'An error occurred during payment');
+          }
+        });
+        
+
+
     } catch (error) {
       console.error('Error creating order:', error);
     }
