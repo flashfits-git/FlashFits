@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store'; // or AsyncStorage
-// import { getCurrentUser } from '../lib/auth'; <-- If using Firebase or custom API
+import * as SecureStore from 'expo-secure-store';
 import Loader from '@/components/Loader/Loader';
 import { initSocket } from './config/socket';
 
@@ -29,6 +27,4 @@ export default function Index() {
     );
   }
   return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)'} />;
-  // return <Redirect href={'/(tabs)'} />;
-
 }

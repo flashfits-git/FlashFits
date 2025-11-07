@@ -8,16 +8,17 @@ import {
   ScrollView,
   Animated,
   Platform,
-  ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
-import { useNavigation } from 'expo-router';
-import { useRouter } from 'expo-router';
-import React, { useState, useRef, useEffect } from 'react';
+import { useNavigation, useRouter } from 'expo-router';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { fetchCategories } from '../api/categories.js';
 import Loader from '@/components/Loader/Loader';
 
-// import { useCart } from './Context';
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const productsAreaWidth = SCREEN_WIDTH * 0.75; // since flex:4 vs flex:1
+const cardSize = (productsAreaWidth - 48) / 3; // spacing included
 
 const Categories = () => {
   const navigation = useNavigation();
@@ -26,7 +27,7 @@ const Categories = () => {
   const [categoriesData, setCategoriesData] = useState([]);
   const [selectedMainId, setSelectedMainId] = useState(null);
   const [selectedSubId, setSelectedSubId] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
@@ -37,28 +38,23 @@ const Categories = () => {
       if (clampedValue < currentOffset.current - 5) {
         navigation.setOptions({
           tabBarStyle: {
+            display: 'flex',
             position: 'absolute',
-            height: Platform.OS === 'ios' ? 70 : 70,
+            height: 70,
             backgroundColor: '#fff',
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            elevation: 5,
-            paddingTop: Platform.OS === 'ios' ? 18 : 10,
+            elevation: 15,
+            paddingBottom: Platform.OS === 'ios' ? 20 : 10,
           },
         });
-      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
+      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 50) {
         navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
       currentOffset.current = clampedValue;
     });
 
-    return () => {
-      scrollOffset.removeListener(listener);
-    };
+    return () => scrollOffset.removeListener(listener);
   }, []);
 
   useEffect(() => {
@@ -66,7 +62,7 @@ const Categories = () => {
       setLoading(true);
       try {
         const data = await fetchCategories();
-        setCategoriesData(data);
+        setCategoriesData(data || []);
       } catch (err) {
         console.error('Error loading categories', err);
       } finally {
@@ -80,15 +76,13 @@ const Categories = () => {
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
 
-  const handleMainCategoryChange = (id) => {
+  const handleMainCategoryChange = useCallback((id) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
-    if (firstSub) setSelectedSubId(firstSub._id);
-  };
+    setSelectedSubId(firstSub ? firstSub._id : null);
+  }, [categoriesData]);
 
-  const handleSubCategoryChange = (id) => {
-    setSelectedSubId(id);
-  };
+  const handleSubCategoryChange = (id) => setSelectedSubId(id);
 
   useEffect(() => {
     if (mainCategories.length > 0 && !selectedMainId) {
@@ -96,54 +90,36 @@ const Categories = () => {
     }
   }, [mainCategories]);
 
-  // ✅ MAIN FUNCTION — sends filters to SelectionPage
-const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
-
-  console.log(subSubCategoryId,'subSubCategoryId');
-  
-  const filters = {
-    priceRange: [0, 10000],
-    // ✅ Include main, sub, and sub-sub category IDs
-    selectedCategoryIds: [selectedMainId, subCategoryId, subSubCategoryId].filter(Boolean),
-    selectedColors: [],
-    selectedStores: [],
-    sortBy: [],
+  const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
+    router.push({
+      pathname: '(stack)/SelectionPage',
+      params: {
+        filterss: JSON.stringify({
+          priceRange: [0, 10000],
+          selectedCategoryIds: [selectedMainId, subCategoryId, subSubCategoryId],
+        }),
+        subCatName,
+      },
+    });
   };
 
-  router.push({
-    pathname: '(stack)/SelectionPage',
-    params: {
-      filterss: JSON.stringify(filters),
-      subCatName,
-    },
-  });
-};
-
-
-  if (loading) {
-    return <Loader />;
-  }
+  if (loading) return <Loader />;
 
   return (
     <>
-    <CategoryTitleBar  />
+      <CategoryTitleBar />
+
+      {/* Main Category Scroll */}
       <View style={styles.categoryBarContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryScrollContent}
-        >
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
           {mainCategories.map(cat => (
             <TouchableOpacity
               key={cat._id}
-              style={[
-                styles.mainCategoryButton,
-                selectedMainId === cat._id && { borderColor: '#eee' },
-              ]}
+              style={[styles.mainCategoryButton, selectedMainId === cat._id && styles.mainCategoryButtonSelected]}
               onPress={() => handleMainCategoryChange(cat._id)}
             >
               <Image
-                source={require('../../assets/images/3.jpg')}
+                source={{ uri: cat.image?.url }}
                 style={styles.mainCategoryImage}
               />
               <Text style={styles.mainCategoryText}>{cat.name}</Text>
@@ -153,49 +129,38 @@ const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
       </View>
 
       <View style={styles.mainContent}>
-        <ScrollView style={styles.sidebar}>
+        {/* Sidebar */}
+        <ScrollView style={styles.sidebar} showsVerticalScrollIndicator={false}>
           {subCategories.map(sub => (
             <TouchableOpacity
               key={sub._id}
-              style={[
-                styles.sidebarItem,
-                selectedSubId === sub._id && styles.sidebarItemSelected,
-              ]}
+              style={[styles.sidebarItem, selectedSubId === sub._id && styles.sidebarItemSelected]}
               onPress={() => handleSubCategoryChange(sub._id)}
             >
-              <Text
-                style={[
-                  styles.sidebarText,
-                  selectedSubId === sub._id && styles.sidebarTextSelected,
-                ]}
-              >
-                {sub.name.toUpperCase()}
+              <Image source={{ uri: sub.image?.url }} style={styles.sidebarImage} />
+              <Text style={[styles.sidebarText, selectedSubId === sub._id && styles.sidebarTextSelected]} numberOfLines={2}>
+                {sub.name}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
+        {/* 3 Column Grid */}
         <View style={styles.productsContainer}>
           <FlatList
             data={subSubCategories}
             keyExtractor={(item) => item._id}
-            numColumns={2}
-            columnWrapperStyle={styles.cardGrid}
+            numColumns={3}
+            columnWrapperStyle={styles.cardRow}
             contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.productCard}
-            onPress={() => handleViewAll(item.name, selectedSubId, item._id)} // Pass selectedSubId and item._id
-          >
-            <Image
-              source={{ uri: item.image?.url }}
-              style={styles.productImage}
-            />
-            <Text style={styles.productTitle} numberOfLines={2}>
-              {item.name}
-            </Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.productCard, { width: cardSize, height: cardSize + 40 }]}
+                onPress={() => handleViewAll(item.name, selectedSubId, item._id)}
+              >
+                <Image source={{ uri: item.image?.url }} style={[styles.productImage, { height: cardSize }]} />
+                <Text style={styles.productTitle} numberOfLines={2}>{item.name}</Text>
+              </TouchableOpacity>
             )}
           />
         </View>
@@ -204,117 +169,43 @@ const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
   );
 };
 
-
 const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryBarContainer: {
-    height: 110,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    elevation: 3,
-    zIndex: 10,
-  },
-  categoryScrollContent: {
-    alignItems: 'center',
-  },
-  mainCategoryButton: {
-    alignItems: 'center',
-    marginRight: 30,
-    borderBottomWidth: 2,
-    borderColor: 'transparent',
-    paddingBottom: 5,
-  },
-  mainCategoryImage: {
-    width: 70,
-    height: 70,
-    borderRadius: 20,
-    marginBottom: 5,
-    resizeMode: 'cover',
-  },
-  mainCategoryText: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    fontFamily: 'Montserrat',
-  },
-  mainContent: {
-    flex: 1,
-    flexDirection: 'row',
-    backgroundColor: '#f9f9f9',
-  },
-  sidebar: {
-    width: 100,
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-  },
-  sidebarItem: {
-    paddingVertical: 20,
-    paddingHorizontal: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sidebarItemSelected: {
-    backgroundColor: '#eee',
-  },
-  sidebarText: {
-    fontSize: 12,
-    color: '#333',
-    fontFamily: 'Montserrat',
-  },
-  sidebarTextSelected: {
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  productsContainer: {
-    flex: 7,
-    backgroundColor:'#fff'
-  },
-  listContent: {
-    backgroundColor: '#fff',
-    padding: 10,
-    paddingBottom: 120,
-  },
-  cardGrid: {
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
+  categoryBarContainer: { height: 110, backgroundColor: '#fff', paddingTop: 10, elevation: 4 },
+  categoryScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
+  mainCategoryButton: { alignItems: 'center', marginRight: 24, paddingBottom: 6, borderBottomWidth: 2, borderColor: 'transparent' },
+  mainCategoryButtonSelected: { borderColor: '#4c4e50ff' },
+  mainCategoryImage: { width: 68, height: 68, borderRadius: 18, marginBottom: 6, backgroundColor: '#f0f0f0' },
+  mainCategoryText: { fontSize: 11.5, fontWeight: '600', color: '#222' },
+
+  mainContent: { flex: 1, flexDirection: 'row', backgroundColor: '#fff' },
+
+  sidebar: { flex: 1, backgroundColor: '#fff', borderRightWidth: 1, borderColor: '#eee', paddingVertical: 10 },
+  sidebarItem: { alignItems: 'center', paddingVertical: 12 },
+  sidebarItemSelected: { backgroundColor: '#eef3ff' },
+  sidebarImage: { width: 65, height: 80, borderRadius: 12, marginBottom: 6, backgroundColor: '#f8f8f8' },
+  sidebarText: { fontSize: 11, color: '#444', textAlign: 'center', paddingHorizontal: 6 },
+  sidebarTextSelected: { color: '#0a1b3c', fontWeight: '700' },
+
+  productsContainer: { flex: 2, padding: 12 },
+  listContent: { paddingBottom: 120 },
+  cardRow: { justifyContent: 'space-between', marginBottom: 16, },
   productCard: {
-    width: '48%',
-    margin: '1%',
     backgroundColor: '#fff',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+    borderRadius: 18,       // ← make more rounded
+    overflow: 'hidden',     // ← ensures image also follows radius
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    height: 150,
-    paddingVertical: 10,
-    paddingHorizontal: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   productImage: {
     width: '100%',
-    height: 110,
-    resizeMode: 'cover',
-    borderRadius: 10,
+    height: cardSize,       // keep your dynamic height
+    borderRadius: 18,       // ← ensure this matches productCard
+    backgroundColor: '#f2f2f2',
   },
-  productTitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#333',
-    textAlign: 'center',
-    marginTop: 6,
-    paddingHorizontal: 4,
-    lineHeight: 16,
-    textTransform: 'capitalize',
-    fontFamily: 'Montserrat',
-  },
+  productTitle: { fontSize: 11.5, textAlign: 'center', paddingVertical: 6, color: '#333' },
 });
 
 export default Categories;

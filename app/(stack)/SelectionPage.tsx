@@ -13,25 +13,15 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import SmoothSlider from '../../components/HomeComponents/SmoothSlider';
-import {getFilteredProducts } from '../api/productApis/products';
+import { getFilteredProducts } from '../api/productApis/products';
 import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
 import { fetchCategories } from '../api/categories';
 import { getMerchants } from '../api/merchatApis/getMerchantHome';
 import { FontAwesome } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-const useThrottle = (callback, delay) => {
-  const lastCall = useRef(0);
-
-  return (...args) => {
-    const now = Date.now();
-    if (now - lastCall.current >= delay) {
-      lastCall.current = now;
-      callback(...args);
-    }
-  };
-};
 
 export default function SelectionPage() {
   const router = useRouter();
@@ -52,7 +42,7 @@ export default function SelectionPage() {
   const [selectedStores, setSelectedStores] = useState([]);
   const [sortBy, setSortBy] = useState([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
-// console.log(selectedCategoryIds,'selectedCategoryIds');
+  // console.log(selectedCategoryIds,'selectedCategoryIds');
 
   const sortModalRef = useRef(null);
   const genderModalRef = useRef(null);
@@ -85,14 +75,14 @@ export default function SelectionPage() {
       const subId = catIds[1];
       const subSubId = catIds[2];
 
-      
+
 
       // Set main category and gender
       if (mainId) {
         const mainCat = categoriesData.find(c => c._id === mainId);
         if (mainCat) {
           // console.log(mainCat.name,'mainCat.name');
-          
+
           setSelectedMainId(mainId);
           setSelectedGender(mainCat.name);
         }
@@ -101,7 +91,7 @@ export default function SelectionPage() {
       // Set subcategory
       if (subId) {
         const subCat = categoriesData.find(c => c._id === subId);
-          console.log(subCat.name, subCat._id, 'mainCat.name');
+        console.log(subCat.name, subCat._id, 'mainCat.name');
         if (subCat) {
           setSelectedSubId(subId);
           // Ensure main category is set if not provided
@@ -121,53 +111,53 @@ export default function SelectionPage() {
   }, [filterss, categoriesData]);
 
   // Fetch filtered products
-const fetchFiltered = useCallback(async () => {
-  try {
-    setIsLoadingProducts(true);
+  const fetchFiltered = useCallback(async () => {
+    try {
+      setIsLoadingProducts(true);
 
-    const apiFilters = {
-      ...(query ? { search: query } : {}),
-      ...filters,
-      selectedCategoryIds:
-        selectedCategoryIds.length > 0
-          ? [selectedCategoryIds[selectedCategoryIds.length - 1]]
-          : [],
-      gender: selectedGender || undefined,
-    };
+      const apiFilters = {
+        ...(query ? { search: query } : {}),
+        ...filters,
+        selectedCategoryIds:
+          selectedCategoryIds.length > 0
+            ? [selectedCategoryIds[selectedCategoryIds.length - 1]]
+            : [],
+        gender: selectedGender || undefined,
+      };
 
-    console.log("🔎 Fetching products with filters:", apiFilters);
+      console.log("🔎 Fetching products with filters:", apiFilters);
 
-    const res = await getFilteredProducts(apiFilters);
-    setProducts(res?.products || []);
-  } catch (err) {
-    console.error("Error fetching filtered products:", err);
-  } finally {
-    setIsLoadingProducts(false);
-  }
-}, [query, filters, selectedCategoryIds, selectedGender]);
+      const res = await getFilteredProducts(apiFilters);
+      setProducts(res?.products || []);
+    } catch (err) {
+      console.error("Error fetching filtered products:", err);
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [query, filters, selectedCategoryIds, selectedGender]);
 
-// useEffect(() => {
-//   fetchFiltered();
-// }, [query, filters, selectedGender, selectedCategoryIds]);
+  // useEffect(() => {
+  //   fetchFiltered();
+  // }, [query, filters, selectedGender, selectedCategoryIds]);
 
   // const throttledFetch = useThrottle(fetchFiltered, 3000);
 
   useEffect(() => {
-  if (isLoadingProducts) return;
-  
-  const hasFilters = 
-    query?.trim()?.length > 0 ||
-    selectedGender ||
-    selectedCategoryIds.length > 0 ||
-    selectedColors.length > 0 ||
-    selectedStores.length > 0 ||
-    sortBy.length > 0 ||
-    (priceRange[0] !== 0 || priceRange[1] !== 10000);
+    if (isLoadingProducts) return;
 
-  if (hasFilters) {
-    fetchFiltered();
-  }
-}, [query, filters, selectedGender, selectedCategoryIds]);
+    const hasFilters =
+      query?.trim()?.length > 0 ||
+      selectedGender ||
+      selectedCategoryIds.length > 0 ||
+      selectedColors.length > 0 ||
+      selectedStores.length > 0 ||
+      sortBy.length > 0 ||
+      (priceRange[0] !== 0 || priceRange[1] !== 10000);
+
+    if (hasFilters) {
+      fetchFiltered();
+    }
+  }, [query, filters, selectedGender, selectedCategoryIds]);
 
 
   // Fetch filtered products when filters change
@@ -260,276 +250,284 @@ const fetchFiltered = useCallback(async () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="chevron-back" size={24} color="black" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{subCatName || query }</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
-              <Ionicons name="search" size={22} color="black" />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Ionicons name="chevron-back" size={24} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/ShoppingBag')}>
-              <Ionicons name="bag-handle-outline" size={22} color="black" />
-              {cartCount > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{cartCount}</Text>
-                </View>
-              )}
+            <Text style={styles.headerTitle}>{subCatName || query}</Text>
+            <View style={styles.headerIcons}>
+              <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
+                <Ionicons name="search" size={22} color="black" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => router.push('/ShoppingBag')}>
+                <Ionicons name="bag-handle-outline" size={22} color="black" />
+                {cartCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>{cartCount}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Filter / Sort / Gender */}
+          <View style={styles.filterGenderWrapper}>
+            <TouchableOpacity onPress={() => filterModalRef.current?.open()} style={styles.filterButton}>
+              <Text style={styles.filterText}>FILTER</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => sortModalRef.current?.open()} style={styles.filterButton1}>
+              <Text style={styles.filterText}>SORT</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => genderModalRef.current?.open()} style={styles.genderButton}>
+              <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
             </TouchableOpacity>
           </View>
+
+          {/* Product List */}
+          <FlatList
+            data={products}
+            renderItem={({ item }) => <Card product={item} />}
+            keyExtractor={item => item._id?.toString()}
+            numColumns={2}
+            showsVerticalScrollIndicator={false}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.cardList}
+            refreshing={isLoadingProducts}
+            onRefresh={fetchFiltered}
+          />
         </View>
 
-        {/* Filter / Sort / Gender */}
-        <View style={styles.filterGenderWrapper}>
-          <TouchableOpacity onPress={() => filterModalRef.current?.open()} style={styles.filterButton}>
-            <Text style={styles.filterText}>FILTER</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => sortModalRef.current?.open()} style={styles.filterButton1}>
-            <Text style={styles.filterText}>SORT</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => genderModalRef.current?.open()} style={styles.genderButton}>
-            <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
-          </TouchableOpacity>
-        </View>
+        {/* FILTER Modal */}
+        <Modalize ref={filterModalRef} adjustToContentHeight>
+          <View style={{ padding: 20, backgroundColor: '#fff' }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Filter Options</Text>
 
-        {/* Product List */}
-        <FlatList
-          data={products}
-          renderItem={({ item }) => <Card product={item} />}
-          keyExtractor={item => item._id?.toString()}
-          numColumns={2}
-          showsVerticalScrollIndicator={false}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.cardList}
-          refreshing={isLoadingProducts}
-          onRefresh={fetchFiltered}
-        />
-      </View>
+            {/* PRICE RANGE */}
+            <Text style={styles.sectionTitle}>PRICE RANGE</Text>
+            <View style={{ alignItems: 'center', marginBottom: 20 }}>
+              <SmoothSlider
+                initialValues={priceRange}
+                onChange={(values) => setPriceRange(values)}
+              />
+            </View>
 
-      {/* FILTER Modal */}
-      <Modalize ref={filterModalRef} adjustToContentHeight>
-        <View style={{ padding: 20, backgroundColor: '#fff' }}>
-          <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 16 }}>Filter Options</Text>
-
-          {/* PRICE RANGE */}
-          <Text style={styles.sectionTitle}>PRICE RANGE</Text>
-          <View style={{ alignItems: 'center', marginBottom: 20 }}>
-            <SmoothSlider
-              initialValues={priceRange}
-              onChange={(values) => setPriceRange(values)}
-            />
-          </View>
-
-          {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
-          <Text style={styles.sectionTitle}>CATEGORY</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-            {subCategories.map(sub => (
-              <TouchableOpacity
-                key={sub._id}
-                style={[
-                  styles.pill,
-                  selectedSubId === sub._id && styles.pillActive
-                ]}
-                onPress={() => handleSubCategoryChange(sub._id)}
-              >
-                <Text style={[
-                  styles.pillText,
-                  selectedSubId === sub._id && styles.pillTextActive
-                ]}>
-                  {sub.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{ flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-            {subSubCategories.map(item => (
-              <TouchableOpacity
-                key={item._id}
-                onPress={() => toggleCategoryCheckbox(item._id)}
-                style={styles.checkboxRow}
-              >
-                <View style={[
-                  styles.checkbox,
-                  filters.selectedCategoryIds.includes(item._id) && styles.checkboxSelected
-                ]}>
-                  {filters.selectedCategoryIds.includes(item._id) && (
-                    <FontAwesome name="check" size={14} color="#fff" />
-                  )}
-                </View>
-                <Text>{item.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* COLOR */}
-          <Text style={styles.sectionTitle}>COLOR</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-            {['Black', 'Red', 'Green', 'Blue', 'Yellow'].map((color) => (
-              <TouchableOpacity
-                key={color}
-                onPress={() => toggleColor(color)}
-                style={[
-                  styles.colorPill,
-                  filters.selectedColors.includes(color) && styles.colorPillSelected,
-                ]}
-              >
-                <Text
+            {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
+            <Text style={styles.sectionTitle}>CATEGORY</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
+              {subCategories.map(sub => (
+                <TouchableOpacity
+                  key={sub._id}
                   style={[
-                    styles.colorPillText,
-                    filters.selectedColors.includes(color) && styles.colorPillTextSelected,
+                    styles.pill,
+                    selectedSubId === sub._id && styles.pillActive
+                  ]}
+                  onPress={() => handleSubCategoryChange(sub._id)}
+                >
+                  <Text style={[
+                    styles.pillText,
+                    selectedSubId === sub._id && styles.pillTextActive
+                  ]}>
+                    {sub.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+              {subSubCategories.map(item => (
+                <TouchableOpacity
+                  key={item._id}
+                  onPress={() => toggleCategoryCheckbox(item._id)}
+                  style={styles.checkboxRow}
+                >
+                  <View style={[
+                    styles.checkbox,
+                    filters.selectedCategoryIds.includes(item._id) && styles.checkboxSelected
+                  ]}>
+                    {filters.selectedCategoryIds.includes(item._id) && (
+                      <FontAwesome name="check" size={14} color="#fff" />
+                    )}
+                  </View>
+                  <Text>{item.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* COLOR */}
+            <Text style={styles.sectionTitle}>COLOR</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+              {['Black', 'Red', 'Green', 'Blue', 'Yellow'].map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  onPress={() => toggleColor(color)}
+                  style={[
+                    styles.colorPill,
+                    filters.selectedColors.includes(color) && styles.colorPillSelected,
                   ]}
                 >
-                  {color}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                  <Text
+                    style={[
+                      styles.colorPillText,
+                      filters.selectedColors.includes(color) && styles.colorPillTextSelected,
+                    ]}
+                  >
+                    {color}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* STORE */}
-          <Text style={styles.sectionTitle}>STORE</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-            {Array.isArray(merchants) && merchants.map(merchant => (
-              <TouchableOpacity
-                key={merchant._id}
-                onPress={() => toggleStore(merchant._id)}
-                style={[
-                  styles.storePill,
-                  filters.selectedStores.includes(merchant._id) && styles.storePillSelected
-                ]}
-              >
-                <Text style={[
-                  styles.storeText,
-                  filters.selectedStores.includes(merchant._id) && styles.storeTextSelected
-                ]}>
-                  {merchant.shopName}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            {/* STORE */}
+            <Text style={styles.sectionTitle}>STORE</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
+              {Array.isArray(merchants) && merchants.map(merchant => (
+                <TouchableOpacity
+                  key={merchant._id}
+                  onPress={() => toggleStore(merchant._id)}
+                  style={[
+                    styles.storePill,
+                    filters.selectedStores.includes(merchant._id) && styles.storePillSelected
+                  ]}
+                >
+                  <Text style={[
+                    styles.storeText,
+                    filters.selectedStores.includes(merchant._id) && styles.storeTextSelected
+                  ]}>
+                    {merchant.shopName}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-          {/* APPLY BUTTON */}
-          <TouchableOpacity
-            style={styles.applyButton}
-            onPress={() => filterModalRef.current?.close()}
-          >
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Filters</Text>
-          </TouchableOpacity>
-        </View>
-      </Modalize>
-
-      {/* SORT Modal */}
-      <Modalize ref={sortModalRef} adjustToContentHeight>
-        <View style={{ paddingVertical: 12 }}>
-          <Text style={{
-            fontSize: 14,
-            fontWeight: '500',
-            color: '#888',
-            paddingHorizontal: 20,
-            marginBottom: 8,
-          }}>
-            SORT BY
-          </Text>
-          {[
-            "newest",
-            'priceLowToHigh',
-            'priceHighToLow',
-            'discount',
-            'customerRating',
-          ].map((option, index) => (
+            {/* APPLY BUTTON */}
             <TouchableOpacity
-              key={option}
-              style={{
-                paddingVertical: 14,
-                paddingHorizontal: 20,
-                borderBottomWidth: index === 4 ? 0 : 1,
-                borderBottomColor: '#eee',
-              }}
-              onPress={() => {
-                setSortBy([option]); // Use array for consistency
-                sortModalRef.current?.close();
-              }}
+              style={styles.applyButton}
+              onPress={() => filterModalRef.current?.close()}
             >
-              <Text style={{
-                fontSize: 16,
-                color: '#222',
-                fontWeight: sortBy.includes(option) ? '700' : '400'
-              }}>
-                {option.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-              </Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Filters</Text>
             </TouchableOpacity>
-          ))}
-        </View>
-      </Modalize>
+          </View>
+        </Modalize>
 
-      {/* GENDER Modal */}
-      <Modalize ref={genderModalRef} adjustToContentHeight>
-        <View style={{ paddingVertical: 12 }}>
-          <Text
-            style={{
+        {/* SORT Modal */}
+        <Modalize ref={sortModalRef} adjustToContentHeight>
+          <View style={{ paddingVertical: 12 }}>
+            <Text style={{
               fontSize: 14,
               fontWeight: '500',
               color: '#888',
               paddingHorizontal: 20,
               marginBottom: 8,
-            }}
-          >
-            GENDER
-          </Text>
-          {mainCategories.map((cat) => (
-            <TouchableOpacity
-              key={cat._id}
-              style={{
-                paddingVertical: 14,
-                paddingHorizontal: 20,
-                borderBottomWidth: 1,
-                borderBottomColor: '#eee',
-              }}
-              onPress={() => {
-                setSelectedGender(cat.name);
-                handleMainCategoryChange(cat._id);
-                genderModalRef.current?.close();
-              }}
-            >
-              <Text
+            }}>
+              SORT BY
+            </Text>
+            {[
+              "newest",
+              'priceLowToHigh',
+              'priceHighToLow',
+              'discount',
+              'customerRating',
+            ].map((option, index) => (
+              <TouchableOpacity
+                key={option}
                 style={{
-                  fontSize: 16,
-                  color: '#222',
-                  fontWeight: selectedGender === cat.name ? '700' : '400',
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  borderBottomWidth: index === 4 ? 0 : 1,
+                  borderBottomColor: '#eee',
+                }}
+                onPress={() => {
+                  setSortBy([option]); // Use array for consistency
+                  sortModalRef.current?.close();
                 }}
               >
-                {cat.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Modalize>
+                <Text style={{
+                  fontSize: 16,
+                  color: '#222',
+                  fontWeight: sortBy.includes(option) ? '700' : '400'
+                }}>
+                  {option.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Modalize>
+
+        {/* GENDER Modal */}
+        <Modalize ref={genderModalRef} adjustToContentHeight>
+          <View style={{ paddingVertical: 12 }}>
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: '500',
+                color: '#888',
+                paddingHorizontal: 20,
+                marginBottom: 8,
+              }}
+            >
+              GENDER
+            </Text>
+            {mainCategories.map((cat) => (
+              <TouchableOpacity
+                key={cat._id}
+                style={{
+                  paddingVertical: 14,
+                  paddingHorizontal: 20,
+                  borderBottomWidth: 1,
+                  borderBottomColor: '#eee',
+                }}
+                onPress={() => {
+                  setSelectedGender(cat.name);
+                  handleMainCategoryChange(cat._id);
+                  genderModalRef.current?.close();
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 16,
+                    color: '#222',
+                    fontWeight: selectedGender === cat.name ? '700' : '400',
+                  }}
+                >
+                  {cat.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </Modalize>
+      </SafeAreaView>
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-container: {
-  flex: 1,
-  backgroundColor: '#fff',
-  // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50, // ✅ dynamic safe spacing
-},
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? 10 : 0, // ✅ prevent overlap on Android
   },
   headerTitle: {
-  fontSize: 15,
-  fontWeight: 'bold',
-  textTransform: 'uppercase',
-  marginVertical: 12,     // Adds space above and below
-  paddingHorizontal: 16,  // Adds space to the sides
-  textAlign: 'center',    // Center the text (optional)
-  color: '#333' 
+    fontSize: 15,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    marginVertical: 12,     // Adds space above and below
+    paddingHorizontal: 16,  // Adds space to the sides
+    textAlign: 'center',    // Center the text (optional)
+    color: '#333'
   },
   headerIcons: {
     flexDirection: 'row',
@@ -539,140 +537,140 @@ container: {
     marginRight: 10,
   },
   badge: {
-  position: 'absolute',
-  top: -6,
-  right: -6,
-  backgroundColor: 'red',
-  borderRadius: 8,
-  width: 16,
-  height: 16,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-genderText: {
-  marginLeft: 8,
-  fontWeight: '500',
-  fontSize: 14,
-},
-row: {
-  justifyContent: 'space-between',
-  marginBottom: 16,
-},
-cardList: {
-  paddingBottom: 100,
-  paddingHorizontal: 4,
-},
-badgeText: {
-  color: '#fff',
-  fontSize: 10,
-  fontWeight: 'bold',
-},
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    width: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  genderText: {
+    marginLeft: 8,
+    fontWeight: '500',
+    fontSize: 14,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  cardList: {
+    paddingBottom: 100,
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   genderContainer: {
-  marginTop: 10,
-  marginBottom: 16,
-  paddingHorizontal: 15,
-},
-filterGenderWrapper: {
-  flexDirection: 'row',
-  flexWrap: 'wrap',
-  justifyContent: 'space-between',
-  // gap: 10,
-  marginTop: 5,
-  marginBottom: 12,
-  paddingHorizontal: 5,
-},
-filterButton: {
-  flex: 1, // Takes equal space among FILTER and SORT
-  justifyContent: 'center',
-  alignItems: 'center',
-  height: 50,
-  borderTopLeftRadius: 20,
-  borderBottomLeftRadius: 20,
-  backgroundColor: '#fff',
-  // borderWidth: 1,
-  // borderColor: '#ddd',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
-  shadowRadius: 3,
-  elevation: 2,
-},
-filterButton1: {
-  flex: 1, // Takes equal space among FILTER and SORT
-  justifyContent: 'center',
-  alignItems: 'center',
-  height: 50,
-  borderTopRightRadius: 20,
-  borderBottomRightRadius: 20,
-  backgroundColor: '#fff',
-  // borderWidth: 1,
-  // borderColor: '#ddd',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.1,
-  shadowRadius: 3,
-  elevation: 2,
-},
+    marginTop: 10,
+    marginBottom: 16,
+    paddingHorizontal: 15,
+  },
+  filterGenderWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    // gap: 10,
+    marginTop: 5,
+    marginBottom: 12,
+    paddingHorizontal: 5,
+  },
+  filterButton: {
+    flex: 1, // Takes equal space among FILTER and SORT
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 50,
+    borderTopLeftRadius: 20,
+    borderBottomLeftRadius: 20,
+    backgroundColor: '#fff',
+    // borderWidth: 1,
+    // borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  filterButton1: {
+    flex: 1, // Takes equal space among FILTER and SORT
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 50,
+    borderTopRightRadius: 20,
+    borderBottomRightRadius: 20,
+    backgroundColor: '#fff',
+    // borderWidth: 1,
+    // borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
 
-genderButton: {
-  width: '20%', // ✅ Occupies 20% of row
-  flexDirection: 'row',
-  justifyContent: 'center',
-  alignItems: 'center',
-  height: 50,
-  borderRadius: 20,
-  backgroundColor: '#fff',
-  borderWidth: .2,
-  borderColor: '#ddd',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-  elevation: 2,
-  marginLeft:10
-},
+  genderButton: {
+    width: '20%', // ✅ Occupies 20% of row
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 50,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: .2,
+    borderColor: '#ddd',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 2,
+    marginLeft: 10
+  },
 
   filterButtonLeft: {
     borderRightWidth: 1,
     borderRightColor: '#ccc',
   },
   checkIcon: {
-  alignSelf: 'center',
-  position: 'absolute',
-  top: 7,
-  left: 7,
-  color:'black'
-},
-checkboxRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-genderWrapper: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  paddingHorizontal: 15,
-  marginBottom: 16,
-},
-checkbox: {
-  width: 30,
-  height: 30,
-  borderRadius: 6,
-  borderWidth: 2,
-  borderColor: '#333',
-  marginRight: 10,
-  justifyContent: 'center',
-  alignItems: 'center',
-},
-checkboxSelected: {
-  backgroundColor: '#333',
-},
+    alignSelf: 'center',
+    position: 'absolute',
+    top: 7,
+    left: 7,
+    color: 'black'
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  genderWrapper: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+    marginBottom: 16,
+  },
+  checkbox: {
+    width: 30,
+    height: 30,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#333',
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxSelected: {
+    backgroundColor: '#333',
+  },
   filterText: {
     fontWeight: '600',
   },
   cardList: {
     paddingBottom: 20,
   },
-    sectionTitle: {
+  sectionTitle: {
     fontWeight: '700',
     fontSize: 14,
     marginBottom: 8,
@@ -699,21 +697,21 @@ checkboxSelected: {
     color: '#fff',
   },
   colorPill: {
-  paddingHorizontal: 20,
-  paddingVertical: 12,
-  borderRadius: 10,
-  backgroundColor: '#f2f2f2',
-},
-colorPillSelected: {
-  backgroundColor: '#222',
-},
-colorPillText: {
-  color: '#333',
-  fontWeight: '500',
-},
-colorPillTextSelected: {
-  color: '#fff',
-},
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#f2f2f2',
+  },
+  colorPillSelected: {
+    backgroundColor: '#222',
+  },
+  colorPillText: {
+    color: '#333',
+    fontWeight: '500',
+  },
+  colorPillTextSelected: {
+    color: '#fff',
+  },
   colorCircle: {
     width: 25,
     height: 25,

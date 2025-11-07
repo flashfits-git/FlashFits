@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, {  useEffect, useRef } from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, Platform, StyleSheet, Animated, Easing, View, StatusBar } from 'react-native';
@@ -11,7 +11,7 @@ import Colors from '../../assets/theme/Colors';
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    height: Platform.OS === 'ios' ? 70 : 70,
+    height: Platform.OS === 'ios' ? 80 : 90,
     backgroundColor: '#fff',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -19,8 +19,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 18,
-    paddingTop: Platform.OS === 'ios' ? 18 : 10,
+    paddingTop: Platform.OS === 'ios' ? 18 : 18,
+    paddingBottom: Platform.OS === 'ios' ? 10 : 10,
+
   },
 });
 

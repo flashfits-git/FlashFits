@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    bottom: 2, // fixed position from bottom
+    bottom: 30, // fixed position from bottom
     paddingHorizontal: 16,
     // zIndex: 100,
     margin: 30,

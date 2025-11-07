@@ -9,6 +9,7 @@ import {
   RefreshControl,
   Animated,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import HearderForProfileComponents from "../../components/ProfilePageComponents/HearderForProfileComponents";
@@ -143,6 +144,8 @@ const OrdersScreen = () => {
   );
 
   return (
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}> 
+    
     <View style={styles.wrapper}>
       <HearderForProfileComponents title={title || "My Orders"} />
       
@@ -280,16 +283,21 @@ const OrdersScreen = () => {
         </ScrollView>
       )}
     </View>
+    </SafeAreaView>
   );
 };
 
 export default OrdersScreen;
 
 const styles = StyleSheet.create({
-  wrapper: {
-    flex: 1,
-    backgroundColor: "#F5F7FA",
-  },
+  safeArea: {
+  flex: 1,
+  backgroundColor: "#F5F7FA",
+},
+wrapper: {
+  flex: 1, // ← keep only if you continue to use wrapper anywhere else
+  backgroundColor: "#F5F7FA",
+},
   container: {
     flex: 1,
     paddingHorizontal: 16,

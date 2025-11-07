@@ -9,13 +9,14 @@ import {
   ScrollView,
   Dimensions,
   Animated,
-  Keyboard,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import logo from "../../assets/loaders/logo.png";
 
 const { width, height } = Dimensions.get("window");
 
@@ -24,7 +25,7 @@ export default function PhoneLogin() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isFocused, setIsFocused] = useState(false);
 
-  // Animation values
+  // ── Animations ─────────────────────────────────────────────────────
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
   const cardSlide = useRef(new Animated.Value(50)).current;
@@ -33,440 +34,281 @@ export default function PhoneLogin() {
   const buttonScale = useRef(new Animated.Value(1)).current;
   const progressWidth = useRef(new Animated.Value(0)).current;
 
+  // Entrance
   useEffect(() => {
-    // Entrance animations
     Animated.parallel([
-      Animated.spring(logoScale, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.spring(cardSlide, {
-        toValue: 0,
-        tension: 50,
-        friction: 8,
-        delay: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOpacity, {
-        toValue: 1,
-        duration: 600,
-        delay: 200,
-        useNativeDriver: true,
-      }),
+      Animated.spring(logoScale, { toValue: 1, tension: 60, friction: 7, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(cardSlide, { toValue: 0, tension: 60, friction: 8, delay: 150, useNativeDriver: true }),
+      Animated.timing(cardOpacity, { toValue: 1, duration: 600, delay: 150, useNativeDriver: true }),
     ]).start();
   }, []);
 
+  // Progress bar
   useEffect(() => {
-    // Progress bar animation
     Animated.spring(progressWidth, {
       toValue: phoneNumber.length / 10,
-      tension: 50,
-      friction: 7,
+      tension: 80,
+      friction: 8,
       useNativeDriver: false,
     }).start();
   }, [phoneNumber]);
 
+  // ── Handlers ───────────────────────────────────────────────────────
   const handleSendOTP = async () => {
-    // Button press animation
     Animated.sequence([
-      Animated.timing(buttonScale, {
-        toValue: 0.95,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(buttonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
+      Animated.timing(buttonScale, { toValue: 0.96, duration: 80, useNativeDriver: true }),
+      Animated.timing(buttonScale, { toValue: 1, duration: 80, useNativeDriver: true }),
     ]).start();
 
-    try {
-      console.log("OTP sent successfully");
-      router.replace({
-        pathname: "/(auth)/otpVerification",
-        params: { phone: phoneNumber },
-      });
-    } catch (error) {
-      console.error("Failed to send OTP", error);
-    }
+    // TODO: real OTP call
+    router.replace({
+      pathname: "/(auth)/otpVerification",
+      params: { phone: phoneNumber },
+    });
   };
 
   const handleFocus = () => {
     setIsFocused(true);
-    Animated.spring(inputScale, {
-      toValue: 1.02,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(inputScale, { toValue: 1.015, tension: 80, friction: 7, useNativeDriver: true }).start();
   };
-
   const handleBlur = () => {
     setIsFocused(false);
-    Animated.spring(inputScale, {
-      toValue: 1,
-      tension: 50,
-      friction: 7,
-      useNativeDriver: true,
-    }).start();
+    Animated.spring(inputScale, { toValue: 1, tension: 80, friction: 7, useNativeDriver: true }).start();
   };
 
-  const progressWidthInterpolated = progressWidth.interpolate({
+  const progressPct = progressWidth.interpolate({
     inputRange: [0, 1],
     outputRange: ["0%", "100%"],
   });
 
+  // ── Render ─────────────────────────────────────────────────────────
   return (
-    <LinearGradient
-      colors={["#F8FAFC", "#FFFFFF", "#F1F5F9"]}
-      style={styles.gradient}
-    >
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "position"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 60}
-      >
-        <ScrollView
-          contentContainerStyle={styles.container}
-          showsVerticalScrollIndicator={false}
-          bounces={false}
-          keyboardShouldPersistTaps="handled"
+    <View style={styles.centerWrapper}>
+    <LinearGradient colors={["#ffffffff", "#ffffffff", "#ffffffff"]} style={styles.gradient}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.select({ ios: 0, android: 20 })}
         >
-          {/* Logo Section with Animation */}
-          <Animated.View
-            style={[
-              styles.logoContainer,
-              {
-                opacity: logoOpacity,
-                transform: [{ scale: logoScale }],
-              },
-            ]}
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.logoWrapper}>
+            {/* ── LOGO ── */}
+            <Animated.View
+              style={[
+                styles.logoWrapper,
+                { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+              ]}
+            >
               <Image
-                source={require("../../assets/loaders/logo.png")}
+                source={logo}
                 style={styles.logo}
                 resizeMode="contain"
               />
-            </View>
-            {/* <Text style={styles.welcomeTitle}>Welcome Back</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Enter your phone number to continue
-          </Text> */}
-          </Animated.View>
+            </Animated.View>
 
-          {/* Main Card with Slide Animation */}
-          <Animated.View
-            style={[
-              styles.cardContainer,
-              {
-                opacity: cardOpacity,
-                transform: [{ translateY: cardSlide }],
-              },
-            ]}
-          >
-            <View style={styles.card}>
-              {/* Phone Input Label */}
-              <Text style={styles.inputLabel}>Phone Number</Text>
+            {/* ── CARD ── */}
+            <Animated.View
+              style={[
+                styles.cardWrapper,
+                { opacity: cardOpacity, transform: [{ translateY: cardSlide }] },
+              ]}
+            >
+              <View style={styles.card}>
+                {/* Label */}
+                <Text style={styles.label}>Phone Number</Text>
 
-              {/* Phone Input Section */}
-              <Animated.View
-                style={[
-                  styles.inputContainer,
-                  {
-                    transform: [{ scale: inputScale }],
-                    borderColor: isFocused ? "#1A1A1A" : "#F0F0F0",
-                    borderWidth: isFocused ? 2 : 1,
-                    backgroundColor: isFocused ? "#FFFFFF" : "#F8FAFC",
-                  },
-                ]}
-              >
-                <TouchableOpacity style={styles.countrySelector}>
-                  <Image
-                    source={{ uri: "https://flagcdn.com/w40/in.png" }}
-                    style={styles.flag}
-                  />
-                  <Text style={styles.countryCode}>+91</Text>
-                  <AntDesign name="down" size={12} color="#666" />
-                </TouchableOpacity>
-
-                <View style={styles.divider} />
-
-                <TextInput
-                  style={styles.phoneInput}
-                  placeholder="00000 00000"
-                  placeholderTextColor="#999"
-                  keyboardType="phone-pad"
-                  value={phoneNumber}
-                  onChangeText={(text) => {
-                    const cleaned = text.replace(/[^0-9]/g, "");
-                    if (cleaned.length <= 10) {
-                      setPhoneNumber(cleaned);
-                    }
-                  }}
-                  onFocus={handleFocus}
-                  onBlur={handleBlur}
-                  maxLength={10}
-                />
-              </Animated.View>
-
-              {/* Progress Indicator */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressHeader}>
-                  <Text style={styles.progressLabel}>Progress</Text>
-                  <Text style={styles.progressCount}>
-                    {phoneNumber.length}/10
-                  </Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <Animated.View
-                    style={[
-                      styles.progressFill,
-                      { width: progressWidthInterpolated },
-                    ]}
-                  />
-                </View>
-              </View>
-
-              {/* Continue Button */}
-              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-                <TouchableOpacity
+                {/* Input */}
+                <Animated.View
                   style={[
-                    styles.continueButton,
-                    phoneNumber.length === 10
-                      ? styles.continueButtonActive
-                      : styles.continueButtonDisabled,
+                    styles.inputBox,
+                    {
+                      transform: [{ scale: inputScale }],
+                      borderColor: isFocused ? "#78787cff" : "#e2e8f0",
+                      backgroundColor: isFocused ? "#ffffff" : "#f8fafc",
+                    },
                   ]}
-                  disabled={phoneNumber.length !== 10}
-                  onPress={handleSendOTP}
-                  activeOpacity={0.8}
                 >
-                  <LinearGradient
-                    colors={
-                      phoneNumber.length === 10
-                        ? ["#1A1A1A", "#2D2D2D"]
-                        : ["#F5F5F5", "#F5F5F5"]
-                    }
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.buttonGradient}
-                  >
-                    <Text
-                      style={[
-                        styles.continueButtonText,
-                        phoneNumber.length === 10
-                          ? styles.continueButtonTextActive
-                          : styles.continueButtonTextDisabled,
-                      ]}
-                    >
-                      Continue
-                    </Text>
-                    {phoneNumber.length === 10 && (
-                      <AntDesign name="arrowright" size={20} color="#FFFFFF" />
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-          </Animated.View>
+                  <TouchableOpacity style={styles.countryPicker}>
+                    <Image
+                      source={{ uri: "https://flagcdn.com/w40/in.png" }}
+                      style={styles.flag}
+                    />
+                    <Text style={styles.code}>+91</Text>
+                    <AntDesign name="down" size={12} color="#64748b" />
+                  </TouchableOpacity>
 
-          {/* Terms Section */}
-          <View style={styles.termsContainer}>
-            <Text style={styles.termsText}>
-              By continuing, you agree to our{" "}
-              <Text style={styles.termsLink}>Terms of Service</Text> and{" "}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
-            </Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+                  <View style={styles.divider} />
+
+                  <TextInput
+                    style={styles.phoneInput}
+                    placeholder="00000 00000"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="phone-pad"
+                    value={phoneNumber}
+                    onChangeText={(t) => {
+                      const clean = t.replace(/[^0-9]/g, "");
+                      if (clean.length <= 10) setPhoneNumber(clean);
+                    }}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    maxLength={10}
+                  />
+                </Animated.View>
+
+                {/* Progress */}
+                <View style={styles.progressBox}>
+                  <View style={styles.progressHeader}>
+                    <Text style={styles.progressTxt}>Progress</Text>
+                    <Text style={styles.progressNum}>{phoneNumber.length}/10</Text>
+                  </View>
+                  <View style={styles.progressTrack}>
+                    <Animated.View style={[styles.progressFill, { width: progressPct }]} />
+                  </View>
+                </View>
+
+                {/* Continue button */}
+                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.continueBtn,
+                      phoneNumber.length === 10 ? styles.continueActive : styles.continueDisabled,
+                    ]}
+                    disabled={phoneNumber.length !== 10}
+                    onPress={handleSendOTP}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={
+                        phoneNumber.length === 10
+                          ? ["#74737aff", "#000122ff"]
+                          : ["#e2e8f0", "#e2e8f0"]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.gradientBtn}
+                    >
+                      <Text
+                        style={[
+                          styles.continueTxt,
+                          phoneNumber.length === 10 ? styles.txtActive : styles.txtDisabled,
+                        ]}
+                      >
+                        Continue
+                      </Text>
+                      {phoneNumber.length === 10 && (
+                        <AntDesign name="right" size={20} color="#fff" />
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
+            </Animated.View>
+
+            {/* ── Terms ── */}
+            <View style={styles.termsBox}>
+              <Text style={styles.terms}>
+                By continuing, you agree to our{" "}
+                <Text style={styles.link}>Terms of Service</Text> and{" "}
+                <Text style={styles.link}>Privacy Policy</Text>
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+
     </LinearGradient>
+     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  gradient: {
-    flex: 1,
-  },
-  container: {
-    flexGrow: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 40,
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginBottom: 48,
-  },
-  logo: {
-    width: width * 0.7,
-    height: 70,
-  },
-  welcomeTitle: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginBottom: 8,
-    fontFamily: "Montserrat",
-  },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: "#64748B",
-    textAlign: "center",
-    fontFamily: "Montserrat",
-  },
-  cardContainer: {
-    marginBottom: 32,
-  },
+  gradient: { flex: 1 },
+
+scrollContainer: {
+  flexGrow: 1,
+  paddingHorizontal: 24,
+  paddingBottom: 48,
+  alignItems: "center",
+  justifyContent: "center", // <-- Center vertically
+},
+centerWrapper: {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center", // <-- Vertically center
+  // paddingHorizontal: 24,
+},
+
+  /* ── LOGO ── */
+  logoWrapper: { marginBottom: 10, alignItems: "center" },
+  logo: { width: width * 0.55, height: 80 },
+
+  /* ── CARD ── */
+  cardWrapper: { width: "100%", marginBottom: 32 },
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+    backgroundColor: "#ffffff",
+    borderRadius: 32,
     padding: 28,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 12,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 10,
   },
-  inputLabel: {
-    fontSize: 14,
+
+  label: {
+    fontSize: 15,
     fontWeight: "600",
     color: "#475569",
     marginBottom: 12,
-    fontFamily: "Montserrat",
+    fontFamily: Platform.select({ ios: "System", android: "Roboto" }),
   },
-  inputContainer: {
+
+  /* ── INPUT ── */
+  inputBox: {
     flexDirection: "row",
     alignItems: "center",
+    borderWidth: 1.5,
     borderRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
     marginBottom: 20,
   },
-  countrySelector: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  flag: {
-    width: 28,
-    height: 20,
-    borderRadius: 4,
-    marginRight: 10,
-  },
-  countryCode: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#1A1A1A",
-    marginRight: 8,
-    fontFamily: "Montserrat",
-  },
-  divider: {
-    width: 1,
-    height: 28,
-    backgroundColor: "#E2E8F0",
-    marginRight: 16,
-  },
+  countryPicker: { flexDirection: "row", alignItems: "center", marginRight: 12 },
+  flag: { width: 28, height: 20, borderRadius: 4, marginRight: 8 },
+  code: { fontSize: 17, fontWeight: "700", color: "#1e293b", marginRight: 6 },
+  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1", marginRight: 12 },
   phoneInput: {
     flex: 1,
     fontSize: 17,
-    color: "#1A1A1A",
-    fontFamily: "Montserrat",
     fontWeight: "600",
+    color: "#1e293b",
+    fontFamily: Platform.select({ ios: "System", android: "Roboto" }),
   },
-  progressContainer: {
-    marginBottom: 24,
-  },
-  progressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-  progressLabel: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "500",
-    fontFamily: "Montserrat",
-  },
-  progressCount: {
-    fontSize: 12,
-    color: "#64748B",
-    fontWeight: "600",
-    fontFamily: "Montserrat",
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: "#F1F5F9",
-    borderRadius: 3,
-    overflow: "hidden",
-  },
-  progressFill: {
-    height: "100%",
-    backgroundColor: "#1A1A1A",
-    borderRadius: 3,
-  },
-  continueButton: {
-    borderRadius: 20,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  buttonGradient: {
+
+  /* ── PROGRESS ── */
+  progressBox: { marginBottom: 24 },
+  progressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  progressTxt: { fontSize: 12, color: "#64748b", fontWeight: "500" },
+  progressNum: { fontSize: 12, color: "#64748b", fontWeight: "600" },
+  progressTrack: { height: 6, backgroundColor: "#e2e8f0", borderRadius: 3, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: "#04002aff", borderRadius: 3 },
+
+  /* ── BUTTON ── */
+  continueBtn: { borderRadius: 20, overflow: "hidden", shadowColor: "#000" },
+  continueActive: { shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+  continueDisabled: { shadowOpacity: 0, elevation: 0 },
+  gradientBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 18,
     gap: 8,
   },
-  continueButtonActive: {
-    // Active state handled by gradient
-  },
-  continueButtonDisabled: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    fontFamily: "Montserrat",
-  },
-  continueButtonTextActive: {
-    color: "#FFFFFF",
-  },
-  continueButtonTextDisabled: {
-    color: "#94A3B8",
-  },
-  termsContainer: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  termsText: {
-    fontSize: 13,
-    color: "#64748B",
-    textAlign: "center",
-    lineHeight: 20,
-    fontFamily: "Montserrat",
-  },
-  termsLink: {
-    color: "#1A1A1A",
-    fontWeight: "700",
-    fontFamily: "Montserrat",
-  },
+  continueTxt: { fontSize: 18, fontWeight: "700" },
+  txtActive: { color: "#ffffff" },
+  txtDisabled: { color: "#94a3b8" },
+
+  /* ── TERMS ── */
+  termsBox: { alignItems: "center", paddingHorizontal: 16 },
+  terms: { fontSize: 13, color: "#64748b", textAlign: "center", lineHeight: 19 },
+  link: { color: "#1e293b", fontWeight: "700" },
 });

@@ -3,6 +3,8 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/assets/theme/Colors';
 import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -34,6 +36,7 @@ const fallbackImages = [
 
 const ProductDetailPage = () => {
     const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
+const insets = useSafeAreaInsets();
 
   const [products, setProduct] = useState({});
   // const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
@@ -50,7 +53,6 @@ const [interpolatedColor, setInterpolatedColor] = useState('#fff');
 const [errorMessage, setErrorMessage] = useState('');
 const errorTimeoutRef = useRef(null);
 const navigation = useNavigation();
-
 
   const router = useRouter();
   const route = useRoute();
@@ -310,28 +312,32 @@ const handleAddToCart = async () => {
   return (
     <>
 <View style={styles.container}>
-<Animated.View style={[styles.topBar, { backgroundColor: headerBackgroundColor }]}>
+<Animated.View
+  style={[
+    styles.topBar,
+    { backgroundColor: headerBackgroundColor, paddingTop: insets.top }
+  ]}
+>
   {/* Left: Back Button */}
   <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
     <Ionicons name="chevron-back" size={24} color={interpolatedColor} />
   </TouchableOpacity>
 
   {/* Center: Merchant Name */}
-  <View style={styles.titleContainer}>
-    <TouchableOpacity
-      activeOpacity={0.7}
-      onPress={() => {
-        const id = merchantData?.merchant?._id || merchantData?._id;
-        if (id) {
-          navigation.navigate('(stack)/ShopDetails/StoreDetailPage', { merchantId: id });
-        }
-      }}
-    >
-      <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
-        {merchantData?.merchant?.shopName || 'Product Details'}
-      </Animated.Text>
-    </TouchableOpacity>
-  </View>
+  <TouchableOpacity
+    activeOpacity={0.7}
+    onPress={() => {
+      const id = merchantData?.merchant?._id || merchantData?._id;
+      if (id) {
+        navigation.navigate('(stack)/ShopDetails/StoreDetailPage', { merchantId: id });
+      }
+    }}
+  >
+    <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
+      {merchantData?.merchant?.shopName || 'Product Details'}
+    </Animated.Text>
+  </TouchableOpacity>
+
 
   {/* Right: Bag Icon */}
   <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
@@ -575,18 +581,35 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
   
-  topBar: {
-    position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, 
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, height: 70, borderBottomLeftRadius: 20, borderBottomRightRadius: 20,
-  },
+topBar: {
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  right: 0,
+  zIndex: 20,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: 16,
+  height: 100,
+  borderBottomLeftRadius: 20,
+  borderBottomRightRadius: 20,
+},
   iconButton: { padding: 8 },
+headerCenter: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  marginTop: 10,
+},
+
 headerTitle: {
   textAlign: 'center',
   fontWeight: 'bold',
   fontSize: 16,
   fontFamily: 'Montserrat',
   textTransform: 'uppercase',
+  paddingVertical: 10,
 },
   iconWithBadge: { position: 'relative' },
   badge: {
@@ -665,6 +688,7 @@ fixedButton: {
   paddingVertical: 5,
   justifyContent: 'center',   // ✅ Center vertically
   alignItems: 'center',       // ✅ Center horizontally
+  paddingBottom: 30,
 },
 addToBagButton: {
   height: 60,

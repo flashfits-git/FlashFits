@@ -15,6 +15,7 @@ import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress ';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import { useRoute } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
+import { SafeAreaView } from "react-native-safe-area-context";
 import { getMerchantById, getProductsByMerchantId } from '../../api/merchatApis/getMerchantHome';
 import Loader from '@/components/Loader/Loader';
 
@@ -26,28 +27,28 @@ const StoreDetailPage = () => {
   const route = useRoute();
   const { merchantId } = route.params;
 
-const handleViewAll = (subCatName, products) => {
-  const filters = {
-    
-    priceRange: [0, 10000], // default price range
-    selectedCategoryIds: [
-      products[0]?.categoryId?._id || '', // Main category ID
-      products[0]?.subCategoryId?._id || '' // Subcategory IDnull, // Sub-subcategory ID (optional)
-    ].filter(Boolean), // Remove falsy values
-    selectedColors: [], // Can be filled later
-    selectedStores: [merchantId], // Filter by merchant/store
-    sortBy: [], // Optional sorting
-  };
+  const handleViewAll = (subCatName, products) => {
+    const filters = {
 
-  router.push({
-    pathname: '(stack)/SelectionPage',
-    params: {
-      filterss: JSON.stringify(filters),
-      subCatName, // Pass subCatName for display or filtering
-      type: 'Max', // Optional, retained for header if needed
-    },
-  });
-};
+      priceRange: [0, 10000], // default price range
+      selectedCategoryIds: [
+        products[0]?.categoryId?._id || '', // Main category ID
+        products[0]?.subCategoryId?._id || '' // Subcategory IDnull, // Sub-subcategory ID (optional)
+      ].filter(Boolean), // Remove falsy values
+      selectedColors: [], // Can be filled later
+      selectedStores: [merchantId], // Filter by merchant/store
+      sortBy: [], // Optional sorting
+    };
+
+    router.push({
+      pathname: '(stack)/SelectionPage',
+      params: {
+        filterss: JSON.stringify(filters),
+        subCatName, // Pass subCatName for display or filtering
+        type: 'Max', // Optional, retained for header if needed
+      },
+    });
+  };
 
 
   useEffect(() => {
@@ -63,7 +64,7 @@ const handleViewAll = (subCatName, products) => {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching merchant or products:', error);
-      } finally{
+      } finally {
         setLoading(false);
       }
     };
@@ -87,13 +88,16 @@ const handleViewAll = (subCatName, products) => {
   if (loading) return <Loader />;
 
   const logoUrl = merchantData?.merchant?.logo?.url;
+  const formattedAddress = merchantData?.merchant?.address
+    ? `${merchantData.merchant.address.street}, ${merchantData.merchant.address.city}, ${merchantData.merchant.address.state}`
+    : 'Address not available';
 
   return (
-    <LinearGradient
-      colors={['#f9fafb', '#ffffffff']}
-      style={styles.background}
-    >
-      {/* <SafeAreaView style={styles.safeArea}> */}
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={['#f9fafb', '#ffffffff']}
+        style={styles.background}
+      >
         <View style={styles.headerContainer}>
           <View style={styles.headerContent}>
             <Image
@@ -103,30 +107,30 @@ const handleViewAll = (subCatName, products) => {
               style={styles.avatar}
             />
 
-<View style={styles.headerTextBox}>
+            <View style={styles.headerTextBox}>
 
-  
-<View style={styles.storeNameRow}>
-  <Text
-    style={styles.storeName}
-    numberOfLines={2}
-    ellipsizeMode="tail"
-  >
-    {merchantData?.merchant?.shopName || 'Shop Name'}
-  </Text>
 
-  <View style={styles.dot} />
-  <Ionicons name="time-outline" size={13} color="#000000ff" style={{ marginLeft: 2 }} />
-  <Text style={styles.timeText}>30 min</Text>
-</View>
+              <View style={styles.storeNameRow}>
+                <Text
+                  style={styles.storeName}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {merchantData?.merchant?.shopName || 'Shop Name'}
+                </Text>
 
-  <View style={styles.storeMetaRow}>
-    <Ionicons name="location-outline" size={15} color="#000000ff" style={{ marginRight: 2 }} />
-    <Text style={styles.addressText} numberOfLines={1}>
-      {merchantData?.merchant?.address || 'Address not available'}
-    </Text>
-  </View>
-</View>
+                <View style={styles.dot} />
+                <Ionicons name="time-outline" size={13} color="#000000ff" style={{ marginLeft: 2 }} />
+                <Text style={styles.timeText}>30 min</Text>
+              </View>
+
+              <View style={styles.storeMetaRow}>
+                <Ionicons name="location-outline" size={15} color="#000000ff" style={{ marginRight: 2 }} />
+                <Text style={styles.addressText} numberOfLines={1}>
+                  {formattedAddress}
+                </Text>
+              </View>
+            </View>
 
           </View>
           <TouchableOpacity
@@ -147,52 +151,54 @@ const handleViewAll = (subCatName, products) => {
             <ShopOffersCarousel />
           </View>
 
-    <View style={styles.sectionContainer}>
-      <View style={styles.flexRow}>
-        <Text style={styles.sectionTitle}>Products in Store</Text>
-        <LinearGradient
-          colors={['#000', 'transparent']}
-          start={{ x: 0, y: 0.5 }}
-          end={{ x: 1, y: 0.5 }}
-          style={styles.thickToThinLine}
-        />
-      </View>
-    </View>
-
-
-        {Object.entries(groupedProducts).map(([subCatName, products]) => (
-          <View key={subCatName} style={styles.categorySection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.subTitle}>{subCatName}</Text>
-          <TouchableOpacity 
-            style={styles.viewAllButton}
-            onPress={() => handleViewAll(subCatName, products)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.viewAllText}>View All</Text>
-            <Ionicons name="chevron-forward" size={16} color="#56565bff" />
-          </TouchableOpacity>
+          <View style={styles.sectionContainer}>
+            <View style={styles.flexRow}>
+              <Text style={styles.sectionTitle}>Products in Store</Text>
+              <LinearGradient
+                colors={['#000', 'transparent']}
+                start={{ x: 0, y: 0.5 }}
+                end={{ x: 1, y: 0.5 }}
+                style={styles.thickToThinLine}
+              />
             </View>
-            <RecentlyViewed deataiPageproducts={products} />
           </View>
-        ))} 
+
+
+          {Object.entries(groupedProducts).map(([subCatName, products]) => (
+            <View key={subCatName} style={styles.categorySection}>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.subTitle}>{subCatName}</Text>
+                <TouchableOpacity
+                  style={styles.viewAllButton}
+                  onPress={() => handleViewAll(subCatName, products)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.viewAllText}>View All</Text>
+                  <Ionicons name="chevron-forward" size={16} color="#56565bff" />
+                </TouchableOpacity>
+              </View>
+              <RecentlyViewed deataiPageproducts={products} />
+            </View>
+          ))}
           <View style={styles.featuredSection}>
             <FeaturedDress />
           </View>
         </ScrollView>
-      {/* </SafeAreaView> */}
-    </LinearGradient>
+        {/* </SafeAreaView> */}
+      </LinearGradient>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+
   background: {
     flex: 1,
     minHeight: '100%',
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
+    backgroundColor: '#fff',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -210,7 +216,7 @@ const styles = StyleSheet.create({
     shadowRadius: 15,
     elevation: 9,
   },
-  
+
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -229,19 +235,19 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
     justifyContent: 'center',
   },
-storeName: {
-  fontSize: 20,
-  fontWeight: '700',
-  color: '#272848',
-  fontFamily: Platform.OS === 'ios' ? 'Montserrat-SemiBold' : 'Roboto',
-  maxWidth: '65%', // ✅ Ensures title doesn't collide with time
-  flexShrink: 1,
-  textTransform: 'capitalize',
-},
+  storeName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#272848',
+    fontFamily: Platform.OS === 'ios' ? 'Montserrat-SemiBold' : 'Roboto',
+    maxWidth: '65%', // ✅ Ensures title doesn't collide with time
+    flexShrink: 1,
+    textTransform: 'capitalize',
+  },
   storeMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10 ,
+    marginTop: 10,
   },
   addressText: {
     fontSize: 13.5,
@@ -262,32 +268,32 @@ storeName: {
     marginLeft: 2,
     fontWeight: '500',
   },
-thickToThinLine: {
-  height: 3,                  // Thicker for a bolder look
-  flex: 1,
-  borderRadius: 4,
-  marginLeft: 8,
-  marginRight: 4,
-  // Simulate "thick-to-thin": Use transform to 'taper' the right edge
-  // by scaling Y and translating as necessary
-  // If possible, use clipPath or border mask for a true taper
-  // For React Native, we use scaleY and skewX for effect
-  transform: [{ scaleY: 0.75 }, { skewX: '8deg' }],
-  // Optional shadow for pop
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 2,
-  elevation: 2,  // Android shadow
-  opacity:.5
-},
+  thickToThinLine: {
+    height: 3,                  // Thicker for a bolder look
+    flex: 1,
+    borderRadius: 4,
+    marginLeft: 8,
+    marginRight: 4,
+    // Simulate "thick-to-thin": Use transform to 'taper' the right edge
+    // by scaling Y and translating as necessary
+    // If possible, use clipPath or border mask for a true taper
+    // For React Native, we use scaleY and skewX for effect
+    transform: [{ scaleY: 0.75 }, { skewX: '8deg' }],
+    // Optional shadow for pop
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,  // Android shadow
+    opacity: .5
+  },
   storesButton: {
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 8,
     padding: 5,
   },
-    sectionContainer: {
+  sectionContainer: {
     // marginTop: 20,
     marginHorizontal: 16,
   },
@@ -298,7 +304,7 @@ thickToThinLine: {
     fontWeight: '600',
     letterSpacing: 0.1,
   },
-    flexRow: {
+  flexRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -314,17 +320,17 @@ thickToThinLine: {
     gap: 14,
   },
   sectionTitle: {
-  fontSize: 18,
-  fontWeight: 'bold',
-  color: '#000',
-  marginRight: 12,  
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+    marginRight: 12,
   },
-storeNameRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  flexWrap: 'nowrap',
-  gap: 6,
-},
+  storeNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'nowrap',
+    gap: 6,
+  },
   categorySection: {
     marginBottom: 20,
     backgroundColor: '#ffffff',
@@ -332,9 +338,9 @@ storeNameRow: {
     paddingTop: 16,
     paddingHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { 
-      width: 0, 
-      height: 2 
+    shadowOffset: {
+      width: 0,
+      height: 2
     },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -342,7 +348,7 @@ storeNameRow: {
     borderWidth: 1,
     borderColor: '#f0f0f5',
   },
-    sectionHeader: {
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -370,7 +376,7 @@ storeNameRow: {
     flex: 1,
     fontFamily: Platform.OS === 'ios' ? 'SF Pro Display' : 'Roboto',
   },
-    viewAllButton: {
+  viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f8f7ff',
@@ -388,23 +394,23 @@ storeNameRow: {
     shadowRadius: 4,
     elevation: 2,
   },
-    viewAllText: {
+  viewAllText: {
     fontSize: 13,
     fontWeight: '600',
     color: '#5a595cff',
     marginRight: 4,
     letterSpacing: 0.2,
   },
-    categorySection_dark: {
+  categorySection_dark: {
     marginBottom: 20,
     backgroundColor: '#454547ff',
     borderRadius: 20,
     paddingVertical: 16,
     paddingHorizontal: 16,
     shadowColor: '#000',
-    shadowOffset: { 
-      width: 0, 
-      height: 4 
+    shadowOffset: {
+      width: 0,
+      height: 4
     },
     shadowOpacity: 0.15,
     shadowRadius: 12,
@@ -448,9 +454,9 @@ storeNameRow: {
     paddingVertical: 20,
     paddingHorizontal: 18,
     shadowColor: '#7B68EE',
-    shadowOffset: { 
-      width: 0, 
-      height: 6 
+    shadowOffset: {
+      width: 0,
+      height: 6
     },
     shadowOpacity: 0.12,
     shadowRadius: 16,

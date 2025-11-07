@@ -12,7 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+import { AntDesign, MaterialCommunityIcons ,  } from "@expo/vector-icons";
 import { phoneLogin } from "@/app/api/auth";
 import { saveToken, saveUserId } from "@/app/utilities/secureStore";
 
@@ -266,7 +266,7 @@ const OTPInput = () => {
           activeOpacity={0.7}
         >
           <View style={styles.backButtonCircle}>
-            <AntDesign name="arrowleft" size={20} color="#1A1A1A" />
+            <AntDesign name="arrow-left" size={20} color="#1A1A1A" />
           </View>
         </TouchableOpacity>
 
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    // elevation: 4,
   },
   headerContent: {
     flex: 1,
@@ -537,7 +537,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 4,
+    // elevation: 4,
   },
   cardContainer: {
     paddingHorizontal: 24,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.08,
     shadowRadius: 24,
-    elevation: 10,
+    // elevation: 10,
   },
   title: {
     fontSize: 24,
@@ -604,7 +604,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-    elevation: 3,
+    // elevation: 3,
   },
   errorBorder: {
     borderColor: "#EF4444",
@@ -681,11 +681,11 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.15,
     shadowRadius: 12,
-    elevation: 8,
+    // elevation: 8,
   },
   verifyButtonDisabled: {
     shadowOpacity: 0,
-    elevation: 0,
+    // elevation: 0,
   },
   buttonGradient: {
     flexDirection: "row",

@@ -4,7 +4,7 @@
     "slug": "FlashFits",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/fevicon.jpg",
+    "icon": "./assets/images/fevicon.png",
     "scheme": "flashfits",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
@@ -15,7 +15,7 @@
     "android": {
       "package": "com.flashfits.app",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/fevicon.jpg",
+        "foregroundImage": "./assets/images/fevicon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -23,14 +23,14 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/fevicon.jpg"
+      "favicon": "./assets/images/fevicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/fevicon.jpg",
+          "image": "./assets/images/fevicon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
@@ -42,12 +42,12 @@
       "expo-secure-store"
     ],
     "splash": {
-      "image": "./assets/images/fevicon.jpg",
+      "image": "./assets/images/fevicon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "extra": {
-      "BACKEND_URL": "https://a7c58272c74e.ngrok-free.app",
+      "BACKEND_URL": "https://ff-api-web.onrender.com",
       "eas": {
         "projectId": "5ffa6730-d676-4b63-a03d-df1db41ca12b"
       }

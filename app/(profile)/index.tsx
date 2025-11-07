@@ -1,9 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Platform, StatusBar } from 'react-native';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Alert } from 'react-native';
+
 
 const ProfilePage = () => {
     const router = useRouter();
@@ -36,6 +38,7 @@ const handleNavigation = async (title: string) => {
 };
 
     return (
+      <SafeAreaView style={styles.safeArea}>
         <ScrollView style={styles.container}>
             {/* Top Bar */}
             <View style={styles.header}>
@@ -72,6 +75,7 @@ const handleNavigation = async (title: string) => {
                 ))}
             </View>
         </ScrollView>
+        </SafeAreaView>
     );
 };
 
@@ -87,6 +91,11 @@ const menuItems = [
 ];
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
