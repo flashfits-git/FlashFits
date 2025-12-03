@@ -29,7 +29,7 @@ export default function FlashfitsStores() {
   const [merchants, setMerchants] = useState([]);
   const [productsByMerchant, setProductsByMerchant] = useState({}); // New state for batch products
   // console.log(productsByMerchant,'productsByMerchant');
-  
+
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,23 +66,22 @@ export default function FlashfitsStores() {
         navigation.setOptions({
           tabBarStyle: {
             position: 'absolute',
-            height: Platform.OS === 'ios' ? 70 : 70,
+            height: Platform.OS === 'ios' ? 80 : 90,
             backgroundColor: '#fff',
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            elevation: 5,
-            paddingTop: Platform.OS === 'ios' ? 18 : 10,
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            paddingTop: Platform.OS === 'ios' ? 18 : 18,
+            paddingBottom: Platform.OS === 'ios' ? 10 : 10,
           },
         });
       } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
         setIsTabBarVisible(false);
         navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
-
       currentOffset.current = clampedValue;
     });
 
@@ -176,7 +175,7 @@ const styles = StyleSheet.create({
   searchIcon: {
     marginRight: 10,
   },
-  
+
   searchInput: {
     flex: 1,
     fontSize: 14,

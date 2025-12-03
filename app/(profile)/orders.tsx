@@ -31,7 +31,7 @@ const OrdersScreen = () => {
       setLoading(true);
       const res = await getAllOrders();
       console.log(res);
-      
+
       if (res) {
         setOrders(res);
         // Fade in animation
@@ -110,19 +110,67 @@ const OrdersScreen = () => {
     return statusIcons[status?.toLowerCase()] || "information-circle-outline";
   };
 
-  const getPaymentStatusBadge = (status) => {
-    return status === "pending" ? (
-      <View style={styles.paymentBadge}>
-        <Ionicons name="time-outline" size={12} color="#FF9800" />
-        <Text style={[styles.paymentText, { color: "#FF9800" }]}>Pending</Text>
-      </View>
-    ) : (
-      <View style={[styles.paymentBadge, { backgroundColor: "#E8F5E9" }]}>
-        <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
-        <Text style={[styles.paymentText, { color: "#4CAF50" }]}>Paid</Text>
-      </View>
-    );
-  };
+  // Determine order-level return/payment status
+const getOrderReturnStatus = (order) => {
+  // 1. If delivery is not completed → show "In Progress"
+  if (order?.customerDeliveryStatus !== "completed") {
+    return "In Progress";
+  }
+
+  // 2. Now apply return logic only AFTER delivery
+  const items = order?.items || [];
+  if (items.length === 0) return "Paid";
+
+  const total = items.length;
+  const returned = items.filter(i => i.tryStatus === "returned").length;
+  const accepted = items.filter(i => i.tryStatus === "accepted").length;
+
+  // All returned
+  if (returned === total) {
+    return "All Returned";
+  }
+
+  // All accepted
+  if (accepted === total) {
+    return "Paid";
+  }
+
+  // Mixed
+  return "Partial Return";
+};
+
+const getPaymentStatusBadge = (order) => {
+  const status = getOrderReturnStatus(order);
+
+  let color = "#4CAF50"; 
+  let bg = "#E8F5E9";
+  let icon = "checkmark-circle";
+  let label = status;
+
+  if (status === "All Returned") {
+    color = "#49f436ff";
+    bg = "#E8F5E9";
+    icon = "checkmark-circle";
+  }
+  else if (status === "Partial Return") {
+    color = "#FF9800";
+    bg = "#FFF3E0";
+    icon = "checkmark-circle";
+  }
+  else if (status === "In Progress") {
+    color = "#2196F3";
+    bg = "#E3F2FD";
+    icon = "time-outline";
+  }
+
+  return (
+    <View style={[styles.paymentBadge, { backgroundColor: bg }]}>
+      <Ionicons name={icon} size={12} color={color} />
+      <Text style={[styles.paymentText, { color }]}>{label}</Text>
+    </View>
+  );
+};
+
 
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
@@ -144,145 +192,145 @@ const OrdersScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}> 
-    
-    <View style={styles.wrapper}>
-      <HearderForProfileComponents title={title || "My Orders"} />
-      
-      {loading && !refreshing ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#000" />
-          <Text style={styles.loadingText}>Loading your orders...</Text>
-        </View>
-      ) : orders.length === 0 ? (
-        renderEmptyState()
-      ) : (
-        <ScrollView
-          style={styles.container}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-        >
-          <Animated.View style={{ opacity: fadeAnim }}>
-            <Text style={styles.orderCount}>
-              {orders.length} {orders.length === 1 ? "Order" : "Orders"}
-            </Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
 
-            {orders.map((order, index) => (
-              <TouchableOpacity
-                key={order._id}
-                style={[
-                  styles.orderCard,
-                  { 
-                    borderLeftColor: getStatusColor(order.orderStatus),
-                    borderLeftWidth: 4,
+      <View style={styles.wrapper}>
+        <HearderForProfileComponents title={title || "My Orders"} />
+
+        {loading && !refreshing ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#000" />
+            <Text style={styles.loadingText}>Loading your orders...</Text>
+          </View>
+        ) : orders.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
+            <Animated.View style={{ opacity: fadeAnim }}>
+              <Text style={styles.orderCount}>
+                {orders.length} {orders.length === 1 ? "Order" : "Orders"}
+              </Text>
+
+              {orders.map((order, index) => (
+                <TouchableOpacity
+                  key={order._id}
+                  style={[
+                    styles.orderCard,
+                    {
+                      borderLeftColor: getStatusColor(order.orderStatus),
+                      borderLeftWidth: 4,
+                    }
+                  ]}
+                  activeOpacity={0.7}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+                      params: { orderId: order._id },
+                    })
                   }
-                ]}
-                activeOpacity={0.7}
-                onPress={() =>
-                  router.push({
-                    pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-                    params: { orderId: order._id },
-                  })
-                }
-              >
-                {/* Header Section */}
-                <View style={styles.orderHeader}>
-                  <View style={styles.orderIdSection}>
-                    <Ionicons name="receipt" size={18} color="#666" />
-                    <Text style={styles.orderId} numberOfLines={1}>
-                      #OrderId_{order._id.slice(-5).toUpperCase()}
-                    </Text>
-                  </View>
-                  {getPaymentStatusBadge(order.paymentStatus)}
-                </View>
-
-                {/* Date & Items Info */}
-                <View style={styles.orderMeta}>
-                  <View style={styles.metaItem}>
-                    <Ionicons name="calendar-outline" size={14} color="#999" />
-                    <Text style={styles.metaText}>
-                      {new Date(order.createdAt).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
-                    </Text>
-                  </View>
-                  <View style={styles.metaDivider} />
-                  <View style={styles.metaItem}>
-                    <Ionicons name="cube-outline" size={14} color="#999" />
-                    <Text style={styles.metaText}>
-                      {order.items?.length || 0} {order.items?.length === 1 ? "Item" : "Items"}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Items Preview */}
-                {order.items && order.items.length > 0 && (
-                  <View style={styles.itemsPreview}>
-                    {order.items.slice(0, 3).map((item, idx) => (
-                      <View key={idx} style={styles.itemDot} />
-                    ))}
-                    {order.items.length > 3 && (
-                      <Text style={styles.moreItems}>
-                        +{order.items.length - 3} more
+                >
+                  {/* Header Section */}
+                  <View style={styles.orderHeader}>
+                    <View style={styles.orderIdSection}>
+                      <Ionicons name="receipt" size={18} color="#666" />
+                      <Text style={styles.orderId} numberOfLines={1}>
+                        #OrderId_{order._id.slice(-5).toUpperCase()}
                       </Text>
-                    )}
-                  </View>
-                )}
-
-                {/* Status & Price Section */}
-                <View style={styles.orderFooter}>
-                  <View style={styles.statusContainer}>
-                    <Ionicons
-                      name={getStatusIcon(order.orderStatus)}
-                      size={20}
-                      color={getStatusColor(order.orderStatus)}
-                    />
-                    <Text
-                      style={[
-                        styles.statusText,
-                        { color: getStatusColor(order.orderStatus) },
-                      ]}
-                    >
-                      {order.orderStatus?.charAt(0).toUpperCase() +
-                        order.orderStatus?.slice(1)}
-                    </Text>
+                    </View>
+                    {getPaymentStatusBadge(order)}
                   </View>
 
-                  <View style={styles.priceContainer}>
-                    <Text style={styles.totalLabel}>Total</Text>
-                    <Text style={styles.totalAmount}>
-                      ₹{order.finalBilling?.totalPayable || order.totalAmount}
-                    </Text>
+                  {/* Date & Items Info */}
+                  <View style={styles.orderMeta}>
+                    <View style={styles.metaItem}>
+                      <Ionicons name="calendar-outline" size={14} color="#999" />
+                      <Text style={styles.metaText}>
+                        {new Date(order.createdAt).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </Text>
+                    </View>
+                    <View style={styles.metaDivider} />
+                    <View style={styles.metaItem}>
+                      <Ionicons name="cube-outline" size={14} color="#999" />
+                      <Text style={styles.metaText}>
+                        {order.items?.length || 0} {order.items?.length === 1 ? "Item" : "Items"}
+                      </Text>
+                    </View>
                   </View>
-                </View>
 
-                {/* Delivery Info */}
-                {order.deliveryCharge > 0 && (
-                  <View style={styles.deliveryInfo}>
-                    <Ionicons name="bicycle" size={14} color="#666" />
-                    <Text style={styles.deliveryText}>
-                      Delivery: ₹{order.deliveryCharge}
-                    </Text>
+                  {/* Items Preview */}
+                  {order.items && order.items.length > 0 && (
+                    <View style={styles.itemsPreview}>
+                      {order.items.slice(0, 3).map((item, idx) => (
+                        <View key={idx} style={styles.itemDot} />
+                      ))}
+                      {order.items.length > 3 && (
+                        <Text style={styles.moreItems}>
+                          +{order.items.length - 3} more
+                        </Text>
+                      )}
+                    </View>
+                  )}
+
+                  {/* Status & Price Section */}
+                  <View style={styles.orderFooter}>
+                    <View style={styles.statusContainer}>
+                      <Ionicons
+                        name={getStatusIcon(order.orderStatus)}
+                        size={20}
+                        color={getStatusColor(order.orderStatus)}
+                      />
+                      <Text
+                        style={[
+                          styles.statusText,
+                          { color: getStatusColor(order.orderStatus) },
+                        ]}
+                      >
+                        {order.orderStatus?.charAt(0).toUpperCase() +
+                          order.orderStatus?.slice(1)}
+                      </Text>
+                    </View>
+
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.totalLabel}>Total</Text>
+                      <Text style={styles.totalAmount}>
+                        ₹{order.finalBilling?.totalPayable || order.totalAmount}
+                      </Text>
+                    </View>
                   </View>
-                )}
 
-                {/* Track Order Arrow */}
-                <View style={styles.trackArrow}>
-                  <Text style={styles.trackText}>Track Order</Text>
-                  <Ionicons name="chevron-forward" size={20} color="#666" />
-                </View>
-              </TouchableOpacity>
-            ))}
+                  {/* Delivery Info */}
+                  {order.deliveryCharge > 0 && (
+                    <View style={styles.deliveryInfo}>
+                      <Ionicons name="bicycle" size={14} color="#666" />
+                      <Text style={styles.deliveryText}>
+                        Delivery: ₹{order.deliveryCharge}
+                      </Text>
+                    </View>
+                  )}
 
-            <View style={styles.bottomSpacing} />
-          </Animated.View>
-        </ScrollView>
-      )}
-    </View>
+                  {/* Track Order Arrow */}
+                  <View style={styles.trackArrow}>
+                    <Text style={styles.trackText}>Track Order</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              <View style={styles.bottomSpacing} />
+            </Animated.View>
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
@@ -291,13 +339,13 @@ export default OrdersScreen;
 
 const styles = StyleSheet.create({
   safeArea: {
-  flex: 1,
-  backgroundColor: "#F5F7FA",
-},
-wrapper: {
-  flex: 1, // ← keep only if you continue to use wrapper anywhere else
-  backgroundColor: "#F5F7FA",
-},
+    flex: 1,
+    backgroundColor: "#F5F7FA",
+  },
+  wrapper: {
+    flex: 1, // ← keep only if you continue to use wrapper anywhere else
+    backgroundColor: "#F5F7FA",
+  },
   container: {
     flex: 1,
     paddingHorizontal: 16,

@@ -1,10 +1,10 @@
 import api from '../../axiosConfig';
 import { getSocket , initSocket } from '../config/socket';
 
-export const createOrder = async () => {
+export const createOrder = async ({addressId}) => {
   try {
     let deliveryCharge = 500;
-    const res = await api.post("/user/order/create", { deliveryCharge });
+    const res = await api.post("/user/order/create", { addressId });
     const order = res.data;
     // initSocket();
     // // ✅ join the socket room for this order
@@ -35,9 +35,32 @@ export const getAllOrders = async () =>{
   }
 }
 
-export const ConfirmClothSelection = async ( orderId ) => {
+export const ConfirmClothSelection = async ( payload ) => {
   try {
-    const res = await api.post(`/user/order/initiateReturn/${orderId}`);
+    const res = await api.post(`/user/order/initiateReturn/${payload.orderId}`, payload);
+    return res.data;
+  } catch (error) {
+    console.error("Axios error:", error);
+    throw error;
+  }
+};
+
+export const someSelectedOtherReturn = async ( payload ) => {
+  try {
+    // const res = await api.post(`/user/order/initiateReturn/${payload.order}`, payload);
+    // return res.data;
+    console.log(payload,"payload");
+  } catch (error) {
+    console.error("Axios error:", error);
+    throw error;
+  }
+};
+
+// create api for get order by passing order id
+
+export const getOrderById = async (orderId) => {
+  try {
+    const res = await api.get(`/user/order/${orderId}`);
     return res.data;
   } catch (error) {
     console.error("Axios error:", error);

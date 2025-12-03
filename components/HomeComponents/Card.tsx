@@ -5,25 +5,6 @@ import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const DressCard = ({ product, onPress }) => {
   const imageUrl = product?.images?.[0]?.url;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   
   return (
     <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
@@ -62,17 +43,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-  },  shadowWrapper: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+  },  
+  
+  shadowWrapper: {
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6,
+    // elevation: 6,
     borderRadius: 15,
     marginBottom: 10,
   },

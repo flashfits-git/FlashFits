@@ -71,6 +71,33 @@ export const UpdateCartQuantity = async ({ cartId, quantity }) => {
 };
 
 
+// ADDRESS CRUD APIS HERE
+
+export const createAddress  = async (addressData) => {
+  try {
+    const response = await api.post('user/address/add', addressData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating address:', error);
+    throw error;
+  }
+};
+
+// create get api for adress
+export const getAddresses = async () => {
+  try {
+    const response = await api.get('user/address/getAllAddress');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching addresses:', error);
+    throw error;
+  }
+};
+
+
+
+
+
 
 
 

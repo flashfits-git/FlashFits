@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  SafeAreaView,
   PanResponder,
   Animated,
   Dimensions,

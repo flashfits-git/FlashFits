@@ -3,41 +3,67 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Modalize } from "react-native-modalize";
 import HandovrModal from "./HandoverModal";
 import * as SecureStore from 'expo-secure-store';
-import { ConfirmClothSelection } from "../../api/orderApis";
+import { ConfirmClothSelection, someSelectedOtherReturn } from "../../api/orderApis";
+import { router } from "expo-router";
 
 interface ConfirmSelectionModalProps {
   onCancel: () => void;
-  order: any;
+  orderId: any;
+  otp?: string;
+  totalPayable?: any
   onConfirm: (method?: string) => void;
+  onAllReturn?: () => void;
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, order, onConfirm }, ref) => {
+  ({ onCancel, orderId, onConfirm, otp, items, totalPayable }, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
+    console.log(orderId, 'ORDER');
 
     const handleCancel = () => onCancel?.();
 
     const confirmClothSelection = async () => {
       try {
-        const res = await ConfirmClothSelection(order);
-        console.log("✅ API Response:", res);
+        const payload = {
+          orderId,
+          items: items.map(item => ({
+            itemId: item._id,
+            tryStatus: item.tryStatus,
+            returnReason: item.returnReason,
+          })),
+        };
 
-        // Close current modal
-        (ref as any)?.current?.close();
+        const anyKeep = items.some(item => item.tryStatus === "keep");
 
-        // Open handover modal only if API call succeeded
-        if (res?.status === 200 || res?.success) {
-          handoverModalRef.current?.open();
+        // Close confirmation modal
+        ref?.current?.close();
 
-          // ✅ Set trial phase complete flag in SecureStore
-          await SecureStore.setItemAsync(`trialPhaseComplete_${order}`, "true");
-        } else {
-          console.warn("API did not return success:", res);
+        // CASE 1: If any item is kept → open handover modal
+        if (anyKeep) {
+          console.log("KEEP detected → Opening Handover modal");
+          setTimeout(() => {
+            handoverModalRef.current?.open();
+          }, 300);
+          return; // ⛔ STOP here — no API call
         }
-      } catch (error) {
-        console.error("❌ Error confirming cloth selection:", error);
+
+        // CASE 2: All items returned → call API
+        console.log(payload.orderId, '8686868');
+        const res = await ConfirmClothSelection(payload);
+        if (res) {
+          console.log('56756776');
+
+          router.replace('/(stack)/OrderDetail/SuccessReturnPage');
+        }
+
+      } catch (e) {
+        console.log("Confirm selection failed:", e);
       }
     };
+
+
+    const totalKeep = items?.filter(i => i.tryStatus === "keep").length || 0;
+    const totalReturn = items?.filter(i => i.tryStatus === "return").length || 0;
 
     return (
       <>
@@ -51,8 +77,25 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
           <View style={styles.container}>
             <Text style={styles.title}>Confirm Selection</Text>
             <Text style={styles.subtitle}>
-              Do you confirm your outfits selection?
+              Haandover Return Items & Share OTP 
             </Text>
+            {/* 🔥 Show OTP here */}
+            {otp && (
+              <Text style={styles.otpText}>
+                OTP: {otp}
+              </Text>
+            )}
+            <View style={styles.countContainer}>
+              <Text style={styles.countText}>
+                Total Selected: <Text style={styles.bold}>{totalKeep}</Text>
+              </Text>
+              <Text style={styles.countText}>
+                Total Return: <Text style={styles.bold}>{totalReturn}</Text>
+              </Text>
+              <Text style={styles.totalPay}>
+                Total Payable : <Text style={styles.bold}>{totalPayable}</Text>
+              </Text>
+            </View>
 
             <View style={styles.buttonRow}>
               <TouchableOpacity
@@ -73,7 +116,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
         </Modalize>
 
         {/* Handover Modal */}
-        <HandovrModal ref={handoverModalRef} onConfirm={onConfirm} />
+        <HandovrModal ref={handoverModalRef} onConfirm={() => { }} />
       </>
     );
   }
@@ -95,6 +138,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingVertical: 25,
+    marginBottom:40
   },
   title: {
     fontSize: 18,
@@ -102,11 +146,41 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 8,
   },
+  otpText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    marginBottom: 15,
+  },
+  countContainer: {
+    width: "100%",
+    marginBottom: 20,
+    padding: 12,
+    backgroundColor: "#f9fafb",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb"
+  },
+  countText: {
+    fontSize: 15,
+    color: "#374151",
+    marginBottom: 4,
+  },
+    totalPay: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#374151",
+    marginBottom: 4,
+  },
+  bold: {
+    fontWeight: "700",
+    color: "#111827",
+  },
   subtitle: {
     fontSize: 14,
     textAlign: "center",
     color: "#6b7280",
-    marginBottom: 20,
+    // marginBottom: 20,
     lineHeight: 20,
   },
   buttonRow: {

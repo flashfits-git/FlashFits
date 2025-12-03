@@ -1,12 +1,21 @@
-import React, {  useEffect, useRef } from 'react';
-import { Tabs } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Text, Platform, StyleSheet, Animated, Easing, View, StatusBar } from 'react-native';
+import {
+  Text,
+  Platform,
+  StyleSheet,
+  Animated,
+  Easing,
+  View,
+  StatusBar,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { Modalize } from 'react-native-modalize';
 import Colors from '../../assets/theme/Colors';
-// import { GetCart } from '../api/productApis/cartProduct';
-// import { storeCartLocally } from '../utilities/cartItemsData';
-// import { CartProvider, useCart } from './Context'; // adjust path accordingly
-
+import { getAddresses } from '../api/productApis/cartProduct';
 
 const styles = StyleSheet.create({
   tabBar: {
@@ -21,10 +30,10 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     paddingTop: Platform.OS === 'ios' ? 18 : 18,
     paddingBottom: Platform.OS === 'ios' ? 10 : 10,
-
   },
 });
 
+// ------------------- ANIMATED ICON WRAPPER -------------------
 const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
@@ -66,7 +75,7 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
         style={{
           fontSize: focused ? 6 : 10,
           marginTop: 2,
-          color: focused ? Colors.dark1 : Colors.dark1,
+          color: Colors.dark1,
           fontWeight: focused ? 'bold' : 'normal',
           fontFamily: 'Oswald-Regular',
         }}
@@ -77,8 +86,8 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   );
 };
 
+// ------------------------ TABS ------------------------
 function TabsWithCart() {
-
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -89,7 +98,7 @@ function TabsWithCart() {
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.dark1,
         tabBarInactiveTintColor: Colors.dark1,
-        tabBarIcon: ({ color, size, focused }) => {
+        tabBarIcon: ({ color, focused }) => {
           let iconName = 'home-outline';
           let label = 'Home';
 
@@ -111,7 +120,6 @@ function TabsWithCart() {
             <AnimatedIconWrapper
               focused={focused}
               iconName={iconName}
-              size={size}
               color={color}
               label={label}
             />
@@ -119,26 +127,149 @@ function TabsWithCart() {
         },
       })}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home' }} />
-      <Tabs.Screen name="Categories" options={{ title: 'Categories' }} />
-      <Tabs.Screen name="FlashfitsStores" options={{ title: 'FlashfitsStores' }} />
-      <Tabs.Screen name="Wishlist" options={{ title: 'Wishlist' }} />
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="Categories" />
+      <Tabs.Screen name="FlashfitsStores" />
+      <Tabs.Screen name="Wishlist" />
     </Tabs>
   );
 }
 
+// ------------------------ MAIN LAYOUT ------------------------
 export default function TabLayout() {
+  const router = useRouter();
+  const addressModalRef = useRef(null);
+
+  const [addresses, setAddresses] = useState([]); // ARRAY ONLY
+  const [loading, setLoading] = useState(true);
+
+  // ------------------- FIRST RENDER CHECK -------------------
+  useEffect(() => {
+    const init = async () => {
+      let selected = await SecureStore.getItemAsync('selectedAddress');
+
+      const res = await getAddresses();
+      setAddresses(res.addresses || []);
+      setLoading(false);
+
+      if (!selected) {
+        setTimeout(() => addressModalRef.current?.open(), 300);
+      }
+    };
+
+    init();
+  }, []);
+
+  // ------------------- RECHECK ON CLOSE -------------------
+  const reCheck = async () => {
+    let selected = await SecureStore.getItemAsync('selectedAddress');
+
+    const res = await getAddresses();
+    setAddresses(res.addresses || []);
+
+    if (!selected) {
+      setTimeout(() => addressModalRef.current?.open(), 200);
+    }
+  };
+
+  const selectAddress = async (item) => {
+    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
+    addressModalRef.current?.close();
+  };
+
   return (
     <View
       style={{
         flex: 1,
         backgroundColor: '#fff',
-        // ✅ Top padding without SafeAreaView
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
       }}
     >
       <TabsWithCart />
-    </View>
 
+      {/* ----------------- MODAL ----------------- */}
+      <Modalize
+        ref={addressModalRef}
+        adjustToContentHeight
+        handleStyle={{ backgroundColor: '#ccc' }}
+        modalStyle={{ padding: 20 }}
+        onClosed={reCheck}
+      >
+        {loading ? (
+          <ActivityIndicator size="large" color="black" />
+        ) : addresses.length === 0 ? (
+
+          // ---------------- NO ADDRESS FOUND ----------------
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 10 }}>
+              No Address Found
+            </Text>
+
+            <TouchableOpacity
+              onPress={() => {
+                addressModalRef.current?.close();
+                router.push('/(stack)/SelectLocationScreen');
+              }}
+              style={{
+                backgroundColor: '#000',
+                paddingVertical: 12,
+                paddingHorizontal: 20,
+                borderRadius: 10,
+                width: '100%',
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
+                Add Address
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+        ) : (
+
+          // ---------------- ADDRESS LIST ----------------
+          <View style={{ padding: 20, width: '100%' }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: '700',
+                marginBottom: 15,
+                textAlign: 'left',
+              }}
+            >
+              Select Address
+            </Text>
+
+            {addresses.map((item) => (
+              <TouchableOpacity
+                key={item._id}
+                onPress={() => selectAddress(item)}
+                style={{
+                  padding: 15,
+                  borderRadius: 12,
+                  borderWidth: 1,
+                  borderColor: '#ddd',
+                  marginBottom: 12,
+                  backgroundColor: '#fafafa',
+                }}
+              >
+                <Text style={{ fontSize: 14, fontWeight: '700' }}>
+                  {item.addressType}
+                </Text>
+
+                <Text style={{ fontSize: 13, color: '#555', marginTop: 3 }}>
+                  {item.addressLine1}
+                </Text>
+
+                <Text style={{ fontSize: 13, marginTop: 5 }}>
+                  {item.name} • {item.phone}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </Modalize>
+
+    </View>
   );
 }

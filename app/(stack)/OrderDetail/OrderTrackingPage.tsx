@@ -6,25 +6,30 @@ import {
   CheckCircle,
   ChevronRight,
   Clock,
-  MapPin,
   MessageCircle,
   Package,
   Phone,
 } from 'lucide-react-native';
+import { Ionicons } from "@expo/vector-icons";
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Image,
+  Platform,
   RefreshControl,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
+import { getOrderById } from '../../api/orderApis';
 import { getSocket } from '../../config/socket';
 import ConfirmSelectionModal from './ConfirmSelectionModal';
+import OSMDeliveryMap from './OSMDeliveryMap';
+import OrderCompletionScreen from './OrderCompletionScreen';
 
 
 // Helper function to format time (MM:SS)
@@ -61,19 +66,30 @@ const TrialPhaseTimer = ({ trialPhaseStart, trialPhaseDuration }) => {
 
   return (
     <View style={styles.timerContainer}>
-      <Text style={styles.timerText}>Trial Phase: {formatTime(timeLeft)}</Text>
+      <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
     </View>
   );
 };
 
-// Item Selection Component
-const ItemSelection = ({ items, onUpdateItem }) => {
+const STATIC_USER = {
+  latitude: 12.9716,
+  longitude: 77.5946,
+};
+
+const STATIC_RIDER = {
+  latitude: 12.9352,
+  longitude: 77.6245,
+};
+
+const ItemSelection = ({ items, onUpdateItem, disabled }) => {
   return (
-    <View style={styles.itemSelectionContainer}>
+    <View style={[styles.itemSelectionContainer, disabled && { opacity: 0.4 }]}>
       <Text style={styles.itemSelectionTitle}>Select Items to Keep or Return</Text>
+
       {items.map((item, index) => (
         <View key={item._id} style={styles.itemCard}>
-          {/* Image and Title Section */}
+
+          {/* IMAGE + TITLE */}
           <View style={styles.itemHeader}>
             <Image source={{ uri: item.image }} style={styles.itemImage} />
             <View style={styles.itemInfo}>
@@ -83,15 +99,17 @@ const ItemSelection = ({ items, onUpdateItem }) => {
             </View>
           </View>
 
-          {/* Action Buttons Section */}
+          {/* ACTION BUTTONS */}
           <View style={styles.itemActions}>
+
             <TouchableOpacity
+              disabled={disabled}
               style={[
                 styles.itemButton,
                 item.tryStatus === 'keep' && styles.itemButtonKeep,
+                disabled && { opacity: 0.5 }
               ]}
               onPress={() => onUpdateItem(index, 'keep', null)}
-              activeOpacity={0.8}
             >
               <Text style={[
                 styles.itemButtonText,
@@ -100,76 +118,100 @@ const ItemSelection = ({ items, onUpdateItem }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
+              disabled={disabled}
               style={[
                 styles.itemButton,
                 item.tryStatus === 'return' && styles.itemButtonReturn,
+                disabled && { opacity: 0.5 }
               ]}
               onPress={() => onUpdateItem(index, 'return', item.returnReason)}
-              activeOpacity={0.8}
             >
               <Text style={[
                 styles.itemButtonText,
                 item.tryStatus === 'return' && styles.itemButtonTextActive
               ]}>↩ Return</Text>
             </TouchableOpacity>
+
           </View>
 
-          {/* Return Reason Input */}
-          {item.tryStatus === 'return' && (
+          {/* REASON INPUT */}
+          {item.tryStatus === 'return' && !disabled && (
             <TextInput
               style={styles.returnReasonInput}
               placeholder="Why are you returning this item?"
               placeholderTextColor="#6b7280"
-              value={item.returnReason || ''}
+              value={item.returnReason || 'Not Liked'}
               onChangeText={(text) => onUpdateItem(index, 'return', text)}
               multiline
               numberOfLines={2}
             />
           )}
+
         </View>
       ))}
     </View>
   );
 };
+
 // Define mapping for order statuses to steps
-const statusToSteps = (orderStatus) => {
-  const steps = [
-    { id: 'picked', label: 'Picked', completed: false },
-    { id: 'in-transit', label: 'In transit', completed: false },
-    { id: 'Arrived', label: 'Arrived', completed: false },
-  ];
+const statusToSteps = (orderStatus, prevSteps) => {
+  // copy previous state to avoid losing completed steps
+  const steps = prevSteps
+    ? prevSteps.map(s => ({ ...s }))
+    : [
+      { id: 'picked', label: 'Picked', completed: false },
+      { id: 'in-transit', label: 'In transit', completed: false },
+      { id: 'Arrived', label: 'Arrived', completed: false },
+    ];
 
   switch (orderStatus) {
-    case 'arrived at delivery':
-      steps[2].completed = true;
-    case 'out_for_delivery':
-      steps[1].completed = true;
     case 'packed':
       steps[0].completed = true;
       break;
-    default:
+
+    case 'out_for_delivery':
+      steps[0].completed = true;
+      steps[1].completed = true;
       break;
+
+    case 'arrived at delivery':
+      steps[0].completed = true;
+      steps[1].completed = true;
+      steps[2].completed = true;
+      break;
+
+    default:
+      // ❗Any other statuses → DO NOTHING. No resets.
+      return steps;
   }
 
   return steps;
 };
 
+
 export default function OrderTrackingPage() {
+
+  const [orderData, setOrderData] = useState(null);
+  const [isDelivered, setIsDelivered] = useState(false);
   const [trialPhaseComplete, setTrialPhaseComplete] = useState(false);
   const modalRef = useRef<Modalize>(null);
   const { orderId } = useLocalSearchParams();
   const router = useRouter();
+  const [selectedItemsForConfirm, setSelectedItemsForConfirm] = useState([]);
+  // const [showReturnButton, setShowReturnButton] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [orderStatus, setOrderStatus] = useState({
     current: '',
     estimatedTime: '',
-    deliveryType: 'Express Delivery',
+    deliveryType: 'Try and Buy',
     steps: [
       { id: 'picked', label: 'Picked', completed: false },
       { id: 'in-transit', label: 'In transit', completed: false },
       { id: 'delivered', label: 'Delivered', completed: false },
     ],
   });
+  // console.log(orderStatus, 'orderStatusorderStatus');
+
   const [deliveryPerson, setDeliveryPerson] = useState(null);
   const [trialPhase, setTrialPhase] = useState({
     isActive: false,
@@ -187,6 +229,130 @@ export default function OrderTrackingPage() {
     totalPayable: 0,
   });
 
+  // ⏱ Calculate Try & Buy Fee Based on Time Difference
+  const calculateTryAndBuyFee = (trialPhaseStart, ratePerMinute = 5) => {
+    if (!trialPhaseStart) return { minutesUsed: 0, payableMinutes: 0, fee: 0 };
+
+    const start = new Date(trialPhaseStart).getTime();
+    const now = Date.now();
+
+    const diffMs = now - start;
+    const minutesUsed = Math.ceil(diffMs / 60000); // total minutes passed
+
+    // First 10 minutes free
+    if (minutesUsed <= 10) {
+      return {
+        minutesUsed,
+        payableMinutes: 0,
+        fee: 0
+      };
+    }
+
+    const payableMinutes = minutesUsed - 10;
+    const fee = payableMinutes * ratePerMinute;
+
+    return {
+      minutesUsed,
+      payableMinutes,
+      fee
+    };
+  };
+
+  const updateBilling = useCallback((items, deliveryCharge, trialPhaseStart) => {
+
+    // 👉 Base amount
+    const baseAmount = items
+      .filter(item => item.tryStatus === "keep")
+      .reduce((sum, item) => sum + item.price * item.quantity, 0);
+
+    // 👉 NEW Try & Buy Fee Calculation
+    const { fee: tryAndBuyFee } = calculateTryAndBuyFee(trialPhaseStart, 5);
+
+    const totalPayable = baseAmount + deliveryCharge + tryAndBuyFee;
+
+    setFinalBilling({
+      baseAmount,
+      deliveryCharge,
+      tryAndBuyFee,
+      gst: 0,
+      discount: 0,
+      totalPayable
+    });
+  }, []);
+
+
+
+  const fetchOrderDetails = useCallback(async () => {
+    try {
+      const response = await getOrderById(orderId);
+      const data = response?.order;
+
+      if (!data) return;
+
+      // 🌟 Save order data
+      setOrderData(data);
+
+      console.log(data, 'data');
+
+      // 🌟 Check delivery status 
+      if (data.customerDeliveryStatus === "completed") {
+        setIsDelivered(true);
+        return;  // ❗ Stop further tracking logic
+      }
+
+      // ❗ Otherwise continue tracking logic...
+      setOtp(data.otp || '');
+      const steps = statusToSteps(data.orderStatus);
+      const estimatedTime = data.deliveryDistance
+        ? `${Math.round(data.deliveryDistance * 2)} Mins`
+        : 'N/A';
+
+      setOrderStatus({
+        current: data.orderStatus,
+        estimatedTime,
+        deliveryType: 'Try & Buy',
+        steps,
+      });
+
+      // Rider handling...
+      setDeliveryPerson({
+        name: data.deliveryRiderId
+          ? `Rider ${data.deliveryRiderId.slice(-4)}`
+          : 'Assigning Delivery Partner Soon',
+        id: data.deliveryRiderId || 'N/A',
+        avatar: '👤',
+      });
+
+      // Items etc.
+      if (data.items) {
+        const formatted = data.items.map(item => ({
+          ...item,
+          tryStatus: item.tryStatus || 'pending',
+          returnReason: item.returnReason || null,
+        }));
+
+        setItems(formatted);
+
+      }
+
+      if (data.trialPhaseDuration > 0 && data.trialPhaseStart) {
+        setTrialPhase({
+          isActive: true,
+          trialPhaseStart: data.trialPhaseStart,
+          trialPhaseDuration: data.trialPhaseDuration,
+        });
+      }
+    } catch (error) {
+      console.log("Error fetching order", error);
+    }
+  }, [orderId, updateBilling]);
+
+  useEffect(() => {
+    fetchOrderDetails(); // <-- FIRST fetch order status on page load
+  }, []);
+
+
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => {
@@ -199,76 +365,71 @@ export default function OrderTrackingPage() {
       const isComplete = await SecureStore.getItemAsync(`trialPhaseComplete_${orderId}`);
       setTrialPhaseComplete(isComplete === "true");
     };
-
     checkTrialPhase();
   }, [orderId]);
 
   // Update billing based on selected items and trial phase duration
-  const updateBilling = useCallback((items, deliveryCharge, trialPhaseStart, trialPhaseDuration) => {
-    const baseAmount = items
-      .filter((item) => item.tryStatus === 'keep')
-      .reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-    // Calculate waiting charge (e.g., ₹10 per minute of trial phase)
-    let tryAndBuyFee = 0;
-    if (trialPhaseStart && trialPhaseDuration > 0) {
-      const startTime = new Date(trialPhaseStart).getTime();
-      const currentTime = Date.now();
-      const elapsedMinutes = Math.floor((currentTime - startTime) / 1000 / 60);
-      tryAndBuyFee = Math.min(elapsedMinutes, trialPhaseDuration) * 10; // ₹10 per minute
-    }
-
-    const totalPayable = baseAmount + deliveryCharge + tryAndBuyFee;
-
-    setFinalBilling({
-      baseAmount,
-      deliveryCharge,
-      tryAndBuyFee,
-      gst: 0, // Add GST logic if needed
-      discount: 0, // Add discount logic if needed
-      totalPayable,
-    });
-  }, []);
 
   // Handle item status update
   const handleUpdateItem = (index, tryStatus, returnReason) => {
-    const updatedItems = [...items];
-    updatedItems[index] = { ...updatedItems[index], tryStatus, returnReason };
-    setItems(updatedItems);
-    updateBilling(updatedItems, finalBilling.deliveryCharge, trialPhase.trialPhaseStart, trialPhase.trialPhaseDuration);
+    const updated = [...items];
+    updated[index] = { ...updated[index], tryStatus, returnReason };
+
+    setItems(updated);
+
+    // FIX 🔥 Use updated items
+    updateBilling(updated, orderData?.deliveryCharge, trialPhase.trialPhaseStart);
   };
 
-  // Handle submission (Return or Payment)
-  const handleSubmit = (action) => {
-    const socket = getSocket();
-    socket.emit('submitTrialSelection', {
-      orderId,
-      items,
-      finalBilling,
-      action, // 'return' or 'payment'
-    });
+  const handleSubmitPress = () => {
+    if (!allItemsSelected) {
+      alert("Please select Keep or Return for all items");
+      return;
+    }
+    setSelectedItemsForConfirm(items); // 👈 pass items into modal
+    modalRef.current?.open();
   };
+
+  const handleConfirm = () => {
+    console.log("CONFIRMED:", selectedItemsForConfirm);
+    modalRef.current?.close();
+    // Add your API call here
+  };
+
 
   useEffect(() => {
-    console.log('Joining order room for orderId:', orderId);
+    const setupSocket = async () => {
+      // console.log("Joining order socket:", orderId);
 
-    joinOrderRoom(orderId).then(() => {
-      listenOrderUpdates((updateData: any) => {
-        // console.log('Received order update:', updateData);
+      await joinOrderRoom(orderId);
+
+      listenOrderUpdates((updateData) => {
+        console.log("SOCKET UPDATE:", updateData);
+
         setOtp(updateData?.otp);
-        console.log('Otp is:', updateData?.otp);
-        const steps = statusToSteps(updateData.orderStatus);
+
         const estimatedTime = updateData.deliveryDistance
           ? `${Math.round(updateData.deliveryDistance * 2)} Mins`
           : 'N/A';
 
-        setOrderStatus({
-          current: updateData.orderStatus || 'pending',
-          estimatedTime,
-          deliveryType: updateData.trialPhaseDuration > 0 ? 'Try & Buy' : 'Express Delivery',
-          steps,
+        setOrderStatus(prev => {
+          const newSteps = statusToSteps(updateData.orderStatus, prev.steps);
+          // merge: once completed → always completed
+          const mergedSteps = prev.steps.map((step, i) => ({
+            ...step,
+            completed: step.completed || newSteps[i].completed
+          }));
+
+          return {
+            ...prev,
+            current: updateData.orderStatus,
+            estimatedTime,
+            deliveryType: 'Try & Buy',
+            steps: mergedSteps,
+          };
         });
 
+        //  here updated the name and phnnumber of delivery partner
         setDeliveryPerson({
           name: updateData.deliveryRiderId
             ? `Rider ${updateData.deliveryRiderId.slice(-4)}`
@@ -278,12 +439,16 @@ export default function OrderTrackingPage() {
         });
 
         if (updateData.items) {
-          setItems(updateData.items.map((item) => ({
+          const updatedItems = updateData.items.map((item) => ({
             ...item,
             tryStatus: item.tryStatus || 'pending',
             returnReason: item.returnReason || null,
-          })));
-          updateBilling(updateData.items, updateData.deliveryCharge, updateData.trialPhaseStart, updateData.trialPhaseDuration);
+          }));
+
+          setItems(updatedItems);
+
+          updateBilling(updatedItems, updateData.deliveryCharge, updateData.trialPhaseStart);
+
         }
 
         if (updateData.trialPhaseDuration > 0 && updateData.trialPhaseStart) {
@@ -296,282 +461,309 @@ export default function OrderTrackingPage() {
       });
 
       const socket = getSocket();
-      socket.on('trialPhaseStart', (data) => {
-        console.log('Received trialPhaseStartdsfdss:', data);
-        // console.log('Order id is:', orderId);
+      socket.on("trialPhaseStart", (data) => {
         if (data.orderId === orderId) {
           setTrialPhase({
             isActive: true,
             trialPhaseStart: data.trialPhaseStart,
             trialPhaseDuration: data.trialPhaseDuration,
           });
-          updateBilling(items, finalBilling.deliveryCharge, data.trialPhaseStart, data.trialPhaseDuration);
+
+          updateBilling(
+            items,
+            finalBilling.deliveryCharge,
+            data.trialPhaseStart,
+            data.trialPhaseDuration
+          );
         }
       });
-    });
+    };
+
+    setupSocket();
 
     return () => {
-      console.log('Cleaning up order listeners for orderId:', orderId);
+      console.log("Cleaning socket listeners for:", orderId);
       const socket = getSocket();
-      socket.off('trialPhaseStart');
+      socket.off("trialPhaseStart");
       removeOrderListeners();
     };
   }, [orderId, items, finalBilling.deliveryCharge, updateBilling]);
+
 
   const hasReturnItems = items.some((item) => item.tryStatus === 'return');
   const allItemsSelected = items.length > 0 && items.every(item => item.tryStatus === 'keep' || item.tryStatus === 'return');
 
   return (
     <>
-      <View style={styles.header}>
-        <View style={styles.headerInner}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backArrow}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            Track OrderId_{orderId.slice(-5).toUpperCase()}
-          </Text>
-        </View>
-      </View>
-      <ScrollView
-        style={styles.container}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#3b82f6']}
-            tintColor="#3b82f6"
-          />
-        }
-      >
-        {/* Map Section - Now separate from status card */}
-        <View style={styles.mapSection}>
-          <View style={styles.mapOverlay} />
-          <View style={[styles.marker, styles.startMarker]}>
-            <MapPin size={20} color="#fff" />
-          </View>
-          <View style={[styles.marker, styles.packageMarker]}>
-            <Package size={24} color="#111" />
-          </View>
-          <View style={[styles.marker, styles.endMarker]}>
-            <MapPin size={20} color="#fff" />
-          </View>
-          <Text style={styles.storeLabel}>Store</Text>
-          <Text style={styles.locationLabel}>Your Location</Text>
-        </View>
-
-        {/* Status Card - Now independent with auto height */}
-        <LinearGradient
-          colors={['#000', '#000', '#000']}
-          start={{ x: 0, y: 1 }}
-          end={{ x: 0, y: 0 }}
-          style={styles.statusCard}
-        >
-          <View style={styles.statusHeader}>
-            <View style={styles.statusLeft}>
-              <View style={styles.packageIcon}>
-                <Package size={24} color="#fff" />
-              </View>
-              <View>
-                <Text style={styles.arrivalText}>
-                  Arriving in {orderStatus.estimatedTime}
-                </Text>
-                <Text style={styles.deliveryType}>{orderStatus.deliveryType}</Text>
-              </View>
+      {isDelivered && orderData ? (
+        <OrderCompletionScreen orderData={orderData} />
+      ) : (
+        <>
+          {/* <SafeAreaView> */}
+          <View style={styles.header}>
+            <View style={styles.headerInner}>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <Text style={styles.backArrow}>←</Text>
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>
+                Track OrderId_{orderId.slice(-5).toUpperCase()}
+              </Text>
             </View>
-            <TouchableOpacity>
-              <Text style={styles.menuDots}>⋮</Text>
-            </TouchableOpacity>
           </View>
+          <ScrollView
+            style={styles.container}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#3b82f6']}
+                tintColor="#3b82f6"
+              />
+            }
+          >
+            <View style={styles.mapSection}>
+              <OSMDeliveryMap userLocation={STATIC_USER} riderLocation={STATIC_RIDER} />
+            </View>
 
-          <View style={styles.stepsRow}>
-            {orderStatus.steps.map((step, index) => (
-              <React.Fragment key={step.id}>
-                <View style={styles.stepContainer}>
-                  <View
-                    style={[
-                      styles.stepCircle,
-                      step.completed
-                        ? styles.stepCompleted
-                        : styles.stepIncomplete,
-                    ]}
-                  >
-                    {step.completed ? (
-                      <CheckCircle size={18} color="#fff" />
-                    ) : (
-                      <Clock size={18} color="#fff" />
+            {/* Status Card - Now independent with auto height */}
+            <LinearGradient
+              colors={['#000', '#000', '#000']}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 0, y: 0 }}
+              style={styles.statusCard}
+            >
+              <View style={styles.statusHeader}>
+                <View style={styles.statusLeft}>
+                  <View style={styles.packageIcon}>
+                    <Package size={24} color="#fff" />
+                  </View>
+                  <View>
+                    <Text style={styles.arrivalText}>
+                      Arriving in {orderStatus.estimatedTime}
+                    </Text>
+                    <Text style={styles.deliveryType}>{orderStatus.deliveryType}</Text>
+                  </View>
+                </View>
+                <TouchableOpacity>
+                  <Text style={styles.menuDots}>⋮</Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.stepsRow}>
+                {orderStatus.steps.map((step, index) => (
+                  <React.Fragment key={step.id}>
+                    <View style={styles.stepContainer}>
+                      <View
+                        style={[
+                          styles.stepCircle,
+                          step.completed
+                            ? styles.stepCompleted
+                            : styles.stepIncomplete,
+                        ]}
+                      >
+                        {step.completed ? (
+                          <CheckCircle size={18} color="#fff" />
+                        ) : (
+                          <Clock size={18} color="#fff" />
+                        )}
+                      </View>
+                      <Text
+                        style={[
+                          styles.stepLabel,
+                          step.completed
+                            ? styles.stepLabelActive
+                            : styles.stepLabelInactive,
+                        ]}
+                      >
+                        {step.label}
+                      </Text>
+                    </View>
+                    {index < orderStatus.steps.length - 1 && (
+                      <View
+                        style={[
+                          styles.stepLine,
+                          step.completed ? styles.lineActive : styles.lineInactive,
+                        ]}
+                      />
+                    )}
+                  </React.Fragment>
+                ))}
+              </View>
+
+
+
+              {/* TIMER — Show only if trial is active AND not completed */}
+              {trialPhase.isActive && orderStatus.current !== "completed try phase" && (
+                <TrialPhaseTimer
+                  trialPhaseStart={trialPhase.trialPhaseStart}
+                  trialPhaseDuration={trialPhase.trialPhaseDuration}
+                />
+              )}
+
+              {/* FULL Try & Buy Section — Show only before trial completion */}
+              {trialPhase.isActive &&
+                items.length > 0 &&
+                orderStatus.current !== "completed try phase" && (
+                  <>
+                    {/* ITEM SELECTION */}
+                    <ItemSelection
+                      items={items}
+                      onUpdateItem={handleUpdateItem}
+                      disabled={false} // no need to disable now
+                    />
+
+                    {/* RETURN OTP */}
+                    {['try phase', 'completed try phase'].includes(orderStatus.current) && (
+                      <View style={styles.otpBadge}>
+                        <Ionicons name="key-outline" size={14} color="#1A73E8" />
+                        <Text style={styles.otpBadgeText}>Return OTP: {otp}</Text>
+                      </View>
+                    )}
+
+                    {/* BILLING */}
+
+                    {
+                      finalBilling?.baseAmount > 0 && (
+                        <View style={styles.billingContainer}>
+                          <Text style={styles.billingTitle}>Billing Summary</Text>
+
+                          <View style={styles.billRow}>
+                            <Text style={styles.billLabel}>Base Amount</Text>
+                            <Text style={styles.billValue}>₹{finalBilling.baseAmount}</Text>
+                          </View>
+
+                          <View style={styles.billRow}>
+                            <Text style={styles.billLabel}>Delivery Charge</Text>
+                            <Text style={styles.billValue}>₹{finalBilling.deliveryCharge}</Text>
+                          </View>
+
+                          {
+                            finalBilling.tryAndBuyFee > 5 &&
+                            < View style={styles.billRow}>
+                              <Text style={styles.billLabel}>Waiting Charge > 10 min</Text>
+                              <Text style={styles.billValue}>₹{finalBilling.tryAndBuyFee}</Text>
+                            </View>
+                          }
+                          <View style={styles.billDivider} />
+
+                          <View style={styles.billRow}>
+                            <Text style={styles.billTotal}>Total Payable</Text>
+                            <Text style={styles.billTotal}>₹{finalBilling.totalPayable}</Text>
+                          </View>
+                        </View>
+                      )
+                    }
+
+
+                    {/* ACTION BUTTONS */}
+                    <View style={styles.actionButtonsContainer}>
+
+                      {/* RETURN BUTTON */}
+                      {hasReturnItems && (
+                        <TouchableOpacity
+                          style={[
+                            styles.actionButtonPrimary,
+                            (!allItemsSelected || trialPhaseComplete) && { opacity: 0.5 },
+                          ]}
+                          onPress={() => {
+                            if (allItemsSelected && !trialPhaseComplete) {
+                              modalRef.current?.open();
+                              handleSubmitPress()
+                            }
+                          }}
+                          disabled={!allItemsSelected || trialPhaseComplete}
+                        >
+                          <Text style={styles.actionButtonText}>
+                            {trialPhaseComplete ? "Trial Completed" : "Return Items"}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* PAYMENT BUTTON */}
+                      {!hasReturnItems && (
+                        <TouchableOpacity
+                          style={[
+                            styles.actionButtonPrimary,
+                            !allItemsSelected && { opacity: 0.5 },
+                          ]}
+                          onPress={() => allItemsSelected && handleSubmit("payment")}
+                          disabled={!allItemsSelected}
+                        >
+                          <Text style={styles.actionButtonText}>Proceed to Payment</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </>
+                )}
+
+            </LinearGradient>
+            <View style={styles.deliveryCard}>
+              <View style={styles.deliveryRow}>
+                <View style={styles.deliveryLeft}>
+                  <View style={styles.avatar}>
+                    <Text style={styles.avatarIcon}>{deliveryPerson?.avatar}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.deliveryName}>{deliveryPerson?.name}</Text>
+                    {deliveryPerson?.id !== 'N/A' && (
+                      <Text style={styles.deliveryId}>I am on my Way, Arriving Soon</Text>
                     )}
                   </View>
-                  <Text
-                    style={[
-                      styles.stepLabel,
-                      step.completed
-                        ? styles.stepLabelActive
-                        : styles.stepLabelInactive,
-                    ]}
-                  >
-                    {step.label}
-                  </Text>
                 </View>
-                {index < orderStatus.steps.length - 1 && (
-                  <View
-                    style={[
-                      styles.stepLine,
-                      step.completed ? styles.lineActive : styles.lineInactive,
-                    ]}
-                  />
+                {deliveryPerson?.id !== 'N/A' && (
+                  <TouchableOpacity style={styles.callButton}>
+                    <Phone size={20} color="#fff" />
+                  </TouchableOpacity>
                 )}
-              </React.Fragment>
-            ))}
-          </View>
-
-          {trialPhase.isActive && (
-            <TrialPhaseTimer
-              trialPhaseStart={trialPhase.trialPhaseStart}
-              trialPhaseDuration={trialPhase.trialPhaseDuration}
-            />
-          )}
-
-          {trialPhase.isActive && items.length > 0 && (
-            <>
-              <ItemSelection items={items} onUpdateItem={handleUpdateItem} />
-              <View style={styles.billingContainer}>
-                <Text style={styles.billingTitle}>Billing Summary</Text>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Base Amount:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.baseAmount}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Delivery Charge:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.deliveryCharge}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Try & Buy Fee:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.tryAndBuyFee}</Text>
-                </View>
-                <View style={styles.billingRow}>
-                  <Text style={styles.billingLabel}>Total Payable:</Text>
-                  <Text style={styles.billingValue}>₹{finalBilling.totalPayable}</Text>
-                </View>
               </View>
-              {/* //show otp only if return is there*/}
-              {hasReturnItems && (
-                <View style={styles.billingContainer}>
-                  <Text style={styles.billingTitle}>Return OTP:  {otp}</Text>
-                </View>
-              )}
-              <View style={styles.actionButtonsContainer}>
-                {/* Show Return button if there are return items */}
-                {hasReturnItems && (
-                  <TouchableOpacity
-                    style={[
-                      styles.actionButtonPrimary,
-                      (!allItemsSelected || trialPhaseComplete) && { opacity: 0.5 },
-                    ]}
-                    onPress={() => {
-                      if (allItemsSelected && !trialPhaseComplete) {
-                        modalRef.current?.open();
-                        handleSubmit("return");
-                      }
-                    }}
-                    disabled={!allItemsSelected || trialPhaseComplete}
-                  >
-                    <Text style={styles.actionButtonText}>
-                      {trialPhaseComplete ? "Trial Completed" : "Return Items"}
+            </View>
+
+            <TouchableOpacity style={styles.actionButton}>
+              <View style={styles.actionLeft}>
+                <Package size={20} color="#444" />
+                <Text style={styles.actionText}>View Package Information</Text>
+              </View>
+              <ChevronRight size={20} color="#9ca3af" />
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.actionButton}>
+              <View style={styles.actionLeft}>
+                <MessageCircle size={20} color="#444" />
+                <Text style={styles.actionText}>Facing issue? Chat with Senz Staff</Text>
+              </View>
+              <ChevronRight size={20} color="#9ca3af" />
+            </TouchableOpacity>
+
+            {orderStatus.deliveryType === 'Try & Buy' && (
+              <View style={styles.tryBuy}>
+                <View style={styles.tryBuyRow}>
+                  <View style={styles.tryBuyIcon}>
+                    <CheckCircle size={20} color="#fff" />
+                  </View>
+                  <View>
+                    <Text style={styles.tryBuyTitle}>Try & Buy Available</Text>
+                    <Text style={styles.tryBuyDesc}>
+                      Try your items at home before making the final decision. Return
+                      unwanted items with the delivery partner.
                     </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Show Payment button only if there are no return items */}
-                {!hasReturnItems && (
-                  <TouchableOpacity
-                    style={[
-                      styles.actionButtonPrimary,
-                      !allItemsSelected && { opacity: 0.5 },
-                    ]}
-                    onPress={() => allItemsSelected && handleSubmit('payment')}
-                    disabled={!allItemsSelected}
-                  >
-                    <Text style={styles.actionButtonText}>Proceed to Payment</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          )}
-        </LinearGradient>
-
-        {deliveryPerson ? (
-          <View style={styles.deliveryCard}>
-            <View style={styles.deliveryRow}>
-              <View style={styles.deliveryLeft}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarIcon}>{deliveryPerson.avatar}</Text>
-                </View>
-                <View>
-                  <Text style={styles.deliveryName}>{deliveryPerson.name}</Text>
-                  <Text style={styles.deliveryId}>{deliveryPerson.id}</Text>
+                  </View>
                 </View>
               </View>
-              {deliveryPerson.id !== 'N/A' && (
-                <TouchableOpacity style={styles.callButton}>
-                  <Phone size={20} color="#fff" />
-                </TouchableOpacity>
-              )}
-            </View>
-          </View>
-        ) : (
-          <View style={styles.deliveryCard}>
-            <View style={styles.deliveryRow}>
-              <View style={styles.deliveryLeft}>
-                <Text style={styles.deliveryName}>Assigning Delivery Partner Soon</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        <TouchableOpacity style={styles.actionButton}>
-          <View style={styles.actionLeft}>
-            <Package size={20} color="#444" />
-            <Text style={styles.actionText}>View Package Information</Text>
-          </View>
-          <ChevronRight size={20} color="#9ca3af" />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.actionButton}>
-          <View style={styles.actionLeft}>
-            <MessageCircle size={20} color="#444" />
-            <Text style={styles.actionText}>Facing issue? Chat with Senz Staff</Text>
-          </View>
-          <ChevronRight size={20} color="#9ca3af" />
-        </TouchableOpacity>
-
-        {orderStatus.deliveryType === 'Try & Buy' && (
-          <View style={styles.tryBuy}>
-            <View style={styles.tryBuyRow}>
-              <View style={styles.tryBuyIcon}>
-                <CheckCircle size={20} color="#fff" />
-              </View>
-              <View>
-                <Text style={styles.tryBuyTitle}>Try & Buy Available</Text>
-                <Text style={styles.tryBuyDesc}>
-                  Try your items at home before making the final decision. Return
-                  unwanted items with the delivery partner.
-                </Text>
-              </View>
-            </View>
-          </View>
-        )}
-      </ScrollView>
-      <ConfirmSelectionModal
-        order={orderId}
-        ref={modalRef}
-        otp={otp}
-        onConfirm={() => {
-          handleSubmit("return");
-          modalRef.current?.close();
-        }}
-      />
+            )}
+          </ScrollView>
+          <ConfirmSelectionModal
+            ref={modalRef}
+            onCancel={() => modalRef.current?.close()}
+            orderId={orderId}
+            otp={otp}
+            items={items}
+            totalPayable={finalBilling.totalPayable}
+            onConfirm={handleConfirm}   // existing logic// 👈 NEW
+          />
+        </>
+      )
+      }
     </>
   );
 }
@@ -579,16 +771,28 @@ export default function OrderTrackingPage() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
   header: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: "#fff",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 44,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
+  },
+  returnButton: {
+    backgroundColor: "#111827",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 20,
+    marginHorizontal: 16,
+  },
+  returnButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
   },
   backButton: { marginRight: 12 },
   backArrow: { fontSize: 22, color: '#374151' },
@@ -641,6 +845,64 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: '#22c55e',
+  },
+  billContainer: {
+    backgroundColor: "#fff",
+    padding: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3
+  },
+  billTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10
+  },
+  billRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 6
+  },
+  billLabel: {
+    fontSize: 16,
+    color: "#fff"
+  },
+  billValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#fff"
+  },
+  billDivider: {
+    height: 1,
+    backgroundColor: "#ddd",
+    marginVertical: 10
+  },
+  billTotal: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#fff"
+  },
+  otpBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F0FE",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    alignSelf: "flex-start",
+    marginTop: 20,
+    width: '100%',
+    height: 50
+  },
+  otpBadgeText: {
+    color: "#1A73E8",
+    fontSize: 13,
+    fontWeight: "600",
+    marginLeft: 6,
+    alignItems: 'center'
   },
   storeLabel: {
     position: 'absolute',
@@ -731,6 +993,37 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
+  riderMarker: {
+    backgroundColor: "white",
+    padding: 6,
+    borderRadius: 50,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
+  },
+  userMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#22c55e", // green
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  userInnerCircle: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#22c55e",
+  },
+
   deliveryRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   deliveryLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   avatar: {
@@ -807,7 +1100,7 @@ const styles = StyleSheet.create({
   itemSelectionTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#50C878',
+    color: '#ffffffff',
     marginBottom: 12,
   },
   itemCard: {
@@ -887,7 +1180,7 @@ const styles = StyleSheet.create({
     minHeight: 60,
     textAlignVertical: 'top',
     borderWidth: 1,
-    borderColor: '#ef4444',
+    borderColor: '#fff',
   },
   // Billing styles
   billingContainer: {
@@ -899,7 +1192,7 @@ const styles = StyleSheet.create({
   billingTitle: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#50C878',
+    color: '#fff',
     marginBottom: 12,
   },
   billingRow: {
@@ -925,7 +1218,7 @@ const styles = StyleSheet.create({
   },
   actionButtonPrimary: {
     flex: 1,
-    backgroundColor: '#50C878',
+    backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
@@ -933,6 +1226,6 @@ const styles = StyleSheet.create({
   actionButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#fff',
+    color: '#000',
   },
 });

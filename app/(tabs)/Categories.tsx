@@ -193,9 +193,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 18,       // ← make more rounded
     overflow: 'hidden',     // ← ensures image also follows radius
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    // elevation: 2,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
