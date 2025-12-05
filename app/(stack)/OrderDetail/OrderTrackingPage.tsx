@@ -198,7 +198,7 @@ export default function OrderTrackingPage() {
   const { orderId } = useLocalSearchParams();
   const router = useRouter();
   const [selectedItemsForConfirm, setSelectedItemsForConfirm] = useState([]);
-  // const [showReturnButton, setShowReturnButton] = useState(false);
+  const [isPackageOpen, setIsPackageOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [orderStatus, setOrderStatus] = useState({
     current: '',
@@ -550,48 +550,48 @@ export default function OrderTrackingPage() {
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.stepsRow}>
-                {orderStatus.steps.map((step, index) => (
-                  <React.Fragment key={step.id}>
-                    <View style={styles.stepContainer}>
-                      <View
-                        style={[
-                          styles.stepCircle,
-                          step.completed
-                            ? styles.stepCompleted
-                            : styles.stepIncomplete,
-                        ]}
-                      >
-                        {step.completed ? (
-                          <CheckCircle size={18} color="#fff" />
-                        ) : (
-                          <Clock size={18} color="#fff" />
-                        )}
+              {['placed', 'accepted', 'packed', 'out_for_delivery', 'arrived at delivery',].includes(orderStatus.current) && (
+                <View style={styles.stepsRow}>
+                  {orderStatus.steps.map((step, index) => (
+                    <React.Fragment key={step.id}>
+                      <View style={styles.stepContainer}>
+                        <View
+                          style={[
+                            styles.stepCircle,
+                            step.completed
+                              ? styles.stepCompleted
+                              : styles.stepIncomplete,
+                          ]}
+                        >
+                          {step.completed ? (
+                            <CheckCircle size={18} color="#fff" />
+                          ) : (
+                            <Clock size={18} color="#fff" />
+                          )}
+                        </View>
+                        <Text
+                          style={[
+                            styles.stepLabel,
+                            step.completed
+                              ? styles.stepLabelActive
+                              : styles.stepLabelInactive,
+                          ]}
+                        >
+                          {step.label}
+                        </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.stepLabel,
-                          step.completed
-                            ? styles.stepLabelActive
-                            : styles.stepLabelInactive,
-                        ]}
-                      >
-                        {step.label}
-                      </Text>
-                    </View>
-                    {index < orderStatus.steps.length - 1 && (
-                      <View
-                        style={[
-                          styles.stepLine,
-                          step.completed ? styles.lineActive : styles.lineInactive,
-                        ]}
-                      />
-                    )}
-                  </React.Fragment>
-                ))}
-              </View>
-
-
+                      {index < orderStatus.steps.length - 1 && (
+                        <View
+                          style={[
+                            styles.stepLine,
+                            step.completed ? styles.lineActive : styles.lineInactive,
+                          ]}
+                        />
+                      )}
+                    </React.Fragment>
+                  ))}
+                </View>
+              )}
 
               {/* TIMER — Show only if trial is active AND not completed */}
               {trialPhase.isActive && orderStatus.current !== "completed try phase" && (
@@ -602,9 +602,7 @@ export default function OrderTrackingPage() {
               )}
 
               {/* FULL Try & Buy Section — Show only before trial completion */}
-              {trialPhase.isActive &&
-                items.length > 0 &&
-                orderStatus.current !== "completed try phase" && (
+              {['arrived at delivery', 'try phase',].includes(orderStatus.current) && (
                   <>
                     {/* ITEM SELECTION */}
                     <ItemSelection
@@ -654,11 +652,8 @@ export default function OrderTrackingPage() {
                         </View>
                       )
                     }
-
-
                     {/* ACTION BUTTONS */}
                     <View style={styles.actionButtonsContainer}>
-
                       {/* RETURN BUTTON */}
                       {hasReturnItems && (
                         <TouchableOpacity
@@ -719,13 +714,40 @@ export default function OrderTrackingPage() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.actionButton}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setIsPackageOpen(!isPackageOpen)}
+            >
               <View style={styles.actionLeft}>
                 <Package size={20} color="#444" />
                 <Text style={styles.actionText}>View Package Information</Text>
               </View>
-              <ChevronRight size={20} color="#9ca3af" />
+              <ChevronRight
+                size={20}
+                color="#9ca3af"
+                style={{ transform: [{ rotate: isPackageOpen ? '90deg' : '0deg' }] }}
+              />
             </TouchableOpacity>
+
+            {isPackageOpen && (
+              <View style={styles.packageContainer}>
+                {items.map((item) => (
+                  <View style={styles.packageItem} key={item._id}>
+
+                    {/* IMAGE */}
+                    <Image source={{ uri: item.image }} style={styles.packageImage} />
+
+                    {/* DETAILS */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.packageName}>{item.name}</Text>
+                      <Text style={styles.packagePrice}>₹{item.price}</Text>
+                      <Text style={styles.packageQty}>Qty: {item.quantity}</Text>
+                    </View>
+
+                  </View>
+                ))}
+              </View>
+            )}
 
             <TouchableOpacity style={styles.actionButton}>
               <View style={styles.actionLeft}>
@@ -741,7 +763,7 @@ export default function OrderTrackingPage() {
                   <View style={styles.tryBuyIcon}>
                     <CheckCircle size={20} color="#fff" />
                   </View>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.tryBuyTitle}>Try & Buy Available</Text>
                     <Text style={styles.tryBuyDesc}>
                       Try your items at home before making the final decision. Return
@@ -1059,6 +1081,52 @@ const styles = StyleSheet.create({
   },
   actionLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   actionText: { fontWeight: '600', color: '#111' },
+
+  packageContainer: {
+    marginHorizontal: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginTop: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+  },
+
+  packageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f2f2f2',
+  },
+
+  packageImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+
+  packageName: {
+    fontSize: 14,
+    color: '#111',
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+
+  packagePrice: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#10b981', // green for price
+    marginBottom: 2,
+  },
+
+  packageQty: {
+    fontSize: 13,
+    color: '#555',
+  },
+
   tryBuy: {
     marginTop: 20,
     marginHorizontal: 16,

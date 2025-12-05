@@ -71,10 +71,16 @@ const HeaderBag = forwardRef((props, ref) => {
 
   const selectAddress = async (item: any) => {
     setSelectedAddress(item);
-    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
+
+    await SecureStore.setItemAsync("selectedAddress", JSON.stringify(item));
+
+    // 🔥 Notify parent (CartBag) that address changed
+    if (props.onAddressChange) {
+      props.onAddressChange(item);
+    }
+
     addressModalRef.current?.close();
   };
-
   useEffect(() => {
     loadStoredAddress();
   }, [loadStoredAddress]);

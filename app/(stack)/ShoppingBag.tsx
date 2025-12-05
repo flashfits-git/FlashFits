@@ -18,13 +18,15 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-// import RazorpayCheckout from 'react-native-razorpay';
+import RazorpayCheckout from 'react-native-razorpay';
+// import RazorpayCheckout from 'razorpay-expo';
+import Constants from 'expo-constants';
 import BagProduct from '../../components/CartBagComponents/BagProduct';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import { createOrder } from '../api/orderApis';
+import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
 import eed from '../../assets/images/star.png'
 import * as SecureStore from 'expo-secure-store';
-import { clearCart, deleteCartItem, GetCart } from '../api/productApis/cartProduct';
+import { clearCart, deleteCartItem, getCartbyPassAdress } from '../api/productApis/cartProduct';
 import { useCart } from '../ContextParent';
 import { joinOrderRoom } from '../sockets/order.socket';
 const { width } = Dimensions.get('window');
@@ -33,6 +35,7 @@ const maxSlide = width * 0.7;
 const CartBag = () => {
   const headerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
+  const [address, setAddress] = useState(null);
   const [scrollY, setScrollY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
@@ -44,14 +47,22 @@ const CartBag = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+
 
   const fetchCart = async (showLoader = true) => {
     try {
-      if (showLoader) setLoading(true);
-      const cartData = await GetCart();
-      const items = cartData.items || [];
-      console.log(cartData, 'cartDatacartData');
+      const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+      const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+      console.log();
 
+      setAddress(parsedAddress);
+      console.log(parsedAddress, 'parsedAddressparsedAddress');
+
+      if (showLoader) setLoading(true);
+      const cartData = await getCartbyPassAdress(parsedAddress);
+      const items = cartData.items || [];
+      setDeliveryCharge(items[0]?.merchantDelivery.deliveryCharge || 0);
       setCartItems(items);
       setCartCount(items.length);
       // Animate content entrance
@@ -77,14 +88,13 @@ const CartBag = () => {
     }
   };
 
-useEffect(() => {
-  fetchCart();
+  useEffect(() => {
+    fetchCart();
+    setTimeout(() => {
+      headerRef.current?.openAddressModal();
+    }, 0);
 
-  setTimeout(() => {
-    headerRef.current?.openAddressModal();
-  }, 0);
-
-}, []);
+  }, []);
 
   // Handle scroll-based animations
   useEffect(() => {
@@ -144,9 +154,6 @@ useEffect(() => {
     await fetchCart(false);
   };
 
-  // console.log(cartItems,'ewfkhbkjewefwbkj');
-
-
   const productData = cartItems.map((item) => {
     const product = item.productId || {};
     const firstVariant = product.variants?.[0] || {};
@@ -169,73 +176,73 @@ useEffect(() => {
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  const handlePaymentComplete = async () => {
+  // const handlePaymentComplete = async () => {
 
-    // 1️⃣ Get stored selected address
-    const storedAddress = await SecureStore.getItemAsync('selectedAddress');
-    const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+  //   // 1️⃣ Get stored selected address
 
-    console.log(parsedAddress, 'parsedAddress');
+  //   const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+  //   const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
 
-    if (!parsedAddress?._id) {
-      Alert.alert("Error", "No address selected!");
-      return;
-    }
+  //   console.log(parsedAddress, 'parsedAddress');
 
-    try {
-      // 2️⃣ Pass addressId to your createOrder API
-      const orderData = await createOrder({
-        addressId: parsedAddress._id,
-      });
+  //   if (!parsedAddress?._id) {
+  //     Alert.alert("Error", "No address selected!");
+  //     return;
+  //   }
 
-      console.log(orderData, "orderData");
-      console.log(orderData.order._id, 'orderData');
+  //   try {
+  //     // 2️⃣ Pass addressId to your createOrder API
+  //     const orderData = await createOrder({
+  //       addressId: parsedAddress._id,
+  //     });
 
-      await joinOrderRoom(orderData.order._id);
-      console.log("📡 Joined room for order:", orderData.order._id);
+  //     console.log(orderData, "orderData");
+  //     console.log(orderData.order._id, 'orderData');
 
-      // 3️⃣ Since Razorpay is removed, redirect directly
-      router.replace({
-        pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-        params: { orderId: JSON.stringify(orderData.order._id) },
-      });
+  //     await joinOrderRoom(orderData.order._id);
+  //     console.log("📡 Joined room for order:", orderData.order._id);
 
-    } catch (error) {
-      console.error('Error creating order:', error);
-      Alert.alert("Order Error", "Failed to create order. Check API.");
-    }
-  };
+  //     // 3️⃣ Since Razorpay is removed, redirect directly
+  //     router.replace({
+  //       pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+  //       params: { orderId: JSON.stringify(orderData.order._id) },
+  //     });
+
+  //   } catch (error) {
+  //     console.error('Error creating order:', error);
+  //     Alert.alert("Order Error", "Failed to create order. Check API.");
+  //   }
+  // };
 
   // PAYMENT COMMENTED HERE <>DONT REMOVE IT<>
 
   // const handlePaymentComplete = async () => {
-  //   // const STATIC_ORDER_ID = "order-123456";
-  //   // router.replace({
-  //   //   pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-  //   //   params: { orderId: "ORDER_123456" },
-  //   // });
-
   //   try {
-
-  //     const orderData = await createOrder();
-  //     console.log(orderData,"orderData");
+  //     const razorpayKey = Constants.expoConfig.extra.RAZORPAY_KEY_ID;
+  //     const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+  //     const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+  //     const orderData = await createOrder({
+  //       addressId: parsedAddress._id,
+  //     });
+  //     console.log(orderData, "orderData");
   //     console.log(orderData.order._id, 'orderData');
   //     await joinOrderRoom(orderData.order._id);
   //     console.log("📡 Joined room for order:", orderData.order._id);
   //     //back to home
-  //     const options ={
-  //       name:"FlashFits",
-  //        description: `Delivery charge`,
+  //     const roundedAmount = Math.round(deliveryCharge * 100); 
+  //     const options = {
+  //       name: "FlashFits",
+  //       description: `Delivery charge`,
   //       order_id: orderData.razorpayOrder.id,
-  //       key: 'rzp_live_RZGUnS7NLvApuL', // Replace with your actual Razorpay key
-  //       amount: Math.round(orderData.razorpayOrder.amount * 100), // Convert to paise
+  //       key: razorpayKey, // Replace with your actual Razorpay key
+  //       amount: roundedAmount, // Convert to paise
   //       currency: 'INR',
   //       theme: { color: '#4CAF50' }
   //     }
-  //      console.log('Opening Razorpay checkout with options:', options);
+  //     console.log('Opening Razorpay checkout with options:', options);
 
 
-  //      RazorpayCheckout.open(options)
+  //     RazorpayCheckout.open(options)
   //       .then((success) => {
   //         console.log('Payment success:', success);
   //         // TODO: Add payment verification with backend if needed
@@ -261,6 +268,88 @@ useEffect(() => {
   //     console.error('Error creating order:', error);
   //   }
   // };
+
+  const handlePaymentComplete = async () => {
+    try {
+      // Step 1: Create Razorpay Order from backend
+      const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+      const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+      const orderResponse = await createOrder({
+        addressId: parsedAddress._id,
+      });
+      if (!orderResponse || !orderResponse.success) return;
+
+      const {
+        razorpayOrderId,
+        amount,
+        key_id,
+        orderId: internalOrderId,
+        name,
+        contact,
+        email,
+      } = orderResponse;
+
+      // Step 2: Open Razorpay Checkout
+      const options = {
+        description: 'FlashFits Order Payment',
+        image: 'https://yourlogo.com/logo.png', // optional
+        currency: 'INR',
+        key: key_id,
+        amount: amount, // already in paise
+        name: 'FlashFits',
+        order_id: razorpayOrderId,
+        prefill: {
+          email: email || '',
+          contact: contact || '',
+          name: name || 'Customer',
+        },
+        theme: { color: '#61b3f6' },
+      };
+
+      console.log(options, 'options');
+
+      RazorpayCheckout.open(options)
+        .then(async (data) => {
+          // Success callback from Razorpay
+          console.log('Razorpay Success:', data);
+          // Step 3: Verify on backend
+          try {
+            const res = await verifyPaymentAndConfirmOrder(data, internalOrderId);
+
+            if (res?.success) {
+              Alert.alert('Success', 'Payment successful! Order confirmed.');
+
+              await joinOrderRoom(internalOrderId);
+
+              router.replace({
+                pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+                params: { orderId: JSON.stringify(internalOrderId) },
+              });
+            } else {
+              Alert.alert('Payment Failed', 'Something went wrong while confirming your order.');
+            }
+
+          } catch (error) {
+            console.error("Payment verification error:", error);
+            Alert.alert('Error', 'Unable to verify payment. Please try again.');
+          }
+        })
+        .catch(async (error) => {
+          console.log('Razorpay Failed/Cancelled:', error);
+          if (error.code === 2) {
+            Alert.alert('Cancelled', 'Payment was cancelled');
+          } else {
+            Alert.alert('Payment Failed', error.description || 'Something went wrong');
+          }
+
+          // Optional: Mark order as failed
+          // await axios.post('/api/payment/failed', { orderId: internalOrderId });
+        });
+    } catch (error) {
+      console.error('Payment flow error:', error);
+      Alert.alert('Error', 'Payment initiation failed');
+    }
+  };
 
   const SlideToPay = ({ label, onComplete }) => {
     const slideAnimation = useRef(new Animated.Value(0)).current;
@@ -401,7 +490,8 @@ useEffect(() => {
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <HeaderBag ref={headerRef} autoOpen  />
+      <HeaderBag ref={headerRef} autoOpen
+        onAddressChange={() => fetchCart(false)} />
 
       {/* Order type selection */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
@@ -604,7 +694,7 @@ useEffect(() => {
             }
           ]}
         >
-          <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
+          {/* <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
             <View style={styles.couponLeft}>
               <Ionicons name="pricetag" size={5} color="black" style={styles.couponIcon} />
               <View>
@@ -613,11 +703,11 @@ useEffect(() => {
               </View>
             </View>
             <Text style={styles.couponArrow}>›</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </Animated.View>
 
         {/* Matching Accessories */}
-        <Animated.View
+        {/* <Animated.View
           style={[
             styles.accessoriesSection,
             {
@@ -637,7 +727,7 @@ useEffect(() => {
           >
             <RecentlyViewed accecories={cartItems} />
           </ScrollView>
-        </Animated.View>
+        </Animated.View> */}
 
         {/* Explore Store Button */}
         <Animated.View
@@ -706,8 +796,11 @@ useEffect(() => {
                   <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
                 </View>
                 <View>
-                  <Text style={styles.payUsingText}>Pay using</Text>
-                  <Text style={styles.googlePayText}>Delivery Charge |  ₹45</Text>
+                  {/* <Text style={styles.payUsingText}>Pay using</Text> */}
+                  <Text style={styles.googlePayText}>
+                    Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
+                  </Text>
+
                 </View>
               </View>
               <TouchableOpacity style={styles.changeButton}>

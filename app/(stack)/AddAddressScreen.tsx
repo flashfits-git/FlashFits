@@ -31,10 +31,9 @@ export default function AddAddressScreen() {
     addressLine1: '',
     addressLine2: '',
     landmark: '',
-    area: 'Maradu',
-    city: 'Kochi',
+    city: '',
     state: 'Kerala',
-    pincode: '682304',
+    pincode: '',
     latitude: latitude,
     longitude: longitude,
   });
@@ -66,7 +65,6 @@ export default function AddAddressScreen() {
       addressLine1: formData.addressLine1,
       addressLine2: formData.addressLine2,
       landmark: formData.landmark,
-      area: formData.area,
       city: formData.city,
       state: formData.state,
       pincode: formData.pincode,
@@ -206,17 +204,6 @@ export default function AddAddressScreen() {
 
             {/* Address details */}
             <Text style={styles.sectionLabel}>Address details</Text>
-            <View style={styles.locationBox}>
-              <Text style={styles.locationTitle}>{formData.area}</Text>
-              <Text style={styles.locationSubtitle}>
-                {formData.area}, {formData.city}, {formData.state}, {formData.pincode}
-              </Text>
-              <TouchableOpacity style={styles.changeButton}>
-                <Text style={styles.changeButtonText}>Change</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Form fields */}
             <TextInput
               style={styles.input}
               placeholder="*Flat / House number"
@@ -235,10 +222,26 @@ export default function AddAddressScreen() {
 
             <TextInput
               style={styles.input}
-              placeholder="Landmark (optional)"
+              placeholder="*City"
               placeholderTextColor="#999"
-              value={formData.landmark}
-              onChangeText={(text) => handleInputChange('landmark', text)}
+              value={formData.city}
+              onChangeText={(text) => handleInputChange('city', text)}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="*State"
+              placeholderTextColor="#999"
+              value={formData.state}
+              onChangeText={(text) => handleInputChange('state', text)}
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="*Pincode"
+              placeholderTextColor="#999"
+              value={formData.pincode}
+              onChangeText={(text) => handleInputChange('pincode', text)}
             />
 
             {/* Contact details */}
@@ -260,6 +263,15 @@ export default function AddAddressScreen() {
               value={formData.name}
               onChangeText={(text) => handleInputChange('name', text)}
             />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Landmark (optional)"
+              placeholderTextColor="#999"
+              value={formData.landmark}
+              onChangeText={(text) => handleInputChange('landmark', text)}
+            />
+
 
             {/* Confirm button */}
             <TouchableOpacity style={styles.confirmButton} onPress={handleSubmit}>

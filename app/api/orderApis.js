@@ -1,18 +1,10 @@
 import api from '../../axiosConfig';
-import { getSocket , initSocket } from '../config/socket';
+// import { getSocket , initSocket } from '../config/socket';
 
 export const createOrder = async ({addressId}) => {
   try {
-    let deliveryCharge = 500;
     const res = await api.post("/user/order/create", { addressId });
     const order = res.data;
-    // initSocket();
-    // // ✅ join the socket room for this order
-    // const socket = getSocket();
-    // if (socket) {
-    //   socket.emit("joinOrderRoom", order._id);
-    //   console.log(`Joined order room: order_${order._id}`);
-    // }
     console.log(order,"order");
     return order;
   } catch (error) {
@@ -65,5 +57,30 @@ export const getOrderById = async (orderId) => {
   } catch (error) {
     console.error("Axios error:", error);
     throw error;
+  }
+};
+
+export const  verifyPaymentAndConfirmOrder = async ( paymentData, internalOrderId) => {
+  try {
+    const response = await api.post('user/order/verifyPayment',
+      {
+        razorpay_order_id: paymentData.razorpay_order_id,
+        razorpay_payment_id: paymentData.razorpay_payment_id,
+        razorpay_signature: paymentData.razorpay_signature,
+        orderId: internalOrderId, // your pending order ID
+      }
+    );
+    return response.data
+    // if (response.data.success) {
+    //   Alert.alert('Success', 'Payment successful! Order confirmed.');
+    //   await joinOrderRoom(internalOrderId);
+    //   router.replace({
+    //     pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+    //     params: { orderId: JSON.stringify(internalOrderId) },
+    //   });
+    // }
+  } catch (error) {
+    console.error('Verification failed:', error.response?.data || error);
+    Alert.alert('Verification Failed', 'Payment was made but verification failed. Contact support.');
   }
 };

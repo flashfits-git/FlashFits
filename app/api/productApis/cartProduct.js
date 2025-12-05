@@ -18,10 +18,20 @@ export const AddProducttoCart = async (productData) => {
 export const GetCart = async () => {
   console.log('Fetching cart...');
   try {
-    const response = await api.get('user/cart'); // Make sure this matches your backend route
+    const response = await api.get('user/cartCount'); // Make sure this matches your backend route
     return response.data;
   } catch (error) {
     console.error('Error fetching cart:', error);
+    throw error;
+  }
+};
+
+export const getCartbyPassAdress = async (addressId) => {
+  try {
+    const response = await api.get(`user/cart/${addressId._id}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching cart:", error);
     throw error;
   }
 };

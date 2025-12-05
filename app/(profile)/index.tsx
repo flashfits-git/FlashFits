@@ -23,6 +23,7 @@ const ProfilePage = () => {
                         style: 'destructive',
                         onPress: async () => {
                             await SecureStore.deleteItemAsync('token');
+                            await SecureStore.deleteItemAsync('selectedAddress');
                             router.replace('/(auth)');
                         },
                     },
