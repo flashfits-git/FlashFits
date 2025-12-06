@@ -17,6 +17,9 @@ import { Modalize } from 'react-native-modalize';
 import Colors from '../../assets/theme/Colors';
 import { getAddresses } from '../api/productApis/cartProduct';
 
+// ⭐ IMPORT ADDRESS CONTEXT
+import { useAddress } from '../AddressContext';
+
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
@@ -140,19 +143,22 @@ export default function TabLayout() {
   const router = useRouter();
   const addressModalRef = useRef(null);
 
-  const [addresses, setAddresses] = useState([]); // ARRAY ONLY
+  const { addresses, setAddresses, setSelectedAddress } = useAddress();
+
   const [loading, setLoading] = useState(true);
 
-  // ------------------- FIRST RENDER CHECK -------------------
+  // ------------------- FIRST RENDER -------------------
   useEffect(() => {
     const init = async () => {
-      let selected = await SecureStore.getItemAsync('selectedAddress');
+      let saved = await SecureStore.getItemAsync('selectedAddress');
 
       const res = await getAddresses();
       setAddresses(res.addresses || []);
       setLoading(false);
 
-      if (!selected) {
+      if (saved) {
+        setSelectedAddress(JSON.parse(saved));
+      } else {
         setTimeout(() => addressModalRef.current?.open(), 300);
       }
     };
@@ -162,18 +168,20 @@ export default function TabLayout() {
 
   // ------------------- RECHECK ON CLOSE -------------------
   const reCheck = async () => {
-    let selected = await SecureStore.getItemAsync('selectedAddress');
+    let saved = await SecureStore.getItemAsync('selectedAddress');
 
     const res = await getAddresses();
     setAddresses(res.addresses || []);
 
-    if (!selected) {
+    if (!saved) {
       setTimeout(() => addressModalRef.current?.open(), 200);
     }
   };
 
+  // ------------------- SELECT ADDRESS -------------------
   const selectAddress = async (item) => {
-    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
+    setSelectedAddress(item);                  // ⭐ Save in Context
+    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));  
     addressModalRef.current?.close();
   };
 
@@ -197,9 +205,8 @@ export default function TabLayout() {
       >
         {loading ? (
           <ActivityIndicator size="large" color="black" />
-        ) : addresses.length === 0 ? (
 
-          // ---------------- NO ADDRESS FOUND ----------------
+        ) : addresses.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 10 }}>
               No Address Found
@@ -226,8 +233,6 @@ export default function TabLayout() {
           </View>
 
         ) : (
-
-          // ---------------- ADDRESS LIST ----------------
           <View style={{ padding: 20, width: '100%' }}>
             <Text
               style={{
@@ -269,7 +274,6 @@ export default function TabLayout() {
           </View>
         )}
       </Modalize>
-
     </View>
   );
 }

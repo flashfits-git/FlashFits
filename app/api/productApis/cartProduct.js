@@ -28,7 +28,7 @@ export const GetCart = async () => {
 
 export const getCartbyPassAdress = async (addressId) => {
   try {
-    const response = await api.get(`user/cart/${addressId._id}`);
+    const response = await api.get(`user/cart/${addressId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching cart:", error);

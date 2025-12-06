@@ -4,13 +4,20 @@ const AddressContext = createContext();
 
 export const AddressProvider = ({ children }) => {
   const [selectedAddress, setSelectedAddress] = useState(null);
+  const [addresses, setAddresses] = useState([]);  // ⭐ store full list
 
   return (
-    <AddressContext.Provider value={{ selectedAddress, setSelectedAddress }}>
+    <AddressContext.Provider
+      value={{
+        selectedAddress,
+        setSelectedAddress,
+        addresses,
+        setAddresses,
+      }}
+    >
       {children}
     </AddressContext.Provider>
   );
 };
 
-// Easy custom hook
 export const useAddress = () => useContext(AddressContext);

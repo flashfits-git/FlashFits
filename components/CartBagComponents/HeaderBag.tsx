@@ -1,7 +1,3 @@
-import { getAddresses } from '@/app/api/productApis/cartProduct';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import React, {
   useCallback,
   useEffect,
@@ -18,38 +14,32 @@ import {
   View,
 } from 'react-native';
 import { Modalize } from 'react-native-modalize';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { getAddresses } from '@/app/api/productApis/cartProduct';
+import { useAddress } from '@/app/AddressContext';   // ✅ USE CONTEXT
 
 const HeaderBag = forwardRef((props, ref) => {
   const router = useRouter();
 
-  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  // ------------------------ CONTEXT ------------------------
+  const { selectedAddress, setSelectedAddress } = useAddress(); // ✅ REPLACE local state
+
   const [addresses, setAddresses] = useState({ addresses: [] });
   const [addressLoading, setAddressLoading] = useState(false);
 
   const addressModalRef = useRef<Modalize>(null);
 
+  // open modal if autoOpen=true
   useEffect(() => {
-    if (ref) {
-      // waits one frame → ensures modalRef exists
-      requestAnimationFrame(() => {
-        if (props.autoOpen) {
-          openAddressModal();
-        }
-      });
-    }
-  }, []);
-
-  const loadStoredAddress = useCallback(async () => {
-    try {
-      const stored = await SecureStore.getItemAsync('selectedAddress');
-      if (stored) {
-        setSelectedAddress(JSON.parse(stored));
+    requestAnimationFrame(() => {
+      if (props.autoOpen) {
+        openAddressModal();
       }
-    } catch (error) {
-      console.log('Error loading address:', error);
-    }
+    });
   }, []);
 
+  // ------------------------ OPEN MODAL ------------------------
   const openAddressModal = async () => {
     setAddressLoading(true);
 
@@ -65,36 +55,37 @@ const HeaderBag = forwardRef((props, ref) => {
     addressModalRef.current?.open();
   };
 
+  // Expose openAddressModal to parent
   useImperativeHandle(ref, () => ({
     openAddressModal,
   }));
 
+  // ------------------------ SELECT ADDRESS ------------------------
   const selectAddress = async (item: any) => {
-    setSelectedAddress(item);
+    setSelectedAddress(item); // ✅ SET IN CONTEXT
 
-    await SecureStore.setItemAsync("selectedAddress", JSON.stringify(item));
-
-    // 🔥 Notify parent (CartBag) that address changed
+    // notify parent
     if (props.onAddressChange) {
       props.onAddressChange(item);
     }
 
     addressModalRef.current?.close();
   };
-  useEffect(() => {
-    loadStoredAddress();
-  }, [loadStoredAddress]);
 
+  // ------------------------ FORMATTED ADDRESS ------------------------
   const formattedAddress = selectedAddress
     ? [selectedAddress.addressLine1, selectedAddress.area, selectedAddress.city]
-      .filter(Boolean)
-      .join(', ')
+        .filter(Boolean)
+        .join(', ')
     : 'Select Location';
 
   return (
     <>
       <View style={styles.headerWrapper}>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.replace('/(tabs)')}
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={24} color="#333" />
         </TouchableOpacity>
 
@@ -107,83 +98,33 @@ const HeaderBag = forwardRef((props, ref) => {
             <Ionicons name="chevron-down" size={16} color="#333" />
           </View>
 
-          <Text style={styles.addressText} numberOfLines={1}>{formattedAddress}</Text>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {formattedAddress}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
+        <TouchableOpacity
+          onPress={() => router.push('/')}
+          style={styles.homeButton}
+        >
           <Ionicons name="home" size={24} color="#333" />
         </TouchableOpacity>
       </View>
 
+      {/* ------------------------ ADDRESS MODAL ------------------------ */}
       <Modalize ref={addressModalRef} adjustToContentHeight>
         <View style={{ padding: 20, marginBottom: 12 }}>
           {addressLoading ? (
             <ActivityIndicator size="large" color="black" />
           ) : addresses.addresses.length === 0 ? (
-            <>
-              <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 15 }}>No Address Found</Text>
-
-              <TouchableOpacity
-                onPress={() => {
-                  addressModalRef.current?.close();
-                  router.push('/(stack)/SelectLocationScreen');
-                }}
-                style={{
-                  backgroundColor: '#000',
-                  paddingVertical: 12,
-                  borderRadius: 10,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>Add Address</Text>
-              </TouchableOpacity>
-            </>
+            <EmptyAddress router={router} modalRef={addressModalRef} />
           ) : (
-            <View style={{ padding: 10, width: '100%' }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: 15,
-                }}
-              >
-                <Text style={{ fontSize: 18, fontWeight: '700' }}>Select Address</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    addressModalRef.current?.close();
-                    router.push('/(stack)/SelectLocationScreen');
-                  }}
-                  style={{
-                    backgroundColor: '#000',
-                    paddingVertical: 8,
-                    paddingHorizontal: 15,
-                    borderRadius: 8,
-                  }}
-                >
-                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>Add Address</Text>
-                </TouchableOpacity>
-              </View>
-
-              {addresses.addresses.map((item) => (
-                <TouchableOpacity
-                  key={item._id}
-                  onPress={() => selectAddress(item)}
-                  style={{
-                    padding: 15,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: '#ddd',
-                    marginBottom: 12,
-                    backgroundColor: '#fafafa',
-                  }}
-                >
-                  <Text style={{ fontSize: 14, fontWeight: '700' }}>{item.addressType}</Text>
-                  <Text style={{ fontSize: 13, color: '#555', marginTop: 3 }}>{item.addressLine1}</Text>
-                  <Text style={{ fontSize: 13, marginTop: 5 }}>{item.name} • {item.phone}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <AddressList
+              addresses={addresses.addresses}
+              router={router}
+              modalRef={addressModalRef}
+              selectAddress={selectAddress}
+            />
           )}
         </View>
       </Modalize>
@@ -193,8 +134,95 @@ const HeaderBag = forwardRef((props, ref) => {
 
 export default HeaderBag;
 
+//
+// ------------------------ SUB COMPONENTS ------------------------
+//
 
-/* Styles remain EXACTLY the same */
+const EmptyAddress = ({ router, modalRef }) => (
+  <>
+    <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 15 }}>
+      No Address Found
+    </Text>
+
+    <TouchableOpacity
+      onPress={() => {
+        modalRef.current?.close();
+        router.push('/(stack)/SelectLocationScreen');
+      }}
+      style={{
+        backgroundColor: '#000',
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+      }}
+    >
+      <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
+        Add Address
+      </Text>
+    </TouchableOpacity>
+  </>
+);
+
+const AddressList = ({ addresses, router, modalRef, selectAddress }) => (
+  <View style={{ padding: 10, width: '100%' }}>
+    <View
+      style={{
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
+      }}
+    >
+      <Text style={{ fontSize: 18, fontWeight: '700' }}>Select Address</Text>
+
+      <TouchableOpacity
+        onPress={() => {
+          modalRef.current?.close();
+          router.push('/(stack)/SelectLocationScreen');
+        }}
+        style={{
+          backgroundColor: '#000',
+          paddingVertical: 8,
+          paddingHorizontal: 15,
+          borderRadius: 8,
+        }}
+      >
+        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
+          Add Address
+        </Text>
+      </TouchableOpacity>
+    </View>
+
+    {addresses.map((item) => (
+      <TouchableOpacity
+        key={item._id}
+        onPress={() => selectAddress(item)}
+        style={{
+          padding: 15,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: '#ddd',
+          marginBottom: 12,
+          backgroundColor: '#fafafa',
+        }}
+      >
+        <Text style={{ fontSize: 14, fontWeight: '700' }}>
+          {item.addressType}
+        </Text>
+        <Text style={{ fontSize: 13, color: '#555', marginTop: 3 }}>
+          {item.addressLine1}
+        </Text>
+        <Text style={{ fontSize: 13, marginTop: 5 }}>
+          {item.name} • {item.phone}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+);
+
+//
+// ------------------------ STYLES ------------------------
+//
 const styles = StyleSheet.create({
   headerWrapper: {
     flexDirection: 'row',

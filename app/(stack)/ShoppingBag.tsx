@@ -25,6 +25,7 @@ import BagProduct from '../../components/CartBagComponents/BagProduct';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
 import eed from '../../assets/images/star.png'
+import { useAddress } from '@/app/AddressContext'; // Import context
 import * as SecureStore from 'expo-secure-store';
 import { clearCart, deleteCartItem, getCartbyPassAdress } from '../api/productApis/cartProduct';
 import { useCart } from '../ContextParent';
@@ -48,19 +49,13 @@ const CartBag = () => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-
+  const { selectedAddress } = useAddress();
 
   const fetchCart = async (showLoader = true) => {
     try {
-      const storedAddress = await SecureStore.getItemAsync('selectedAddress');
-      const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
-      console.log();
-
-      setAddress(parsedAddress);
-      console.log(parsedAddress, 'parsedAddressparsedAddress');
 
       if (showLoader) setLoading(true);
-      const cartData = await getCartbyPassAdress(parsedAddress);
+      const cartData = await getCartbyPassAdress(selectedAddress._id);
       const items = cartData.items || [];
       setDeliveryCharge(items[0]?.merchantDelivery.deliveryCharge || 0);
       setCartItems(items);
@@ -90,6 +85,8 @@ const CartBag = () => {
 
   useEffect(() => {
     fetchCart();
+    console.log(selectedAddress._id, 'selectedAddressselectedAddress');
+    
     setTimeout(() => {
       headerRef.current?.openAddressModal();
     }, 0);
