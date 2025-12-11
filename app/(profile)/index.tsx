@@ -24,6 +24,7 @@ const ProfilePage = () => {
                         onPress: async () => {
                             await SecureStore.deleteItemAsync('token');
                             await SecureStore.deleteItemAsync('selectedAddress');
+                            await SecureStore.deleteItemAsync("addressSelectedOnce"); 
                             router.replace('/(auth)');
                         },
                     },

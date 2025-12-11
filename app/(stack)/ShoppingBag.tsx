@@ -19,11 +19,10 @@ import {
   View
 } from 'react-native';
 import RazorpayCheckout from 'react-native-razorpay';
-// import RazorpayCheckout from 'razorpay-expo';
-import Constants from 'expo-constants';
 import BagProduct from '../../components/CartBagComponents/BagProduct';
-import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
+// import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
+import AddressSelectionModalize from './AddressSelectionModalize';
 import eed from '../../assets/images/star.png'
 import { useAddress } from '@/app/AddressContext'; // Import context
 import * as SecureStore from 'expo-secure-store';
@@ -34,7 +33,9 @@ const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
 const CartBag = () => {
-  const headerRef = useRef<any>(null);
+  const addressRef = useRef(null);
+  const [shouldAskAddress, setShouldAskAddress] = useState(false);
+  const [addressModalOpenedOnce, setAddressModalOpenedOnce] = useState(false);
   const [loading, setLoading] = useState(true);
   const [address, setAddress] = useState(null);
   const [scrollY, setScrollY] = useState(0);
@@ -50,6 +51,32 @@ const CartBag = () => {
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
   const [deliveryCharge, setDeliveryCharge] = useState(0);
   const { selectedAddress } = useAddress();
+
+  useEffect(() => {
+    const checkFirstTime = async () => {
+      const flag = await SecureStore.getItemAsync("addressSelectedOnce");
+      // user already selected → don't auto-open
+      if (flag === "true") return;
+
+      // user first time → open modal
+      setShouldAskAddress(true);
+    };
+    checkFirstTime();
+  }, []);
+
+  useEffect(() => {
+    if (shouldAskAddress && !addressModalOpenedOnce) {
+      setAddressModalOpenedOnce(true);
+      setTimeout(() => addressRef.current?.open(), 400);
+    }
+  }, [shouldAskAddress]);
+
+
+  const handleAddressChange = async (address) => {
+    setAddress(address);
+    // Prevent modalize auto-opening again
+    await SecureStore.setItemAsync("addressSelectedOnce", "true");
+  };
 
   const fetchCart = async (showLoader = true) => {
     try {
@@ -83,15 +110,11 @@ const CartBag = () => {
     }
   };
 
+
   useEffect(() => {
     fetchCart();
     console.log(selectedAddress._id, 'selectedAddressselectedAddress');
-    
-    setTimeout(() => {
-      headerRef.current?.openAddressModal();
-    }, 0);
-
-  }, []);
+  }, [selectedAddress]);
 
   // Handle scroll-based animations
   useEffect(() => {
@@ -173,104 +196,16 @@ const CartBag = () => {
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-  // const handlePaymentComplete = async () => {
-
-  //   // 1️⃣ Get stored selected address
-
-  //   const storedAddress = await SecureStore.getItemAsync('selectedAddress');
-  //   const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
-
-  //   console.log(parsedAddress, 'parsedAddress');
-
-  //   if (!parsedAddress?._id) {
-  //     Alert.alert("Error", "No address selected!");
-  //     return;
-  //   }
-
-  //   try {
-  //     // 2️⃣ Pass addressId to your createOrder API
-  //     const orderData = await createOrder({
-  //       addressId: parsedAddress._id,
-  //     });
-
-  //     console.log(orderData, "orderData");
-  //     console.log(orderData.order._id, 'orderData');
-
-  //     await joinOrderRoom(orderData.order._id);
-  //     console.log("📡 Joined room for order:", orderData.order._id);
-
-  //     // 3️⃣ Since Razorpay is removed, redirect directly
-  //     router.replace({
-  //       pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-  //       params: { orderId: JSON.stringify(orderData.order._id) },
-  //     });
-
-  //   } catch (error) {
-  //     console.error('Error creating order:', error);
-  //     Alert.alert("Order Error", "Failed to create order. Check API.");
-  //   }
-  // };
-
-  // PAYMENT COMMENTED HERE <>DONT REMOVE IT<>
-
-  // const handlePaymentComplete = async () => {
-  //   try {
-  //     const razorpayKey = Constants.expoConfig.extra.RAZORPAY_KEY_ID;
-  //     const storedAddress = await SecureStore.getItemAsync('selectedAddress');
-  //     const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
-  //     const orderData = await createOrder({
-  //       addressId: parsedAddress._id,
-  //     });
-  //     console.log(orderData, "orderData");
-  //     console.log(orderData.order._id, 'orderData');
-  //     await joinOrderRoom(orderData.order._id);
-  //     console.log("📡 Joined room for order:", orderData.order._id);
-  //     //back to home
-  //     const roundedAmount = Math.round(deliveryCharge * 100); 
-  //     const options = {
-  //       name: "FlashFits",
-  //       description: `Delivery charge`,
-  //       order_id: orderData.razorpayOrder.id,
-  //       key: razorpayKey, // Replace with your actual Razorpay key
-  //       amount: roundedAmount, // Convert to paise
-  //       currency: 'INR',
-  //       theme: { color: '#4CAF50' }
-  //     }
-  //     console.log('Opening Razorpay checkout with options:', options);
-
-
-  //     RazorpayCheckout.open(options)
-  //       .then((success) => {
-  //         console.log('Payment success:', success);
-  //         // TODO: Add payment verification with backend if needed
-  //         Alert.alert('Success', 'Payment completed successfully!');
-  //         router.replace({
-  //           pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-  //           params: { orderId: JSON.stringify(orderData.order._id) }, // must stringify objects
-  //         });
-  //       })
-  //       .catch((error) => {
-  //         console.error('Razorpay error:', error);
-  //         if (error.code === 0) {
-  //           Alert.alert('Payment Status', 'Payment completed. Verifying...');
-  //         } else if (error.code === 1) {
-  //           Alert.alert('Payment Failed', error.description || 'Payment could not be completed');
-  //         } else if (error.code === 2) {
-  //           console.log('Payment cancelled by user');
-  //         } else {
-  //           Alert.alert('Payment Error', error.description || 'An error occurred during payment');
-  //         }
-  //       });
-  //   } catch (error) {
-  //     console.error('Error creating order:', error);
-  //   }
-  // };
-
   const handlePaymentComplete = async () => {
+
     try {
       // Step 1: Create Razorpay Order from backend
       const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+
+
       const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+      console.log(parsedAddress, 'passre');
+
       const orderResponse = await createOrder({
         addressId: parsedAddress._id,
       });
@@ -317,10 +252,12 @@ const CartBag = () => {
               Alert.alert('Success', 'Payment successful! Order confirmed.');
 
               await joinOrderRoom(internalOrderId);
-
+              await SecureStore.setItemAsync("addressSelectedOnce", "false");
               router.replace({
                 pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-                params: { orderId: JSON.stringify(internalOrderId) },
+                params: {
+                  orderId: internalOrderId.toString(),
+                },
               });
             } else {
               Alert.alert('Payment Failed', 'Something went wrong while confirming your order.');
@@ -338,9 +275,6 @@ const CartBag = () => {
           } else {
             Alert.alert('Payment Failed', error.description || 'Something went wrong');
           }
-
-          // Optional: Mark order as failed
-          // await axios.post('/api/payment/failed', { orderId: internalOrderId });
         });
     } catch (error) {
       console.error('Payment flow error:', error);
@@ -485,213 +419,217 @@ const CartBag = () => {
   }
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <HeaderBag ref={headerRef} autoOpen
-        onAddressChange={() => fetchCart(false)} />
+    <>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
-      {/* Order type selection */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
+        <HeaderBag onOpenAddressModal={() => addressRef.current?.open()} ref={addressRef} />
 
-        {/* Try and Buy Tab */}
-        <TouchableOpacity
-          onPress={() => setActiveTab('TryandBuy')}
-          style={styles.tabButton}
-          activeOpacity={0.9}
-        >
-          {activeTab === 'TryandBuy' && (
-            <LinearGradient
-              colors={['#111111ff', '#1c1c1cd9']}
-              start={{ x: 0, y: 1 }}
-              end={{ x: 1, y: 0 }}
-              style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
-            />
-          )}
-          <View style={styles.flexRow}>
-            <MaterialIcons
-              name="auto-fix-high"
-              size={18}
-              color="white"
-              style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
-            />
-            <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
-              Try then Buy
-            </Text>
 
-            {/* ❓ Help icon with toggle */}
-            <TouchableOpacity
-              onPress={() => {
-                setShowTryBuyInfo(true);
-                popupOpacity.setValue(0);
-                Animated.timing(popupOpacity, {
-                  toValue: 1,
-                  duration: 300,
-                  useNativeDriver: true,
-                }).start(() => {
-                  setTimeout(() => {
-                    Animated.timing(popupOpacity, {
-                      toValue: 0,
-                      duration: 500,
-                      useNativeDriver: true,
-                    }).start(() => setShowTryBuyInfo(false));
-                  }, 4000);
-                });
-              }}
-              style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
-            >
-              <MaterialIcons
-                name="help"
-                size={15}
-                color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
+        {/* Order type selection */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
+
+          {/* Try and Buy Tab */}
+          <TouchableOpacity
+            onPress={() => setActiveTab('TryandBuy')}
+            style={styles.tabButton}
+            activeOpacity={0.9}
+          >
+            {activeTab === 'TryandBuy' && (
+              <LinearGradient
+                colors={['#111111ff', '#1c1c1cd9']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
               />
-            </TouchableOpacity>
+            )}
+            <View style={styles.flexRow}>
+              <MaterialIcons
+                name="auto-fix-high"
+                size={18}
+                color="white"
+                style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+              />
+              <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
+                Try then Buy
+              </Text>
 
-          </View>
-        </TouchableOpacity>
-        {/* Payment Tab */}
-        <TouchableOpacity
-          onPress={() => setActiveTab('Payment')}
-          style={styles.tabButton}
-          activeOpacity={0.9}
-        >
-          {activeTab === 'Payment' && (
-            <LinearGradient
-              colors={['#61b3f6ff', '#61b3f6d1']}
-              start={{ x: 0, y: 1 }}
-              end={{ x: 1, y: 0 }}
-              style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
-            />
-          )}
-          <View style={styles.flexRow}>
-            <MaterialIcons name="payments" size={18} color="black" style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]} />
-            <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
-              Pay Order
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+              {/* ❓ Help icon with toggle */}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowTryBuyInfo(true);
+                  popupOpacity.setValue(0);
+                  Animated.timing(popupOpacity, {
+                    toValue: 1,
+                    duration: 300,
+                    useNativeDriver: true,
+                  }).start(() => {
+                    setTimeout(() => {
+                      Animated.timing(popupOpacity, {
+                        toValue: 0,
+                        duration: 500,
+                        useNativeDriver: true,
+                      }).start(() => setShowTryBuyInfo(false));
+                    }, 4000);
+                  });
+                }}
+                style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+              >
+                <MaterialIcons
+                  name="help"
+                  size={15}
+                  color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
+                />
+              </TouchableOpacity>
 
-      {/* Try and Buy Tab info pop up*/}
-      {showTryBuyInfo && (
-        <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
-          <View style={styles.popupContent}>
-            <Text style={styles.popupText}>
-              🛍️ Try before you buy at your doorstep!{'\n'}
-              ✅ Keep what you love{'\n'}
-              🔄 Instant return for the rest!
-            </Text>
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Fixed Delivery Bar */}
-      <Animated.View
-        style={[
-          styles.fixedDeliveryBar,
-          { opacity: deliveryBarOpacity }
-        ]}
-        pointerEvents={scrollY > 10 ? 'auto' : 'none'}
-      >
-        <LinearGradient
-          colors={['rgba(255, 255, 255, 0.68)', 'rgba(255, 255, 255, 0.98)']}
-          style={styles.fixedDeliveryContent}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={styles.deliveryLeftSection}>
-            <Text style={styles.deliveryText}>
-              Delivery in <Text style={styles.deliveryTime}>2 hrs</Text>
-            </Text>
-            <View style={styles.superFastBadge}>
-              <Image source={eed} style={styles.badgeIcon} />
-              <Text style={styles.badgeText}>Superfast</Text>
             </View>
-          </View>
-          <View style={styles.itemCountContainer}>
-            <Text style={styles.itemCountText}>{totalItems} item{totalItems > 1 ? 's' : ''}</Text>
-            <Text style={styles.totalValueText}>₹{totalValue.toLocaleString()}</Text>
-          </View>
-        </LinearGradient>
-      </Animated.View>
+          </TouchableOpacity>
+          {/* Payment Tab */}
+          <TouchableOpacity
+            onPress={() => setActiveTab('Payment')}
+            style={styles.tabButton}
+            activeOpacity={0.9}
+          >
+            {activeTab === 'Payment' && (
+              <LinearGradient
+                colors={['#61b3f6ff', '#61b3f6d1']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
+              />
+            )}
+            <View style={styles.flexRow}>
+              <MaterialIcons name="payments" size={18} color="black" style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]} />
+              <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
+                Pay Order
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-        scrollEventThrottle={16}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-      >
-
-        {/* Main Delivery Info */}
-        <Animated.View
+        {/* Fixed Delivery Bar */}
+        {/* <Animated.View
           style={[
-            styles.deliveryInfoWrapper,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
+            styles.fixedDeliveryBar,
+            { opacity: deliveryBarOpacity }
           ]}
+          pointerEvents={scrollY > 10 ? 'auto' : 'none'}
         >
           <LinearGradient
-            colors={['#FFFFFF', '#F8F9FA']}
-            style={styles.deliveryInfo}
-            start={{ x: 0, y: 1 }}
-            end={{ x: 0, y: 0 }}
+            colors={['rgba(255, 255, 255, 0.68)', 'rgba(255, 255, 255, 0.98)']}
+            style={styles.fixedDeliveryContent}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
           >
-            <View style={styles.deliveryHeader}>
-              <View style={styles.deliveryLeftSection}>
-                <View style={styles.deliveryTimeContainer}>
-                  <Text style={styles.deliveryMainText}>Delivery in</Text>
-                  <Text style={styles.deliveryTimeText}>2 hours</Text>
-                </View>
-                <View style={styles.superFastBadge}>
-                  <Image source={eed} style={styles.badgeIcon} />
-                  <Text style={styles.badgeText}>Superfast</Text>
-                </View>
-              </View>
-
-              <View style={styles.deliveryRightSection}>
-                <Text style={styles.itemSummaryText}>{totalItems} items</Text>
-                <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
+            <View style={styles.deliveryLeftSection}>
+              <Text style={styles.deliveryText}>
+                Delivery in <Text style={styles.deliveryTime}>2 hrs</Text>
+              </Text>
+              <View style={styles.superFastBadge}>
+                <Image source={eed} style={styles.badgeIcon} />
+                <Text style={styles.badgeText}>Superfast</Text>
               </View>
             </View>
+            <View style={styles.itemCountContainer}>
+              <Text style={styles.itemCountText}>{totalItems} item{totalItems > 1 ? 's' : ''}</Text>
+              <Text style={styles.totalValueText}>₹{totalValue.toLocaleString()}</Text>
+            </View>
           </LinearGradient>
-        </Animated.View>
+        </Animated.View> */}
 
-        {/* Products Section */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }}
+        {/* Try and Buy Tab info pop up*/}
+        {showTryBuyInfo && (
+          <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
+            <View style={styles.popupContent}>
+              <Text style={styles.popupText}>
+                🛍️ Try before you buy at your doorstep!{'\n'}
+                ✅ Keep what you love{'\n'}
+                🔄 Instant return for the rest!
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         >
-          <BagProduct
-            product={productData}
-            onDelete={handleDelete}
-            onQuantityChange={(cartId, newQty) => {
-              setCartItems(prev =>
-                prev.map(item =>
-                  item._id === cartId
-                    ? { ...item, quantity: newQty }
-                    : item
-                )
-              );
-            }}
-          />
-        </Animated.View>
 
-        {/* Coupon Section */}
-        <Animated.View
-          style={[
-            styles.couponSection,
-            {
+          {/* Main Delivery Info */}
+          <Animated.View
+            style={[
+              styles.deliveryInfoWrapper,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#F8F9FA']}
+              style={styles.deliveryInfo}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 0, y: 0 }}
+            >
+              <View style={styles.deliveryHeader}>
+                <View style={styles.deliveryLeftSection}>
+                  <View style={styles.deliveryTimeContainer}>
+                    <Text style={styles.deliveryMainText}>Delivery in</Text>
+                    <Text style={styles.deliveryTimeText}>2 hours</Text>
+                  </View>
+                  <View style={styles.superFastBadge}>
+                    <Image source={eed} style={styles.badgeIcon} />
+                    <Text style={styles.badgeText}>Superfast</Text>
+                  </View>
+                </View>
+
+                <View style={styles.deliveryRightSection}>
+                  <Text style={styles.itemSummaryText}>{totalItems} items</Text>
+                  <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Products Section */}
+          <Animated.View
+            style={{
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
-          {/* <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
+            }}
+          >
+            <BagProduct
+              product={productData}
+              onDelete={handleDelete}
+              onQuantityChange={(cartId, newQty) => {
+                setCartItems(prev =>
+                  prev.map(item =>
+                    item._id === cartId
+                      ? { ...item, quantity: newQty }
+                      : item
+                  )
+                );
+              }}
+            />
+          </Animated.View>
+
+          {/* Coupon Section */}
+          <Animated.View
+            style={[
+              styles.couponSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            {/* <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
             <View style={styles.couponLeft}>
               <Ionicons name="pricetag" size={5} color="black" style={styles.couponIcon} />
               <View>
@@ -701,10 +639,10 @@ const CartBag = () => {
             </View>
             <Text style={styles.couponArrow}>›</Text>
           </TouchableOpacity> */}
-        </Animated.View>
+          </Animated.View>
 
-        {/* Matching Accessories */}
-        {/* <Animated.View
+          {/* Matching Accessories */}
+          {/* <Animated.View
           style={[
             styles.accessoriesSection,
             {
@@ -726,90 +664,91 @@ const CartBag = () => {
           </ScrollView>
         </Animated.View> */}
 
-        {/* Explore Store Button */}
-        <Animated.View
-          style={[
-            styles.exploreSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.exploreButton}
-            onPress={() => {
-              if (productData.length > 0) {
-                const merchantId = cartItems[0]?.merchantId?._id;
-                router.push({
-                  pathname: '/(stack)/ShopDetails/StoreDetailPage',
-                  params: { merchantId },
-                });
+          {/* Explore Store Button */}
+          <Animated.View
+            style={[
+              styles.exploreSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
               }
-            }}
+            ]}
           >
-            <LinearGradient
-              colors={['#F8F9FA', '#FFFFFF']}
-              style={styles.exploreGradient}
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => {
+                if (productData.length > 0) {
+                  const merchantId = cartItems[0]?.merchantId?._id;
+                  router.push({
+                    pathname: '/(stack)/ShopDetails/StoreDetailPage',
+                    params: { merchantId },
+                  });
+                }
+              }}
             >
-              <Text style={styles.exploreButtonText}>EXPLORE STORE MORE</Text>
-              <Text style={styles.exploreSubtext}>Discover similar products</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
+              <LinearGradient
+                colors={['#F8F9FA', '#FFFFFF']}
+                style={styles.exploreGradient}
+              >
+                <Text style={styles.exploreButtonText}>EXPLORE STORE MORE</Text>
+                <Text style={styles.exploreSubtext}>Discover similar products</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
 
-      {/* slide bar swiching */}
-      {activeTab === 'Payment' && (
-        <>
-          <View style={styles.paymentMethodContainer}>
-            <View style={styles.paymentMethod}>
-              <View style={styles.paymentMethodLeft}>
-                <View style={styles.googlePayIcon}>
-                  {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
-                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+        {/* slide bar swiching */}
+        {activeTab === 'Payment' && (
+          <>
+            <View style={styles.paymentMethodContainer}>
+              <View style={styles.paymentMethod}>
+                <View style={styles.paymentMethodLeft}>
+                  <View style={styles.googlePayIcon}>
+                    {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
+                    <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
 
+                  </View>
+                  <View>
+                    <Text style={styles.payUsingText}>Pay using</Text>
+                    <Text style={styles.googlePayText}>Google Pay</Text>
+                  </View>
                 </View>
-                <View>
-                  <Text style={styles.payUsingText}>Pay using</Text>
-                  <Text style={styles.googlePayText}>Google Pay</Text>
+                <TouchableOpacity style={styles.changeButton}>
+                  <Text style={styles.changeButtonText}>Change</Text>
+                  <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
+          </>
+        )}
+        {activeTab === 'TryandBuy' && (
+          <>
+            <View style={styles.paymentMethodContainer}>
+              <View style={styles.paymentMethod}>
+                <View style={styles.paymentMethodLeft}>
+                  <View style={styles.googlePayIcon}>
+                    <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
+                  </View>
+                  <View>
+                    {/* <Text style={styles.payUsingText}>Pay using</Text> */}
+                    <Text style={styles.googlePayText}>
+                      Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
+                    </Text>
+
+                  </View>
                 </View>
               </View>
-              <TouchableOpacity style={styles.changeButton}>
-                <Text style={styles.changeButtonText}>Change</Text>
-                <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
-              </TouchableOpacity>
             </View>
-          </View>
-          <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
-        </>
-      )}
-      {activeTab === 'TryandBuy' && (
-        <>
-          <View style={styles.paymentMethodContainer}>
-            <View style={styles.paymentMethod}>
-              <View style={styles.paymentMethodLeft}>
-                <View style={styles.googlePayIcon}>
-                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
-                </View>
-                <View>
-                  {/* <Text style={styles.payUsingText}>Pay using</Text> */}
-                  <Text style={styles.googlePayText}>
-                    Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
-                  </Text>
-
-                </View>
-              </View>
-              <TouchableOpacity style={styles.changeButton}>
-                <Text style={styles.changeButtonText}>Change</Text>
-                <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          <SlideToPay label="tryandbuy" onComplete={handlePaymentComplete} />
-        </>
-      )}
-    </View>
+            <SlideToPay label="tryandbuy" onComplete={handlePaymentComplete} />
+          </>
+        )}
+      </View>
+      <AddressSelectionModalize
+        ref={addressRef}
+        onSelectAddress={handleAddressChange}
+      />
+    </>
   );
 };
 
@@ -844,7 +783,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 16 },
 
   // Fixed Delivery Bar
-  fixedDeliveryContentfixedDeliveryBar: { marginHorizontal: 16, marginTop: 2, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+  fixedDeliveryContentfixedDeliveryBar: {borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
   fixedDeliveryContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -860,7 +799,7 @@ const styles = StyleSheet.create({
   },
   fixedDeliveryBar: {
     position: 'absolute',
-    top: 180, // or StatusBar.currentHeight + Header height
+    // top: 180, // or StatusBar.currentHeight + Header height
     left: 0,
     right: 0,
     zIndex: 800,
@@ -929,9 +868,9 @@ const styles = StyleSheet.create({
   slideToPayContainer: { marginBottom: 20 },
   paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0', },
   paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  paymentMethodLeft: { flexDirection: 'row', alignItems: 'center' },
+  paymentMethodLeft: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },
   googlePayIcon: { marginRight: 12 },
-  googlePayImage: { width: 40, height: 30 },
+  googlePayImage: { width: 20, height: 20 },
   payUsingText: { fontSize: 13, color: '#666' },
   googlePayText: { fontSize: 16, fontWeight: '600', color: '#000' },
   changeButton: { flexDirection: 'row', alignItems: 'center' },

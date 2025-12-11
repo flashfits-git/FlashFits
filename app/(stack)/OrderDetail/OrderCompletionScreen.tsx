@@ -7,6 +7,9 @@ import { useRouter } from 'expo-router';
 const OrderCompletionScreen = ({orderData}) => {
 
   const router = useRouter();
+
+  console.log(orderData, 'orderData');
+  
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);

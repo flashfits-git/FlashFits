@@ -12,13 +12,11 @@ import {
   Animated,
   Platform,
   TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Modalize } from 'react-native-modalize';
 import * as SecureStore from 'expo-secure-store';
-
+import { addressModalRef } from "./_layout";
 import PopupCart from '../../components/HomeComponents/PopupCart';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import Carousel from '@/components/HomeComponents/Carousel';
@@ -31,6 +29,7 @@ import Footer from '../../components/Footer';
 import Loader from '@/components/Loader/Loader';
 import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
+import AddressSelectionModalize from '../';
 
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context
 
@@ -136,7 +135,7 @@ export default function Home() {
         <Banner />
 
         {/* FIXED HEADER */}
-        <View style={styles.header}>
+        <View style={styles.header} >
           <View style={styles.locationWrapper}>
             <Ionicons
               name="location-outline"
@@ -145,11 +144,21 @@ export default function Home() {
               style={styles.locationIcon}
             />
 
-            <View style={styles.locationTextWrapper}>
-              <View style={styles.locationRow}>
-                <Text style={styles.cityText} numberOfLines={1}>
-                  {selectedAddress
-                    ? [
+            <TouchableOpacity onPress={() => {
+              try {
+                addressModalRef.current?.open();
+              } catch (err) {
+                console.log("Modal open error:", err);
+              }
+            }} 
+            style={{paddingVertical:20}}>
+              <View
+                style={styles.locationTextWrapper}
+              >
+                <View style={styles.locationRow}>
+                  <Text style={styles.cityText} numberOfLines={1}>
+                    {selectedAddress
+                      ? [
                         selectedAddress.addressLine1,
                         selectedAddress.area,
                         selectedAddress.city,
@@ -157,26 +166,27 @@ export default function Home() {
                         .map((v) => v?.trim())
                         .filter(Boolean)
                         .join(', ')
-                    : 'Select Location'}
-                </Text>
-              </View>
+                      : 'Select Location'}
+                  </Text>
+                </View>
 
-              <View style={styles.subRow}>
-                <Text style={styles.subText} numberOfLines={1}>
-                  {selectedAddress
-                    ? `${selectedAddress.addressType}`
-                    : 'Explore trending styles around you!'}
-                </Text>
+                <View style={styles.subRow}>
+                  <Text style={styles.subText} numberOfLines={1}>
+                    {selectedAddress
+                      ? `${selectedAddress.addressType}`
+                      : 'Explore trending styles around you!'}
+                  </Text>
 
-                <TouchableOpacity onPress={() => router.push('/(stack)/AddressSelector')}>
-                  <Ionicons
-                    name="chevron-down-outline"
-                    size={16}
-                    color="black"
-                  />
-                </TouchableOpacity>
+                  <TouchableOpacity>
+                    <Ionicons
+                      name="chevron-down-outline"
+                      size={16}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.notificationIcon}>

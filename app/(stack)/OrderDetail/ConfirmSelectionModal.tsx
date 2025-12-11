@@ -2,8 +2,9 @@ import React, { forwardRef, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Modalize } from "react-native-modalize";
 import HandovrModal from "./HandoverModal";
-import * as SecureStore from 'expo-secure-store';
-import { ConfirmClothSelection, someSelectedOtherReturn } from "../../api/orderApis";
+// import * as SecureStore from 'expo-secure-store';
+import RazorpayCheckout from 'react-native-razorpay';
+import { finalpaymentInitiate, finalpaymetVerify } from "../../api/orderApis";
 import { router } from "expo-router";
 
 interface ConfirmSelectionModalProps {
@@ -16,7 +17,7 @@ interface ConfirmSelectionModalProps {
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, orderId, onConfirm, otp, items, totalPayable }, ref) => {
+  ({ onCancel, orderId, onConfirm, otp, items, totalPayable, orderData }, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
     console.log(orderId, 'ORDER');
 
@@ -35,33 +36,77 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
 
         const anyKeep = items.some(item => item.tryStatus === "keep");
 
-        // Close confirmation modal
         ref?.current?.close();
 
-        // CASE 1: If any item is kept → open handover modal
         if (anyKeep) {
-          console.log("KEEP detected → Opening Handover modal");
-          setTimeout(() => {
-            handoverModalRef.current?.open();
-          }, 300);
+
+        console.log(payload, '8686868');
+        const res = await finalpaymentInitiate(payload);
+
+        if (res) {
+          console.log(res, 'res');
+          console.log("Final Payment Data →", res);
+
+          const {
+            amount,
+            breakdown,
+            key_id,
+            razorpayOrder,
+            orderId: internalOrderId,
+            name,
+            email,
+            contact,
+            currency,
+          } = res;
+
+          const razorpayOrderId = razorpayOrder?.id;
+
+          // 3️⃣ SETUP RAZORPAY OPTIONS
+          const options = {
+            description: "FlashFits Final Order Payment",
+            currency: currency || "INR",
+            key: key_id,
+            amount: amount, // already in paise (20100)
+            name: "FlashFits",
+            order_id: razorpayOrderId,
+            // ✅ Prefill directly from backend response
+            prefill: {
+              email: email || "",
+              contact: contact || "",
+              name: name || "Customer",
+            },
+
+            theme: { color: "#61b3f6" },
+          };
+
+          console.log("Razorpay Options →", options);
+
+          // // 4️⃣ OPEN RAZORPAY CHECKOUT
+          RazorpayCheckout.open(options)
+            .then(async (paymentData) => {
+              console.log("Payment Success:", paymentData);
+              console.log(paymentData, internalOrderId, '6667');
+              // OPTIONAL → VERIFY WITH BACKEND
+              await finalpaymetVerify(paymentData, internalOrderId);
+              router.replace({
+                pathname: '/(stack)/OrderDetail/OrderCompletionScreen',
+                params: {
+                  orderData
+                }
+              });
+              alert("Payment Successful!");
+            })
+            .catch((error) => {
+              console.log("Payment Error:", error);
+              alert("Payment Failed. Please try again.");
+            });
+        }
           return; // ⛔ STOP here — no API call
         }
-
-        // CASE 2: All items returned → call API
-        console.log(payload.orderId, '8686868');
-        const res = await ConfirmClothSelection(payload);
-        if (res) {
-          console.log('56756776');
-
-          router.replace('/(stack)/OrderDetail/SuccessReturnPage');
-        }
-
       } catch (e) {
         console.log("Confirm selection failed:", e);
       }
     };
-
-
     const totalKeep = items?.filter(i => i.tryStatus === "keep").length || 0;
     const totalReturn = items?.filter(i => i.tryStatus === "return").length || 0;
 
@@ -77,7 +122,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
           <View style={styles.container}>
             <Text style={styles.title}>Confirm Selection</Text>
             <Text style={styles.subtitle}>
-              Haandover Return Items & Share OTP 
+              Haandover Return Items & Share OTP
             </Text>
             {/* 🔥 Show OTP here */}
             {otp && (
@@ -109,7 +154,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
                 style={[styles.actionButton, styles.confirmButton]}
                 onPress={confirmClothSelection}
               >
-                <Text style={styles.confirmText}>Confirm</Text>
+                <Text style={styles.confirmText}>Pay Selected</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -138,7 +183,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingVertical: 25,
-    marginBottom:40
+    marginBottom: 40
   },
   title: {
     fontSize: 18,
@@ -166,7 +211,7 @@ const styles = StyleSheet.create({
     color: "#374151",
     marginBottom: 4,
   },
-    totalPay: {
+  totalPay: {
     fontSize: 15,
     fontWeight: "700",
     color: "#374151",

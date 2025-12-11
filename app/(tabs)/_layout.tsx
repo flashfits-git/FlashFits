@@ -12,31 +12,62 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import * as Location from 'expo-location';
 import * as SecureStore from 'expo-secure-store';
 import { Modalize } from 'react-native-modalize';
 import Colors from '../../assets/theme/Colors';
 import { getAddresses } from '../api/productApis/cartProduct';
+import AddressSelectionModalize from '../../components/AddressModalize/AddressSelectionModalize';
 
-// ⭐ IMPORT ADDRESS CONTEXT
+export const addressModalRef = React.createRef();
+// ⭐ ADDRESS CONTEXT
 import { useAddress } from '../AddressContext';
 
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    height: Platform.OS === 'ios' ? 80 : 90,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    paddingTop: Platform.OS === 'ios' ? 18 : 18,
-    paddingBottom: Platform.OS === 'ios' ? 10 : 10,
-  },
-});
+// --------------------------------------------
+//   DISTANCE HELPERS MOVED OUTSIDE useEffect
+// --------------------------------------------
+const toRad = (x: number) => (x * Math.PI) / 180;
 
-// ------------------- ANIMATED ICON WRAPPER -------------------
+const distanceInMeters = (lat1, lon1, lat2, lon2) => {
+  const R = 6371e3; // meters
+
+  const φ1 = toRad(lat1);
+  const φ2 = toRad(lat2);
+  const Δφ = toRad(lat2 - lat1);
+  const Δλ = toRad(lon2 - lon1);
+
+  const a =
+    Math.sin(Δφ / 2) ** 2 +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+};
+
+/**
+ * RETURNS address if within 300m radius
+ */
+const findNearestAddress = (currLat, currLng, list) => {
+  let nearest = null;
+
+  list.forEach((addr) => {
+    if (!addr.location?.coordinates) return;
+
+    const [lng, lat] = addr.location.coordinates;
+    const dist = distanceInMeters(currLat, currLng, lat, lng);
+
+    if (dist <= 300) {
+      nearest = addr;
+    }
+  });
+
+  return nearest;
+};
+
+// --------------------------------------------
+//                TAB ICON
+// --------------------------------------------
 const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
@@ -89,16 +120,27 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   );
 };
 
-// ------------------------ TABS ------------------------
+// --------------------------------------------
+//                TABS UI
+// --------------------------------------------
 function TabsWithCart() {
   return (
+    <>
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
         animation: 'none',
         tabBarHideOnKeyboard: true,
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          position: 'absolute',
+          height: Platform.OS === 'ios' ? 80 : 90,
+          backgroundColor: '#fff',
+          borderTopLeftRadius: 30,
+          borderTopRightRadius: 30,
+          paddingTop: 18,
+          paddingBottom: 10,
+        },
         tabBarActiveTintColor: Colors.dark1,
         tabBarInactiveTintColor: Colors.dark1,
         tabBarIcon: ({ color, focused }) => {
@@ -135,10 +177,14 @@ function TabsWithCart() {
       <Tabs.Screen name="FlashfitsStores" />
       <Tabs.Screen name="Wishlist" />
     </Tabs>
+     <AddressSelectionModalize ref={addressModalRef} />
+    </>
   );
 }
 
-// ------------------------ MAIN LAYOUT ------------------------
+// --------------------------------------------
+//            MAIN SCREEN (CLEAN)
+// --------------------------------------------
 export default function TabLayout() {
   const router = useRouter();
   const addressModalRef = useRef(null);
@@ -147,26 +193,68 @@ export default function TabLayout() {
 
   const [loading, setLoading] = useState(true);
 
-  // ------------------- FIRST RENDER -------------------
+  // --------------------------------------------
+  //          FIRST MOUNT → LOCATION + ADDRESS
+  // --------------------------------------------
   useEffect(() => {
     const init = async () => {
-      let saved = await SecureStore.getItemAsync('selectedAddress');
+      try {
+        setLoading(true);
 
-      const res = await getAddresses();
-      setAddresses(res.addresses || []);
-      setLoading(false);
+        // 1️⃣ PERMISSION
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          console.log('Location permission denied');
+        }
 
-      if (saved) {
-        setSelectedAddress(JSON.parse(saved));
-      } else {
+        // 2️⃣ GET CURRENT GPS
+        let currentLoc = await Location.getCurrentPositionAsync({});
+        const { latitude: currLat, longitude: currLng } = currentLoc.coords;
+
+        // 3️⃣ API FETCH ADDRESSES
+        const res = await getAddresses();
+        const userAddresses = res?.addresses || [];
+        setAddresses(userAddresses);
+
+        // 4️⃣ GET SAVED ADDRESS
+        let saved = await SecureStore.getItemAsync('selectedAddress');
+        let savedAddress = saved ? JSON.parse(saved) : null;
+
+        // 5️⃣ GPS AUTO-MATCH WITH NEAREST
+        const nearest = findNearestAddress(currLat, currLng, userAddresses);
+
+        if (nearest) {
+          setSelectedAddress(nearest);
+          await SecureStore.setItemAsync(
+            'selectedAddress',
+            JSON.stringify(nearest)
+          );
+          setLoading(false);
+          return;
+        }
+
+        // 6️⃣ USE SAVED IF EXISTS
+        if (savedAddress) {
+          setSelectedAddress(savedAddress);
+          setLoading(false);
+          return;
+        }
+
+        // 7️⃣ OPEN MODAL ONLY ONCE
         setTimeout(() => addressModalRef.current?.open(), 300);
+      } catch (err) {
+        console.log('INIT ERR:', err);
       }
+
+      setLoading(false);
     };
 
     init();
   }, []);
 
-  // ------------------- RECHECK ON CLOSE -------------------
+  // --------------------------------------------
+  //         WHEN MODAL CLOSES → VERIFY
+  // --------------------------------------------
   const reCheck = async () => {
     let saved = await SecureStore.getItemAsync('selectedAddress');
 
@@ -178,13 +266,18 @@ export default function TabLayout() {
     }
   };
 
-  // ------------------- SELECT ADDRESS -------------------
+  // --------------------------------------------
+  //             SELECT ADDRESS
+  // --------------------------------------------
   const selectAddress = async (item) => {
-    setSelectedAddress(item);                  // ⭐ Save in Context
-    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));  
+    setSelectedAddress(item);
+    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
     addressModalRef.current?.close();
   };
 
+  // --------------------------------------------
+  //                UI RETURN
+  // --------------------------------------------
   return (
     <View
       style={{
@@ -195,17 +288,18 @@ export default function TabLayout() {
     >
       <TabsWithCart />
 
-      {/* ----------------- MODAL ----------------- */}
-      <Modalize
-        ref={addressModalRef}
-        adjustToContentHeight
-        handleStyle={{ backgroundColor: '#ccc' }}
-        modalStyle={{ padding: 20 }}
-        onClosed={reCheck}
-      >
+      {/* ------------------------------------------ */}
+      {/*                ADDRESS MODAL               */}
+      {/* ------------------------------------------ */}
+<Modalize
+  ref={addressModalRef}
+  adjustToContentHeight
+  handleStyle={{ backgroundColor: '#ccc' }}
+  modalStyle={{ padding: 20 }}
+  onClosed={reCheck}
+>
         {loading ? (
           <ActivityIndicator size="large" color="black" />
-
         ) : addresses.length === 0 ? (
           <View style={{ padding: 20, alignItems: 'center' }}>
             <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 10 }}>
@@ -231,19 +325,35 @@ export default function TabLayout() {
               </Text>
             </TouchableOpacity>
           </View>
-
         ) : (
           <View style={{ padding: 20, width: '100%' }}>
-            <Text
+            <View
               style={{
-                fontSize: 18,
-                fontWeight: '700',
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 marginBottom: 15,
-                textAlign: 'left',
               }}
             >
-              Select Address
-            </Text>
+              <Text style={{ fontSize: 18, fontWeight: '700' }}>Select Address</Text>
+
+              <TouchableOpacity
+                onPress={() => {
+                  addressModalRef.current?.close();
+                  router.push('/(stack)/SelectLocationScreen');
+                }}
+                style={{
+                  backgroundColor: '#000',
+                  paddingVertical: 8,
+                  paddingHorizontal: 15,
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
+                  Add Address
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             {addresses.map((item) => (
               <TouchableOpacity

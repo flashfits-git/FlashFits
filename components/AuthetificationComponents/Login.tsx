@@ -146,7 +146,7 @@ export default function PhoneLogin() {
 
                   <TextInput
                     style={styles.phoneInput}
-                    placeholder="00000 00000"
+                    placeholder="Phone Number"
                     placeholderTextColor="#94a3b8"
                     keyboardType="phone-pad"
                     value={phoneNumber}
@@ -272,10 +272,10 @@ centerWrapper: {
     paddingVertical: 16,
     marginBottom: 20,
   },
-  countryPicker: { flexDirection: "row", alignItems: "center", marginRight: 12 },
+  countryPicker: { flexDirection: "row", alignItems: "center", },
   flag: { width: 28, height: 20, borderRadius: 4, marginRight: 8 },
   code: { fontSize: 17, fontWeight: "700", color: "#1e293b", marginRight: 6 },
-  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1", marginRight: 12 },
+  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1",marginLeft:2 },
   phoneInput: {
     flex: 1,
     fontSize: 17,
