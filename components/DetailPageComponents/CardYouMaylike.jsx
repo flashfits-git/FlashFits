@@ -4,23 +4,20 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const DressCard = ({ product, onPress }) => {
-  // Grab the first variant if it exists
-  const variant = Array.isArray(product.variants) ? product.variants[0] : null;
+  const imageUrl = product?.images?.[0]?.url;
 
-  // Fetch the first image URL from the variant, if available
-  const imageUrl = variant?.images?.[0]?.url;
-
-  // Price and MRP also from the first variant
-  const price = variant?.price ?? 0;
-  const mrp = variant?.mrp ?? 0;
-
+  const price = product?.price ?? 0;
+  const mrp = product?.mrp ?? 0;
   const rating = product?.ratings ?? 0;
 
   return (
     <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.image} />
+          ) : null}
+
           <View style={styles.ratingContainer}>
             <Text style={styles.ratingText}>⭐ {rating}</Text>
           </View>
@@ -36,14 +33,13 @@ const DressCard = ({ product, onPress }) => {
 
       <View style={styles.priceRow}>
         <Text style={styles.price}>₹{price}</Text>
-        {mrp > price ? (
+        {mrp > price && (
           <Text style={styles.oldPrice}>₹{mrp}</Text>
-        ) : null}
+        )}
       </View>
     </TouchableOpacity>
   );
 };
-
 
 export default function Card({ product }) {
   const router = useRouter();
@@ -70,18 +66,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },  shadowWrapper: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 6,
-    borderRadius: 15,
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 1 },
+    // shadowOpacity: 0.1,
+    // shadowRadius: 2,
+  }, 
+   shadowWrapper: {
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 4 },
+    // shadowOpacity: 0.3,
+    // shadowRadius: 5,
+    // elevation: 6,
+    // borderRadius: 15,
     marginBottom: 10,
   },
   imageWrapper: {

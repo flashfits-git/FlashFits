@@ -13,7 +13,7 @@ import Footer from '../../components/Footer';
 
 import WhishlistCard from '../../components/WhishlistComponents/WhishlistCard';
 import HeaderWishlist from '../../components/WhishlistComponents/HeaderWishlist';
-import { fetchnewArrivalsProductsData } from '../api/productApis/products';
+import { getMyWishlist } from '../api/productApis/products';
 
 export default function WishlistScreen() {
   const navigation = useNavigation();
@@ -33,8 +33,14 @@ export default function WishlistScreen() {
 
   const getNewArrivalsProducts = async () => {
     try {
-      const response = await fetchnewArrivalsProductsData();
-      setNewArrivalsProducts(response);
+      const response = await getMyWishlist();
+      console.log(response.data, 'responceresponceresponceresponceresponce');
+
+      setNewArrivalsProducts(response?.data?.map(w => ({
+        wishlistId: w._id,
+        addedAt: w.addedAt,
+        ...w.product,     // 👈 flatten product
+      })));
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -85,28 +91,28 @@ export default function WishlistScreen() {
 
   if (loading) return <Loader />;
 
-return (
-  <View style={styles.container}>
-    <HeaderWishlist />
-    <Animated.FlatList
-      data={[1]}               // <-- only one item to allow scrolling
-      keyExtractor={() => "wishlist-scroll"}
-      renderItem={() => null} // no items rendered
-      ListHeaderComponent={
-        <WhishlistCard product={newArrivalsProducts} /> // unchanged
-      }
-      contentContainerStyle={{ paddingBottom: 120 }}
-      showsVerticalScrollIndicator={false}
-      onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-        { useNativeDriver: false }
-      )}
-      scrollEventThrottle={16}
-    />
+  return (
+    <View style={styles.container}>
+      <HeaderWishlist />
+      <Animated.FlatList
+        data={[1]}               // <-- only one item to allow scrolling
+        keyExtractor={() => "wishlist-scroll"}
+        renderItem={() => null} // no items rendered
+        ListHeaderComponent={
+          <WhishlistCard product={newArrivalsProducts} /> // unchanged
+        }
+        contentContainerStyle={{ paddingBottom: 120 }}
+        showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      />
 
-    <Footer />
-  </View>
-);
+      <Footer />
+    </View>
+  );
 
 }
 

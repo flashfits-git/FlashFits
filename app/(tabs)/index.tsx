@@ -29,8 +29,7 @@ import Footer from '../../components/Footer';
 import Loader from '@/components/Loader/Loader';
 import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
-import AddressSelectionModalize from '../';
-
+import {getMyWishlist} from '../api/productApis/products'
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context
 
 const HEADER_HEIGHT = 70;
@@ -80,6 +79,50 @@ export default function Home() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+useEffect(() => {
+  const syncWishlistVariants = async () => {
+    try {
+      const response = await getMyWishlist();
+      const wishlist = response?.data || [];
+
+      // 🔑 Extract variant IDs
+      const variantIds = wishlist
+        .map(item => item?.product?.variant?._id)
+        .filter(Boolean);
+
+      // 🔐 Store in SecureStore
+      await SecureStore.setItemAsync(
+        'Wishlist',
+        JSON.stringify(variantIds)
+      );
+
+      console.log('Wishlist variant IDs stored:', variantIds);
+    } catch (error) {
+      console.error('Wishlist sync error:', error);
+    }
+  };
+
+  syncWishlistVariants();
+}, []);
+
+  useEffect(() => {
+    const reCheck = async () => {
+
+      console.log('88888k');
+      let saved = await SecureStore.getItemAsync('selectedAddress');
+      // const res = await getAddresses();
+      // setAddresses(res.addresses || []);
+
+      if (!saved) {
+        setTimeout(() => addressModalRef.current?.open(), 200);
+      }
+    };
+    reCheck();
+  }, [selectedAddress]);
+
+
+
 
   // ------------------- TAB BAR SCROLL -------------------
   useEffect(() => {
@@ -150,8 +193,8 @@ export default function Home() {
               } catch (err) {
                 console.log("Modal open error:", err);
               }
-            }} 
-            style={{paddingVertical:20}}>
+            }}
+              style={{ paddingVertical: 20 }}>
               <View
                 style={styles.locationTextWrapper}
               >

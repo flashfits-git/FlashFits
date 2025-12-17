@@ -53,7 +53,6 @@ export const getFilteredProducts = async (filters) => {
 export const getYouMayLikeProducts = async (merchantId, subSubCategoryId) => {
  
   // console.log(merchantId,subSubCategoryId,'subSubCategoryId._idsubSubCategoryId._id');
-  
 
   try {
     const res = await api.get('user/products/getYouMayLikeProducts', {
@@ -68,6 +67,39 @@ export const getYouMayLikeProducts = async (merchantId, subSubCategoryId) => {
   } catch (error) {
     console.error('Axios error in getYouMayLikeProducts:', error);
     throw error;
+  }
+};
+
+export const addToWishlist = async (productId, variantId) => {
+  console.log(productId,variantId)
+  
+  try {
+    const res = await api.post('user/wishlist/add', { productId, variantId });
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+export const removeFromWishlist = async (wishlistItemId) => {
+  try {
+    const res = await api.delete(`user/wishlist/delete/${wishlistItemId}`);
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+
+// =============================
+// 🟦 Get current user's wishlist
+// =============================
+export const getMyWishlist = async () => {
+  try {
+    const res = await api.get('user/wishlist/my');
+    return res.data;
+  } catch (err) {
+    throw err.response?.data || err;
   }
 };
 

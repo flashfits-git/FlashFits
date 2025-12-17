@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, TextInput } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions,TextInput, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
@@ -14,9 +14,12 @@ export default function SelectLocationScreen() {
         latitude: 0,
         longitude: 0,
     });
-
-    const [address, setAddress] = useState("Fetching address...");
+    const [mapReady, setMapReady] = useState(false);
+    const [address, setAddress] = useState("Fetching Address...");
+    const [ParamAddress, setParamAddress] = useState("Fetching Address...");
     const [searchQuery, setSearchQuery] = useState("");
+    const [locating, setLocating] = useState(false);
+
 
     // Load user's current location
     useEffect(() => {
@@ -24,30 +27,74 @@ export default function SelectLocationScreen() {
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== "granted") return;
 
-            let loc = await Location.getCurrentPositionAsync({});
+            const loc = await Location.getCurrentPositionAsync({});
             const lat = loc.coords.latitude;
             const lng = loc.coords.longitude;
 
             setCenterCoords({ latitude: lat, longitude: lng });
             reverseGeocode(lat, lng);
-
-            // move map to current location
-            sendToWebview(`moveTo(${lat}, ${lng})`);
+            setMapReady(true);
         })();
     }, []);
 
+    const requestAndFetchLocation = async () => {
+        if (locating) return;
+
+        try {
+            setLocating(true);
+
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                alert('Location permission is required');
+                setLocating(false);
+                return;
+            }
+
+            const loc = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.High,
+            });
+
+            const lat = loc.coords.latitude;
+            const lng = loc.coords.longitude;
+
+            setCenterCoords({ latitude: lat, longitude: lng });
+            reverseGeocode(lat, lng);
+            sendToWebview(`moveTo(${lat}, ${lng})`);
+        } catch (err) {
+            alert('Unable to fetch current location');
+        } finally {
+            setLocating(false);
+        }
+    };
+
+    useEffect(() => {
+        requestAndFetchLocation();
+    }, []);
+
+
     const reverseGeocode = async (lat: number, lng: number) => {
         try {
-            const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
-            const resp = await fetch(url);
+            const resp = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+                // 'https://nominatim.openstreetmap.org/reverse?format=json&lat=9.931233&lon=76.267303',
+                {
+                    headers: {
+                        "User-Agent": "FlashFitsApp/1.0 (contact@flashfits.com)",
+                    },
+                }
+            );
             const json = await resp.json();
-
+            console.log(json.display_name,'json');
+            
             setAddress(json.display_name || "Unknown location");
-        } catch (e) {
+            setParamAddress(json.address || "Unknown location");
+        } catch {
             setAddress("Unable to fetch address");
         }
     };
 
+ console.log(ParamAddress,'address');
+ 
     const sendToWebview = (js: string) => {
         webviewRef.current?.injectJavaScript(js + "; true;");
     };
@@ -65,15 +112,23 @@ export default function SelectLocationScreen() {
     const handleSearch = async () => {
         if (!searchQuery.trim()) return;
 
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}`;
-        const resp = await fetch(url);
+        const resp = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&q=${searchQuery}`,
+            {
+                headers: {
+                    "User-Agent": "FlashFitsApp/1.0 (contact@flashfits.com)",
+                },
+            }
+        );
+
         const results = await resp.json();
 
-        if (results[0]) {
+        if (results.length > 0) {
             const lat = parseFloat(results[0].lat);
             const lng = parseFloat(results[0].lon);
 
             sendToWebview(`moveTo(${lat}, ${lng})`);
+            reverseGeocode(lat, lng);
         }
     };
 
@@ -91,12 +146,14 @@ export default function SelectLocationScreen() {
             </View>
 
             {/* WebView Map */}
-            <WebView
-                ref={webviewRef}
-                onMessage={onMessage}
-                source={{ html: mapHTML(centerCoords.latitude, centerCoords.longitude) }}
-                style={{ flex: 1 }}
-            />
+            {mapReady && (
+                <WebView
+                    ref={webviewRef}
+                    onMessage={onMessage}
+                    source={{ html: mapHTML(centerCoords.latitude, centerCoords.longitude) }}
+                    style={{ flex: 1 }}
+                />
+            )}
 
             {/* Fixed Marker */}
             <View style={styles.markerFixed}>
@@ -104,10 +161,16 @@ export default function SelectLocationScreen() {
             </View>
 
             {/* Go to current location */}
-            <TouchableOpacity style={styles.currentLocationBtn} onPress={() => {
-                sendToWebview(`moveTo(${centerCoords.latitude}, ${centerCoords.longitude})`);
-            }}>
-                <Text style={{ color: "#0a7" }}>📍 Go to current location</Text>
+            <TouchableOpacity
+                style={[styles.currentLocationBtn, locating && { opacity: 0.6 }]}
+                onPress={requestAndFetchLocation}
+                disabled={locating}
+            >
+                {locating ? (
+                    <ActivityIndicator size="small" color="#0a7" />
+                ) : (
+                    <Text style={{ color: '#0a7' }}>📍 Go to current location</Text>
+                )}
             </TouchableOpacity>
 
             {/* Bottom Address Panel */}
@@ -128,6 +191,7 @@ export default function SelectLocationScreen() {
                             params: {
                                 lat: centerCoords.latitude,
                                 lng: centerCoords.longitude,
+                                address: JSON.stringify(ParamAddress)
                             },
                         });
                     }}
@@ -238,7 +302,7 @@ const styles = StyleSheet.create({
         color: "#444",
     },
     setLocationBtn: {
-        backgroundColor: "#0a7",
+        backgroundColor: "rgba(0, 0, 0, 1)",
         padding: 14,
         borderRadius: 10,
         marginTop: 15,

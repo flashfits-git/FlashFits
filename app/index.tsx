@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import Loader from '@/components/Loader/Loader';
-import { initSocket } from './config/socket';
+// import { initSocket } from './config/socket';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +15,7 @@ export default function Index() {
       console.log(token,'token');
       
       setIsAuthenticated(!!token); // or check session validity
-      initSocket(token)
+      // initSocket(token)
       setIsLoading(false);
     };
     checkAuth();

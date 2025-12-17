@@ -8,7 +8,7 @@ const OrderCompletionScreen = ({orderData}) => {
 
   const router = useRouter();
 
-  console.log(orderData, 'orderData');
+  console.log(orderData, 'orderDataorderDatao777777777777rderDataorderDataorderData');
   
   
   const formatDate = (dateString) => {
@@ -30,8 +30,8 @@ const OrderCompletionScreen = ({orderData}) => {
     }
   };
 
-  const returnedItems = orderData.items.filter(item => item.tryStatus === 'returned');
-  const keptItems = orderData.items.filter(item => item.tryStatus === 'kept');
+  // const returnedItems = orderData.items.filter(item => item.tryStatus === 'returned');
+  // const keptItems = orderData.items.filter(item => item.tryStatus === 'kept');
 
   return (
     <ScrollView style={styles.container}>

@@ -3,24 +3,24 @@ import {
   View, Text, Image, StyleSheet, TouchableOpacity, Animated,
   Dimensions, FlatList, ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/assets/theme/Colors';
 import { Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Modalize } from 'react-native-modalize';
-import { productDetailPage, getYouMayLikeProducts} from '../../api/productApis/products';
+import { productDetailPage, addToWishlist, removeFromWishlist } from '../../api/productApis/products';
+import * as SecureStore from 'expo-secure-store';
 import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
 import Loader from '@/components/Loader/Loader';
-import {addToPreviouslyViewed} from '../../utilities/localStorageRecentlyViewd'
+import { addToPreviouslyViewed } from '../../utilities/localStorageRecentlyViewd'
 import PopupCart from '../../../components/HomeComponents/PopupCart';
 import { useRoute } from '@react-navigation/native';
-import { AddProducttoCart ,clearCart, GetCart} from '../../api/productApis/cartProduct';
+import { AddProducttoCart, clearCart, GetCart } from '../../api/productApis/cartProduct';
 import { getMerchantById } from '../../api/merchatApis/getMerchantHome'
 import ErrorMessage from '../../utilities/errorHandlingPopUp'
-import { useCart } from '../../ContextParent'; 
+import { useCart } from '../../ContextParent';
 import { useNavigation } from '@react-navigation/native';
 
 
@@ -35,24 +35,28 @@ const fallbackImages = [
 ];
 
 const ProductDetailPage = () => {
-    const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
-const insets = useSafeAreaInsets();
+  const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
+  const insets = useSafeAreaInsets();
 
   const [products, setProduct] = useState({});
   // const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
-    const [merchantData, setMerchantData] = useState({});
+  const [merchantData, setMerchantData] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
+
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistItemId, setWishlistItemId] = useState(null);
+
   const [selectedSize, setSelectedSize] = useState(null);
   const [selectedColor, setSelectedColor] = useState(null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
-const [interpolatedColor, setInterpolatedColor] = useState('#fff');
-const [errorMessage, setErrorMessage] = useState('');
-const errorTimeoutRef = useRef(null);
-const navigation = useNavigation();
+  const [interpolatedColor, setInterpolatedColor] = useState('#fff');
+  const [errorMessage, setErrorMessage] = useState('');
+  const errorTimeoutRef = useRef(null);
+  const navigation = useNavigation();
 
   const router = useRouter();
   const route = useRoute();
@@ -60,11 +64,11 @@ const navigation = useNavigation();
   const { id, variantId } = route.params || {};
 
   // console.log(products,'ed389e93e93e8');
-      // const merchantId = products?.merchantId?._id;
-      // const subSubCategoryId = products?.subSubCategoryId?._id;
+  // const merchantId = products?.merchantId?._id;
+  // const subSubCategoryId = products?.subSubCategoryId?._id;
 
-      // console.log(products, 'iuef98yef98efwef8u9');
-    
+  // console.log(products, 'iuef98yef98efwef8u9');
+
 
   const modalizeRef = useRef(null);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -72,61 +76,61 @@ const navigation = useNavigation();
   const toastTranslateY = useRef(new Animated.Value(30)).current;
 
   const showError = (message) => {
-  setErrorMessage(message);
-  // Auto-hide after 3 seconds
-  if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-  errorTimeoutRef.current = setTimeout(() => {
-    setErrorMessage('');
-  }, 3000);
-};
+    setErrorMessage(message);
+    // Auto-hide after 3 seconds
+    if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+    errorTimeoutRef.current = setTimeout(() => {
+      setErrorMessage('');
+    }, 3000);
+  };
 
-useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      // 1. Fetch Product Details
-      const data = await productDetailPage(id);
-      setProduct(data);
+        // 1. Fetch Product Details
+        const data = await productDetailPage(id);
+        setProduct(data);
 
-      // Extract IDs
-      const merchantId = data?.merchantId?._id;
-      const subSubCategoryId = data?.subSubCategoryId?._id;
+        // Extract IDs
+        const merchantId = data?.merchantId?._id;
+        const subSubCategoryId = data?.subSubCategoryId?._id;
 
-      // 2. Fetch "You May Like" Products
-      // if (merchantId && subSubCategoryId) {
+        // 2. Fetch "You May Like" Products
+        // if (merchantId && subSubCategoryId) {
         // const similarProducts = await getYouMayLikeProducts(merchantId, subSubCategoryId);
         // setYouMayLikeProducts(similarProducts);
         // console.log(youMayLikeProducts.length,'youMayLikeProductsyouMayLikeProducts');
-        
 
-      // 3. Handle default variant selection
-      if (data?.variants?.length > 0) {
-        const firstVariant = data.variants.find(x => x._id === variantId);
-        if (firstVariant) {
-          setSelectedColor(firstVariant.color.name);
-          const availableSize = firstVariant.sizes.find(s => s.stock > 0);
-          if (availableSize) setSelectedSize(availableSize.size);
+
+        // 3. Handle default variant selection
+        if (data?.variants?.length > 0) {
+          const firstVariant = data.variants.find(x => x._id === variantId);
+          if (firstVariant) {
+            setSelectedColor(firstVariant.color.name);
+            const availableSize = firstVariant.sizes.find(s => s.stock > 0);
+            if (availableSize) setSelectedSize(availableSize.size);
+          }
         }
+
+        // 4. Fetch Merchant Details
+        if (merchantId) {
+          const merchantInfo = await getMerchantById(merchantId);
+          setMerchantData(merchantInfo);
+        }
+
+      } catch (err) {
+        console.error('Error fetching product, merchant, or recommendations:', err);
+        setError('Failed to load product details');
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // 4. Fetch Merchant Details
-      if (merchantId) {
-        const merchantInfo = await getMerchantById(merchantId);
-        setMerchantData(merchantInfo);
-      }
-
-    } catch (err) {
-      console.error('Error fetching product, merchant, or recommendations:', err);
-      setError('Failed to load product details');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (id) fetchData();
-}, [id, variantId]);
+    if (id) fetchData();
+  }, [id, variantId]);
 
 
   useEffect(() => {
@@ -137,25 +141,50 @@ useEffect(() => {
     (variant) => variant.color.name === selectedColor
   ) || products?.variants?.[0];
 
-useEffect(() => {
-  if (products && selectedVariant) {
-    addToPreviouslyViewed({
-      id: products._id,
-      rating: products.ratings,
-      name: products.name,
-      variants: selectedVariant,
+  useEffect(() => {
+    if (products && selectedVariant) {
+      addToPreviouslyViewed({
+        id: products._id,
+        rating: products.ratings,
+        name: products.name,
+        variants: selectedVariant,
+      });
+    }
+  }, [products, selectedVariant]);
+
+  useEffect(() => {
+    const checkWishlistStatus = async () => {
+      if (!selectedVariant?._id) return;
+
+      try {
+        const stored = await SecureStore.getItemAsync('Wishlist');
+        const variantIds = stored ? JSON.parse(stored) : [];
+
+        setIsWishlisted(variantIds.includes(selectedVariant._id));
+      } catch (err) {
+        console.log('Wishlist SecureStore read error:', err);
+      }
+    };
+
+    checkWishlistStatus();
+  }, [selectedVariant?._id]);
+
+
+  useEffect(() => {
+    const listener = scrollY.addListener(({ value }) => {
+      const color = value < 150 ? '#fff' : '#000'; // Simplified threshold
+      setInterpolatedColor(color);
     });
-  }
-}, [products, selectedVariant]);
 
-useEffect(() => {
-  const listener = scrollY.addListener(({ value }) => {
-    const color = value < 150 ? '#fff' : '#000'; // Simplified threshold
-    setInterpolatedColor(color);
-  });
+    return () => scrollY.removeListener(listener);
+  }, []);
 
-  return () => scrollY.removeListener(listener);
-}, []);
+  useEffect(() => {
+    if (products && products._id) {
+      setIsWishlisted(products.isWishlisted || false);
+      setWishlistItemId(products.wishlistItemId || null);
+    }
+  }, [products]);
 
   const selectedStock = selectedVariant?.sizes?.find(
     (s) => s.size === selectedSize
@@ -179,15 +208,15 @@ useEffect(() => {
     inputRange: [0, 300], outputRange: ['transparent', '#fff'], extrapolate: 'clamp',
   });
   const headerTitleColor = scrollY.interpolate({
-  inputRange: [0, 300],
-  outputRange: ['#fff', '#000'],
-  extrapolate: 'clamp',
-});
-const iconColor = scrollY.interpolate({
-  inputRange: [0, 300],
-  outputRange: ['#fff', '#000'],
-  extrapolate: 'clamp',
-});
+    inputRange: [0, 300],
+    outputRange: ['#fff', '#000'],
+    extrapolate: 'clamp',
+  });
+  const iconColor = scrollY.interpolate({
+    inputRange: [0, 300],
+    outputRange: ['#fff', '#000'],
+    extrapolate: 'clamp',
+  });
   const showAddToCartToast = () => {
     setShowToast(true);
     Animated.parallel([
@@ -205,94 +234,132 @@ const iconColor = scrollY.interpolate({
 
 
   //  console.log(selectedVariant?.images?.[0]?.url, 'url' );
-   
-const handleAddToCart = async () => {
-  const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0
 
-  const productData = {
-    productId: products._id,
-    variantId: selectedVariant?._id,
-    name: products.name,
-    size: selectedSize,
-    quantity,
-    merchantId: products.merchantId._id,
-    image: {
-    public_id: selectedVariant?.images?.[0]?.public_id,
-    url: selectedVariant?.images?.[0]?.url,
-   },
-    stockQuantity: currentStock, // ✅ Include actual stock available
+  const handleAddToWishlist = async () => {
+    try {
+      const stored = await SecureStore.getItemAsync('Wishlist');
+      const variantIds = stored ? JSON.parse(stored) : [];
+
+      if (!isWishlisted) {
+        // ➕ Add to wishlist (API)
+        const res = await addToWishlist(products._id, selectedVariant._id);
+
+        const updated = [...new Set([...variantIds, selectedVariant._id])];
+
+        await SecureStore.setItemAsync(
+          'Wishlist',
+          JSON.stringify(updated)
+        );
+
+        setIsWishlisted(true);
+        setWishlistItemId(res?.data?._id || null);
+      } else {
+        // ➖ Remove from wishlist (API)
+        await removeFromWishlist(wishlistItemId);
+
+        const updated = variantIds.filter(id => id !== selectedVariant._id);
+
+        await SecureStore.setItemAsync(
+          'Wishlist',
+          JSON.stringify(updated)
+        );
+
+        setIsWishlisted(false);
+        setWishlistItemId(null);
+      }
+    } catch (err) {
+      console.log('Wishlist error:', err);
+    }
   };
 
-  try {
-    const latestCart = await GetCart();
-    const cartItemsSafe = latestCart.items || [];
-    const existingItem = cartItemsSafe.find(
-      item =>
-        item.productId === productData.productId &&
-        item.variantId === productData.variantId &&
-        item.size === productData.size
-    );
-    const existingQty = existingItem?.quantity || 0;
-    const totalRequest = existingQty + quantity;
 
-    if (totalRequest > currentStock) {
-      showError(
-        `Only ${currentStock} items available. You already have ${existingQty} in cart.`
+  const handleAddToCart = async () => {
+    const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0
+
+    const productData = {
+      productId: products._id,
+      variantId: selectedVariant?._id,
+      name: products.name,
+      size: selectedSize,
+      quantity,
+      merchantId: products.merchantId._id,
+      image: {
+        public_id: selectedVariant?.images?.[0]?.public_id,
+        url: selectedVariant?.images?.[0]?.url,
+      },
+      stockQuantity: currentStock, // ✅ Include actual stock available
+    };
+
+    try {
+      const latestCart = await GetCart();
+      const cartItemsSafe = latestCart.items || [];
+      const existingItem = cartItemsSafe.find(
+        item =>
+          item.productId === productData.productId &&
+          item.variantId === productData.variantId &&
+          item.size === productData.size
       );
-      return;
-    }
+      const existingQty = existingItem?.quantity || 0;
+      const totalRequest = existingQty + quantity;
 
-    const cartMerchant =
-      cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
-    if (
-      cartItemsSafe.length > 0 &&
-      cartMerchant &&
-      cartMerchant !== productData.merchantId
-    ) {
-      Alert.alert(
-        'Clear Cart?',
-        'Your cart contains items from another shop. Clear the cart and add this new item?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Clear Cart',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await clearCart();
-                setCartCount(0);
-                await AddProducttoCart(productData);
-                setCartItems([productData]);
-                setCartCount(1);
-                showAddToCartToast();
-                setTimeout(() => {
-                  modalizeRef.current?.close();
-                }, 0);
-              } catch (error) {
-                console.error('Error while clearing and adding:', error);
-              }
+      if (totalRequest > currentStock) {
+        showError(
+          `Only ${currentStock} items available. You already have ${existingQty} in cart.`
+        );
+        return;
+      }
+
+      const cartMerchant =
+        cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
+      if (
+        cartItemsSafe.length > 0 &&
+        cartMerchant &&
+        cartMerchant !== productData.merchantId
+      ) {
+        Alert.alert(
+          'Clear Cart?',
+          'Your cart contains items from another shop. Clear the cart and add this new item?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Clear Cart',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await clearCart();
+                  setCartCount(0);
+                  await AddProducttoCart(productData);
+                  setCartItems([productData]);
+                  setCartCount(1);
+                  showAddToCartToast();
+                  setTimeout(() => {
+                    modalizeRef.current?.close();
+                  }, 0);
+                } catch (error) {
+                  console.error('Error while clearing and adding:', error);
+                }
+              },
             },
-          },
-        ]
-      );
-      return;
-    }
+          ]
+        );
+        return;
+      }
 
-    await AddProducttoCart(productData);
-    setCartItems(prev => [...prev, productData]);
-    setCartCount(count => count + 1);
-    showAddToCartToast();
-    setQuantity(1);
-  } catch (error) {
-    const backendMsg =
-      error?.response?.data?.message || 'Failed to add to cart. Please try again.';
-    showError(backendMsg);
-  } finally {
-    setTimeout(() => {
-      modalizeRef.current?.close();
-    }, 0);
-  }
-};
+      await AddProducttoCart(productData);
+      setCartItems(prev => [...prev, productData]);
+      setCartCount(count => count + 1);
+      showAddToCartToast();
+      setQuantity(1);
+    } catch (error) {
+      const backendMsg =
+        error?.response?.data?.message || 'Failed to add to cart. Please try again.';
+      showError(backendMsg);
+    } finally {
+      setTimeout(() => {
+        modalizeRef.current?.close();
+      }, 0);
+    }
+  };
 
 
   if (loading) return <Loader />;
@@ -311,51 +378,51 @@ const handleAddToCart = async () => {
 
   return (
     <>
-<View style={styles.container}>
-<Animated.View
-  style={[
-    styles.topBar,
-    { backgroundColor: headerBackgroundColor, paddingTop: insets.top }
-  ]}
->
-  {/* Left: Back Button */}
-  <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
-    <Ionicons name="chevron-back" size={24} color={interpolatedColor} />
-  </TouchableOpacity>
+      <View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.topBar,
+            { backgroundColor: headerBackgroundColor, paddingTop: insets.top }
+          ]}
+        >
+          {/* Left: Back Button */}
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
+            <Ionicons name="chevron-back" size={24} color={interpolatedColor} />
+          </TouchableOpacity>
 
-  {/* Center: Merchant Name */}
-  <TouchableOpacity
-    activeOpacity={0.7}
-    onPress={() => {
-      const id = merchantData?.merchant?._id || merchantData?._id;
-      if (id) {
-        navigation.navigate('(stack)/ShopDetails/StoreDetailPage', { merchantId: id });
-      }
-    }}
-  >
-    <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
-      {merchantData?.merchant?.shopName || 'Product Details'}
-    </Animated.Text>
-  </TouchableOpacity>
-
-
-  {/* Right: Bag Icon */}
-  <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
-    <View style={styles.iconWithBadge}>
-      <Ionicons name="bag-handle-outline" size={24} color={interpolatedColor} />
-      {cartCount > 0 && (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{cartCount}</Text>
-        </View>
-      )}
-    </View>
-  </TouchableOpacity>
-</Animated.View>
+          {/* Center: Merchant Name */}
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => {
+              const id = merchantData?.merchant?._id || merchantData?._id;
+              if (id) {
+                navigation.navigate('(stack)/ShopDetails/StoreDetailPage', { merchantId: id });
+              }
+            }}
+          >
+            <Animated.Text style={[styles.headerTitle, { color: headerTitleColor }]} numberOfLines={1}>
+              {merchantData?.merchant?.shopName || 'Product Details'}
+            </Animated.Text>
+          </TouchableOpacity>
 
 
-{errorMessage !== '' && (
-  <ErrorMessage message={errorMessage} />
-)}
+          {/* Right: Bag Icon */}
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
+            <View style={styles.iconWithBadge}>
+              <Ionicons name="bag-handle-outline" size={24} color={interpolatedColor} />
+              {cartCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>{cartCount}</Text>
+                </View>
+              )}
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+
+
+        {errorMessage !== '' && (
+          <ErrorMessage message={errorMessage} />
+        )}
 
         <Animated.ScrollView
           onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: false })}
@@ -382,8 +449,12 @@ const handleAddToCart = async () => {
                 <View key={index} style={[styles.dot, index === activeIndex && styles.activeDot]} />
               ))}
             </View>
-            <TouchableOpacity style={styles.heartButton}>
-              <Ionicons name="heart-outline" size={20} color="#fff" />
+            <TouchableOpacity style={styles.heartButton} onPress={handleAddToWishlist}>
+              <Ionicons
+                name={isWishlisted ? "heart" : "heart-outline"}
+                size={20}
+                color={isWishlisted ? "red" : "#fff"}
+              />
             </TouchableOpacity>
             {discountPercentage > 0 && (
               <View style={styles.discountBadge}>
@@ -404,7 +475,7 @@ const handleAddToCart = async () => {
                   {selectedVariant?.mrp && selectedVariant.mrp > selectedVariant.price && (
                     <Text style={styles.strike}>₹{selectedVariant.mrp}</Text>
                   )}
-                    {/* <Text style={styles.optionLabel}>{selectedColor}</Text> */}
+                  {/* <Text style={styles.optionLabel}>{selectedColor}</Text> */}
                 </Text>
 
                 <View style={styles.ratingContainer}>
@@ -453,27 +524,27 @@ const handleAddToCart = async () => {
               </View>
 
               <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.circleButton,
-                  quantity === 1 && { opacity: 0.4 }, // Visual feedback
-                ]}
-                onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-                disabled={quantity === 1} // ✅ Disable when quantity is 1
-              >
-                <Text style={styles.buttonText}>−</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.circleButton,
+                    quantity === 1 && { opacity: 0.4 }, // Visual feedback
+                  ]}
+                  onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
+                  disabled={quantity === 1} // ✅ Disable when quantity is 1
+                >
+                  <Text style={styles.buttonText}>−</Text>
+                </TouchableOpacity>
                 <Text style={styles.quantityText}>{quantity}</Text>
-            <TouchableOpacity
-              style={[
-                styles.circleButton,
-                quantity >= selectedStock && { opacity: 0.4 }, // Visual feedback
-              ]}
-              onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
-              disabled={quantity >= selectedStock} // ✅ Disable when at stock limit
-            >
-              <Text style={styles.buttonText}>+</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.circleButton,
+                    quantity >= selectedStock && { opacity: 0.4 }, // Visual feedback
+                  ]}
+                  onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
+                  disabled={quantity >= selectedStock} // ✅ Disable when at stock limit
+                >
+                  <Text style={styles.buttonText}>+</Text>
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -491,12 +562,15 @@ const handleAddToCart = async () => {
             </Text>
           </View>
 
-         <YouMayLike
+          <YouMayLike
             merchantId={products?.merchantId?._id}
             subSubCategoryId={products?.subSubCategoryId?._id}
+            subCategoryId={products?.subCategoryId?._id}
+            shownProductId={products?._id}
           />
+          
         </Animated.ScrollView>
-          <PopupCart />
+        <PopupCart />
 
         <View style={styles.fixedButton}>
           <TouchableOpacity style={styles.addToBagButton} onPress={() => modalizeRef.current?.open()}>
@@ -580,37 +654,37 @@ const handleAddToCart = async () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
-  
-topBar: {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  zIndex: 20,
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: 16,
-  height: 100,
-  borderBottomLeftRadius: 20,
-  borderBottomRightRadius: 20,
-},
-  iconButton: { padding: 8 },
-headerCenter: {
-  flex: 1,
-  alignItems: 'center',
-  justifyContent: 'center',
-  marginTop: 10,
-},
 
-headerTitle: {
-  textAlign: 'center',
-  fontWeight: 'bold',
-  fontSize: 16,
-  fontFamily: 'Montserrat',
-  textTransform: 'uppercase',
-  paddingVertical: 10,
-},
+  topBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 100,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  iconButton: { padding: 8 },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+
+  headerTitle: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: 'Montserrat',
+    textTransform: 'uppercase',
+    paddingVertical: 10,
+  },
   iconWithBadge: { position: 'relative' },
   badge: {
     position: 'absolute', top: -6, right: -6, backgroundColor: 'red', borderRadius: 8,
@@ -636,28 +710,28 @@ headerTitle: {
   },
   discountText: { color: '#fff', fontSize: 12, fontWeight: 'bold', fontFamily: 'Montserrat' },
   titleContainer: {
-  position: 'absolute',
-  left: 0,
-  right: 0,
-  top: 0,
-  bottom: 0,
-  justifyContent: 'center',
-  alignItems: 'center',
-  paddingHorizontal: 50, // to avoid overlapping the side icons
-  zIndex: -1,
-},
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 50, // to avoid overlapping the side icons
+    zIndex: -1,
+  },
   infoContainer: { padding: 10 },
-  title: { fontSize: 20, fontWeight: '600', fontFamily: 'Montserrat', marginLeft: 5,},
+  title: { fontSize: 20, fontWeight: '600', fontFamily: 'Montserrat', marginLeft: 5, },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
   priceSection: { flex: 1, gap: 4 },
   price: { fontSize: 20, fontWeight: 'bold', fontFamily: 'Montserrat', paddingLeft: 4 },
   strike: { textDecorationLine: 'line-through', fontSize: 14, color: '#888', marginLeft: 5, fontFamily: 'Montserrat' },
   ratingContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
   ratingText: { marginLeft: 5, fontSize: 12, color: '#888', fontFamily: 'Montserrat' },
-  
+
   colorRow: { flexDirection: 'row', paddingLeft: 4, paddingTop: 2, flexWrap: 'wrap' },
   colorCircle: { width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1 },
-  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat'},
+  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat' },
 
   quantityContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   circleButton: {
@@ -672,32 +746,32 @@ headerTitle: {
   description: { fontSize: 14, marginVertical: 10, color: '#444', fontFamily: 'Montserrat' },
   readMore: { color: '#007BFF', fontWeight: '500', fontFamily: 'Montserrat' },
 
-fixedButton: {
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  backgroundColor: '#fff',
-  borderTopRightRadius: 40,
-  borderTopLeftRadius: 40,
-  borderTopWidth: 2,
-  borderRightWidth: 1,
-  borderLeftWidth: 1,
-  borderColor: '#eee',
-  paddingHorizontal: 10,
-  paddingVertical: 5,
-  justifyContent: 'center',   // ✅ Center vertically
-  alignItems: 'center',       // ✅ Center horizontally
-  paddingBottom: 30,
-},
-addToBagButton: {
-  height: 60,
-  backgroundColor: '#000',
-  borderRadius: 28,
-  justifyContent: 'center',
-  alignItems: 'center',
-  width: '100%',
-},
+  fixedButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopRightRadius: 40,
+    borderTopLeftRadius: 40,
+    borderTopWidth: 2,
+    borderRightWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: '#eee',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    justifyContent: 'center',   // ✅ Center vertically
+    alignItems: 'center',       // ✅ Center horizontally
+    paddingBottom: 30,
+  },
+  addToBagButton: {
+    height: 60,
+    backgroundColor: '#000',
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+  },
   addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
 
   modal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 10 },
@@ -712,25 +786,25 @@ addToBagButton: {
   sizeText: { textAlign: 'center' },
   stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Montserrat' },
   errorBox: {
-  position: 'absolute',
-  top: 80,
-  left: 20,
-  right: 20,
-  padding: 12,
-  backgroundColor: '#ffe0e0',
-  borderColor: '#ff4d4d',
-  borderWidth: 1,
-  borderRadius: 8,
-  zIndex: 100,
-  elevation: 10,
-},
+    position: 'absolute',
+    top: 80,
+    left: 20,
+    right: 20,
+    padding: 12,
+    backgroundColor: '#ffe0e0',
+    borderColor: '#ff4d4d',
+    borderWidth: 1,
+    borderRadius: 8,
+    zIndex: 100,
+    elevation: 10,
+  },
 
-errorText: {
-  color: '#b00020',
-  fontSize: 14,
-  textAlign: 'center',
-  fontWeight: 'bold',
-},
+  errorText: {
+    color: '#b00020',
+    fontSize: 14,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
   modalButton: {
     position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff',
     paddingHorizontal: 16, paddingBottom: 24,

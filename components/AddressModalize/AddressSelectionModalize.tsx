@@ -19,9 +19,9 @@ interface AddressModalProps {
 const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref) => {
     const router = useRouter();
     const modalRef = useRef<Modalize>(null);
+    console.log('model;999');
 
     const {
-        selectedAddress,
         setSelectedAddress,
         addresses,
         setAddresses,
@@ -38,9 +38,14 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
     // Fetch addresses when opened
     const loadAddresses = async () => {
         try {
-            setLoading(true);
-            const res = await getAddresses();
-            setAddresses(res?.addresses || []);
+            if (addresses) {
+                return
+            } else {
+                setLoading(true);
+                const res = await getAddresses();
+                console.log('97787');    
+                setAddresses(res?.addresses || []);
+            }
         } catch (err) {
             console.log('getAddresses Error:', err);
         } finally {
@@ -56,9 +61,23 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
     const selectAddress = async (item: any) => {
         setSelectedAddress(item);
         await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
-
         onSelectAddress?.(item);
         modalRef.current?.close();
+        reCheck()
+    };
+
+    const reCheck = async () => {
+
+        console.log('reCheck00000');
+
+        let saved = await SecureStore.getItemAsync('selectedAddress');
+
+        // const res = await getAddresses();
+        // setAddresses(res.addresses || []);
+
+        if (!saved) {
+            setTimeout(() => modalRef.current?.open(), 200);
+        }
     };
 
 
@@ -150,6 +169,7 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
             ref={modalRef}
             adjustToContentHeight
             onOpened={handleOpen}
+            onClosed={reCheck}
         >
             <View style={{ padding: 20, marginBottom: 12 }}>
                 {loading ? (

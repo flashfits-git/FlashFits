@@ -1,118 +1,129 @@
 import React, { forwardRef, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Modalize } from "react-native-modalize";
-import HandovrModal from "./HandoverModal";
-// import * as SecureStore from 'expo-secure-store';
-import RazorpayCheckout from 'react-native-razorpay';
-import { finalpaymentInitiate, finalpaymetVerify } from "../../api/orderApis";
+import RazorpayCheckout from "react-native-razorpay";
 import { router } from "expo-router";
+
+import HandovrModal from "./HandoverModal";
+import { finalpaymentInitiate, finalpaymetVerify } from "../../api/orderApis";
 
 interface ConfirmSelectionModalProps {
   onCancel: () => void;
-  orderId: any;
+  orderId: string;
   otp?: string;
-  totalPayable?: any
-  onConfirm: (method?: string) => void;
-  onAllReturn?: () => void;
+  totalPayable?: number;
+  items: any[];
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, orderId, onConfirm, otp, items, totalPayable, orderData }, ref) => {
+  ({ onCancel, orderId, otp, items = [], totalPayable }, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
-    console.log(orderId, 'ORDER');
 
     const handleCancel = () => onCancel?.();
 
-    const confirmClothSelection = async () => {
+    const isAllReturned = items.every(
+      item => item.tryStatus === "returned"
+    );
+
+    const buildPayload = () => ({
+      orderId,
+      items: items.map(item => ({
+        itemId: item._id,
+        tryStatus: item.tryStatus,
+        returnReason: item.returnReason || null,
+      })),
+    });
+
+    // 🔹 CASE 1: ALL ITEMS RETURNED
+    const handleReturnAll = async () => {
       try {
-        const payload = {
-          orderId,
-          items: items.map(item => ({
-            itemId: item._id,
-            tryStatus: item.tryStatus,
-            returnReason: item.returnReason,
-          })),
-        };
-
-        const anyKeep = items.some(item => item.tryStatus === "keep");
-
         ref?.current?.close();
 
-        if (anyKeep) {
-
-        console.log(payload, '8686868');
+        const payload = buildPayload();
         const res = await finalpaymentInitiate(payload);
 
-        if (res) {
-          console.log(res, 'res');
-          console.log("Final Payment Data →", res);
+        if (!res) return;
 
-          const {
-            amount,
-            breakdown,
-            key_id,
-            razorpayOrder,
-            orderId: internalOrderId,
-            name,
-            email,
-            contact,
-            currency,
-          } = res;
-
-          const razorpayOrderId = razorpayOrder?.id;
-
-          // 3️⃣ SETUP RAZORPAY OPTIONS
-          const options = {
-            description: "FlashFits Final Order Payment",
-            currency: currency || "INR",
-            key: key_id,
-            amount: amount, // already in paise (20100)
-            name: "FlashFits",
-            order_id: razorpayOrderId,
-            // ✅ Prefill directly from backend response
-            prefill: {
-              email: email || "",
-              contact: contact || "",
-              name: name || "Customer",
-            },
-
-            theme: { color: "#61b3f6" },
-          };
-
-          console.log("Razorpay Options →", options);
-
-          // // 4️⃣ OPEN RAZORPAY CHECKOUT
-          RazorpayCheckout.open(options)
-            .then(async (paymentData) => {
-              console.log("Payment Success:", paymentData);
-              console.log(paymentData, internalOrderId, '6667');
-              // OPTIONAL → VERIFY WITH BACKEND
-              await finalpaymetVerify(paymentData, internalOrderId);
-              router.replace({
-                pathname: '/(stack)/OrderDetail/OrderCompletionScreen',
-                params: {
-                  orderData
-                }
-              });
-              alert("Payment Successful!");
-            })
-            .catch((error) => {
-              console.log("Payment Error:", error);
-              alert("Payment Failed. Please try again.");
-            });
-        }
-          return; // ⛔ STOP here — no API call
-        }
+        router.replace({
+          pathname: "/(stack)/OrderDetail/ReturnItemsPage",
+          params: {
+            orderId,
+            otp,
+            items: JSON.stringify(items),
+          },
+        });
       } catch (e) {
-        console.log("Confirm selection failed:", e);
+        console.log("Return all failed:", e);
       }
     };
-    const totalKeep = items?.filter(i => i.tryStatus === "keep").length || 0;
-    const totalReturn = items?.filter(i => i.tryStatus === "return").length || 0;
+
+    // 🔹 CASE 2: KEEP + PAY FLOW
+    const handlePaySelected = async () => {
+      try {
+        ref?.current?.close();
+
+        const payload = buildPayload();
+        const res = await finalpaymentInitiate(payload);
+
+        if (!res) return;
+
+        const {
+          amount,
+          key_id,
+          razorpayOrder,
+          orderId: internalOrderId,
+          name,
+          email,
+          contact,
+          currency,
+        } = res;
+
+        const options = {
+          description: "FlashFits Final Payment",
+          currency: currency || "INR",
+          key: key_id,
+          amount,
+          name: "FlashFits",
+          order_id: razorpayOrder?.id,
+          prefill: {
+            name: name || "Customer",
+            email: email || "",
+            contact: contact || "",
+          },
+          theme: { color: "#61b3f6" },
+        };
+
+        RazorpayCheckout.open(options)
+          .then(async paymentData => {
+            await finalpaymetVerify(paymentData, internalOrderId);
+
+            const returnedItems = items.filter(
+              item => item.tryStatus === "returned"
+            );
+
+            router.replace({
+              pathname: "/(stack)/OrderDetail/ReturnItemsPage",
+              params: {
+                orderId: internalOrderId,
+                otp,
+                items: JSON.stringify(returnedItems),
+              },
+            });
+          })
+          .catch(err => {
+            console.log("Payment Failed:", err);
+            alert("Payment failed. Please try again.");
+          });
+      } catch (e) {
+        console.log("Payment flow error:", e);
+      }
+    };
+
+    const totalKeep = items.filter(i => i.tryStatus === "keep").length;
+    const totalReturn = items.filter(i => i.tryStatus === "returned").length;
 
     return (
       <>
-        {/* Confirm Selection Modal */}
         <Modalize
           ref={ref}
           adjustToContentHeight
@@ -122,24 +133,23 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
           <View style={styles.container}>
             <Text style={styles.title}>Confirm Selection</Text>
             <Text style={styles.subtitle}>
-              Haandover Return Items & Share OTP
+              Handover return items & share OTP
             </Text>
-            {/* 🔥 Show OTP here */}
-            {otp && (
-              <Text style={styles.otpText}>
-                OTP: {otp}
-              </Text>
-            )}
+
+            {otp && <Text style={styles.otpText}>OTP: {otp}</Text>}
+
             <View style={styles.countContainer}>
               <Text style={styles.countText}>
-                Total Selected: <Text style={styles.bold}>{totalKeep}</Text>
+                Keep: <Text style={styles.bold}>{totalKeep}</Text>
               </Text>
               <Text style={styles.countText}>
-                Total Return: <Text style={styles.bold}>{totalReturn}</Text>
+                Return: <Text style={styles.bold}>{totalReturn}</Text>
               </Text>
-              <Text style={styles.totalPay}>
-                Total Payable : <Text style={styles.bold}>{totalPayable}</Text>
-              </Text>
+              {!isAllReturned && (
+                <Text style={styles.totalPay}>
+                  Payable: <Text style={styles.bold}>{totalPayable}</Text>
+                </Text>
+              )}
             </View>
 
             <View style={styles.buttonRow}>
@@ -152,16 +162,17 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.confirmButton]}
-                onPress={confirmClothSelection}
+                onPress={isAllReturned ? handleReturnAll : handlePaySelected}
               >
-                <Text style={styles.confirmText}>Pay Selected</Text>
+                <Text style={styles.confirmText}>
+                  {isAllReturned ? "Return All" : "Pay Selected"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modalize>
 
-        {/* Handover Modal */}
-        <HandovrModal ref={handoverModalRef} onConfirm={() => { }} />
+        <HandovrModal ref={handoverModalRef} onConfirm={() => {}} />
       </>
     );
   }
@@ -183,7 +194,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingVertical: 25,
-    marginBottom: 40
+    marginBottom: 40,
   },
   title: {
     fontSize: 18,
@@ -191,52 +202,44 @@ const styles = StyleSheet.create({
     color: "#111827",
     marginBottom: 8,
   },
+  subtitle: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+  },
   otpText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-    marginBottom: 15,
+    fontWeight: "700",
+    marginVertical: 10,
   },
   countContainer: {
     width: "100%",
-    marginBottom: 20,
+    marginVertical: 20,
     padding: 12,
     backgroundColor: "#f9fafb",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e5e7eb"
+    borderColor: "#e5e7eb",
   },
   countText: {
     fontSize: 15,
-    color: "#374151",
     marginBottom: 4,
   },
   totalPay: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#374151",
-    marginBottom: 4,
   },
   bold: {
     fontWeight: "700",
-    color: "#111827",
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#6b7280",
-    // marginBottom: 20,
-    lineHeight: 20,
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "center",
     gap: 12,
   },
   actionButton: {
-    borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 30,
+    borderRadius: 12,
   },
   cancelButton: {
     backgroundColor: "#f3f4f6",
@@ -245,13 +248,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
   },
   cancelText: {
-    color: "#111827",
     fontSize: 16,
     fontWeight: "600",
   },
   confirmText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    color: "#fff",
   },
 });

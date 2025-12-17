@@ -28,7 +28,7 @@ export default function FlashfitsStores() {
   const [loading, setLoading] = useState(true);
   const [merchants, setMerchants] = useState([]);
   const [productsByMerchant, setProductsByMerchant] = useState({}); // New state for batch products
-  // console.log(productsByMerchant,'productsByMerchant');
+  console.log(merchants,'merchantsmerchantsmerchantsmerchants');
 
 
   useEffect(() => {
@@ -131,7 +131,8 @@ export default function FlashfitsStores() {
         <NearbyStores merchantData={merchants} productsByMerchant={productsByMerchant} />
 
         <Text style={styles.sectionTitle}>Popular Stores</Text>
-        {/* <PopularStores merchantData={merchants} productsByMerchant={productsByMerchant} /> */}
+        <PopularStores merchantData={merchants} productsByMerchant={productsByMerchant} />
+        {/* <NearbyStores merchantData={merchants} productsByMerchant={productsByMerchant} /> */}
       </ScrollView>
 
       <PopupCart isTabBarVisible={isTabBarVisible} />

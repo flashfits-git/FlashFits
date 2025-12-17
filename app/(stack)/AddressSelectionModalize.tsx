@@ -38,9 +38,13 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
     // Fetch addresses when opened
     const loadAddresses = async () => {
         try {
-            setLoading(true);
-            const res = await getAddresses();
-            setAddresses(res?.addresses || []);
+            if (addresses) {
+                return
+            } else {
+                setLoading(true);
+                const res = await getAddresses();
+                setAddresses(res?.addresses || []);
+            }
         } catch (err) {
             console.log('getAddresses Error:', err);
         } finally {

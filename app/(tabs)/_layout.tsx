@@ -186,94 +186,111 @@ function TabsWithCart() {
 //            MAIN SCREEN (CLEAN)
 // --------------------------------------------
 export default function TabLayout() {
-  const router = useRouter();
+  // const router = useRouter();
   const addressModalRef = useRef(null);
 
   const { addresses, setAddresses, setSelectedAddress } = useAddress();
+  
 
   const [loading, setLoading] = useState(true);
 
   // --------------------------------------------
   //          FIRST MOUNT → LOCATION + ADDRESS
   // --------------------------------------------
-  useEffect(() => {
-    const init = async () => {
-      try {
-        setLoading(true);
+useEffect(() => {
+  
+  const init = async () => {
+    try {
+      setLoading(true);
 
-        // 1️⃣ PERMISSION
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') {
-          console.log('Location permission denied');
-        }
-
-        // 2️⃣ GET CURRENT GPS
-        let currentLoc = await Location.getCurrentPositionAsync({});
-        const { latitude: currLat, longitude: currLng } = currentLoc.coords;
-
-        // 3️⃣ API FETCH ADDRESSES
-        const res = await getAddresses();
-        const userAddresses = res?.addresses || [];
-        setAddresses(userAddresses);
-
-        // 4️⃣ GET SAVED ADDRESS
-        let saved = await SecureStore.getItemAsync('selectedAddress');
-        let savedAddress = saved ? JSON.parse(saved) : null;
-
-        // 5️⃣ GPS AUTO-MATCH WITH NEAREST
-        const nearest = findNearestAddress(currLat, currLng, userAddresses);
-
-        if (nearest) {
-          setSelectedAddress(nearest);
-          await SecureStore.setItemAsync(
-            'selectedAddress',
-            JSON.stringify(nearest)
-          );
-          setLoading(false);
-          return;
-        }
-
-        // 6️⃣ USE SAVED IF EXISTS
-        if (savedAddress) {
-          setSelectedAddress(savedAddress);
-          setLoading(false);
-          return;
-        }
-
-        // 7️⃣ OPEN MODAL ONLY ONCE
-        setTimeout(() => addressModalRef.current?.open(), 300);
-      } catch (err) {
-        console.log('INIT ERR:', err);
+      // 1️⃣ PERMISSION
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      console.log(status,'status');
+      
+      if (status !== "granted") {
+        console.log("Location permission denied");
       }
 
-      setLoading(false);
-    };
+      // 2️⃣ GET CURRENT GPS (still ok to keep for later use)
+      let currentLoc = await Location.getCurrentPositionAsync({});
+      const { latitude: currLat, longitude: currLng } = currentLoc.coords;
+      console.log(currLat,currLng,'currLatcurrLatcurrLatcurrLat');
+      
+      // 3️⃣ FETCH USER ADDRESSES
+      const res = await getAddresses();
+      const userAddresses = res?.addresses || [];
+      // console.log(userAddresses,'userAddressesuserAddressesuserAddressesuserAddresses');
+      
+      setAddresses(userAddresses);
 
-    init();
-  }, []);
+      // 4️⃣ GET SAVED ADDRESS
+      let saved = await SecureStore.getItemAsync("selectedAddress");
+      let savedAddress = saved ? JSON.parse(saved) : null;
+
+      // 5️⃣ USE SAVED ADDRESS (NO AUTO-ASSIGNING ANYTHING)
+      if (savedAddress) {
+        setSelectedAddress(savedAddress);
+        setLoading(false);
+        return;
+      }
+
+      // 6️⃣ If no saved address → open modal for user selection
+      setTimeout(() => addressModalRef.current?.open(), 300);
+
+    } catch (err) {
+      console.log("INIT ERR:", err);
+
+            // 3️⃣ FETCH USER ADDRESSES
+      const res = await getAddresses();
+      const userAddresses = res?.addresses || [];
+      setAddresses(userAddresses);
+
+      // 4️⃣ GET SAVED ADDRESS
+      let saved = await SecureStore.getItemAsync("selectedAddress");
+      let savedAddress = saved ? JSON.parse(saved) : null;
+
+      // 5️⃣ USE SAVED ADDRESS (NO AUTO-ASSIGNING ANYTHING)
+      if (savedAddress) {
+        setSelectedAddress(savedAddress);
+        setLoading(false);
+        return;
+      }
+
+      // 6️⃣ If no saved address → open modal for user selection
+      setTimeout(() => addressModalRef.current?.open(), 300);
+    }
+
+    setLoading(false);
+  };
+
+  init();
+}, []);
 
   // --------------------------------------------
   //         WHEN MODAL CLOSES → VERIFY
   // --------------------------------------------
-  const reCheck = async () => {
-    let saved = await SecureStore.getItemAsync('selectedAddress');
+  // const reCheck = async () => {
 
-    const res = await getAddresses();
-    setAddresses(res.addresses || []);
+  //   console.log('reCheck');
+    
+  //   let saved = await SecureStore.getItemAsync('selectedAddress');
 
-    if (!saved) {
-      setTimeout(() => addressModalRef.current?.open(), 200);
-    }
-  };
+  //   const res = await getAddresses();
+  //   setAddresses(res.addresses || []);
 
-  // --------------------------------------------
-  //             SELECT ADDRESS
-  // --------------------------------------------
-  const selectAddress = async (item) => {
-    setSelectedAddress(item);
-    await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
-    addressModalRef.current?.close();
-  };
+  //   if (!saved) {
+  //     setTimeout(() => addressModalRef.current?.open(), 200);
+  //   }
+  // };
+
+  // // --------------------------------------------
+  // //             SELECT ADDRESS
+  // // --------------------------------------------
+  // const selectAddress = async (item) => {
+  //   setSelectedAddress(item);
+  //   await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
+  //   addressModalRef.current?.close();
+  // };
 
   // --------------------------------------------
   //                UI RETURN
@@ -291,7 +308,7 @@ export default function TabLayout() {
       {/* ------------------------------------------ */}
       {/*                ADDRESS MODAL               */}
       {/* ------------------------------------------ */}
-<Modalize
+{/* <Modalize
   ref={addressModalRef}
   adjustToContentHeight
   handleStyle={{ backgroundColor: '#ccc' }}
@@ -383,7 +400,7 @@ export default function TabLayout() {
             ))}
           </View>
         )}
-      </Modalize>
+      </Modalize> */}
     </View>
   );
 }

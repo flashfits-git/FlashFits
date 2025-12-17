@@ -26,6 +26,7 @@ const StoreDetailPage = () => {
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params;
+// console.log(productss,'33322');
 
   const handleViewAll = (subCatName, products) => {
     const filters = {
@@ -147,9 +148,9 @@ const StoreDetailPage = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.sectionCard}>
+          {/* <View style={styles.sectionCard}>
             <ShopOffersCarousel />
-          </View>
+          </View> */}
 
           <View style={styles.sectionContainer}>
             <View style={styles.flexRow}>
@@ -180,9 +181,11 @@ const StoreDetailPage = () => {
               <RecentlyViewed deataiPageproducts={products} />
             </View>
           ))}
-          <View style={styles.featuredSection}>
+
+
+          {/* <View style={styles.featuredSection}>
             <FeaturedDress />
-          </View>
+          </View> */}
         </ScrollView>
         {/* </SafeAreaView> */}
       </LinearGradient>
@@ -294,7 +297,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   sectionContainer: {
-    // marginTop: 20,
+    marginTop: 20,
     marginHorizontal: 16,
   },
   iconLabel: {
@@ -337,16 +340,16 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingTop: 16,
     paddingHorizontal: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#f0f0f5',
+    // shadowColor: '#000',
+    // shadowOffset: {
+    //   width: 0,
+    //   height: 2
+    // },
+    // shadowOpacity: 0.05,
+    // shadowRadius: 8,
+    // elevation: 3,
+    // borderWidth: 1,
+    // borderColor: '#f0f0f5',
   },
   sectionHeader: {
     flexDirection: 'row',

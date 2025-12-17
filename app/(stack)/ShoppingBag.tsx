@@ -333,7 +333,7 @@ const CartBag = () => {
                 <Ionicons name="chevron-forward" size={18} color="#000" />
               </View>
             </Animated.View>
-            <Text style={styles.slideText}>Try then Buy</Text>
+            <Text style={styles.slideText}>Try & Buy</Text>
           </LinearGradient>
         </View>
       );
@@ -341,7 +341,7 @@ const CartBag = () => {
 
     if (label === 'prepaid') {
       return (
-        <View style={styles.slideToPayContainer}>
+        <View style={styles.slideToPayContainer} >
           <LinearGradient
             colors={['#61b3f6ff', '#61b3f6d1']}
             start={{ x: 0, y: 0 }}
@@ -451,9 +451,8 @@ const CartBag = () => {
                 style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
               />
               <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
-                Try then Buy
+                Try & Buy
               </Text>
-
               {/* ❓ Help icon with toggle */}
               <TouchableOpacity
                 onPress={() => {
@@ -487,8 +486,9 @@ const CartBag = () => {
           {/* Payment Tab */}
           <TouchableOpacity
             onPress={() => setActiveTab('Payment')}
-            style={styles.tabButton}
+            style={[styles.tabButton, styles.disabledTab]}
             activeOpacity={0.9}
+            disabled
           >
             {activeTab === 'Payment' && (
               <LinearGradient
@@ -498,13 +498,20 @@ const CartBag = () => {
                 style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
               />
             )}
+
             <View style={styles.flexRow}>
-              <MaterialIcons name="payments" size={18} color="black" style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]} />
+              <MaterialIcons
+                name="payments"
+                size={18}
+                color="black"
+                style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}
+              />
               <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
                 Pay Order
               </Text>
             </View>
           </TouchableOpacity>
+
         </View>
 
         {/* Fixed Delivery Bar */}
@@ -735,7 +742,13 @@ const CartBag = () => {
                     <Text style={styles.googlePayText}>
                       Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
                     </Text>
-
+                    <Text style={styles.googlePayText1}>
+                      Return Charge will be deducted when you keep the Cart. 
+                    {/* (₹{totalValue.toLocaleString()}) */}
+                    </Text>
+                    {/* <Text style={styles.googlePayText1}>
+                      We applies return charge deduction on keeping the cart.
+                    </Text> */}
                   </View>
                 </View>
               </View>
@@ -783,7 +796,7 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 16 },
 
   // Fixed Delivery Bar
-  fixedDeliveryContentfixedDeliveryBar: {borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
+  fixedDeliveryContentfixedDeliveryBar: { borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
   fixedDeliveryContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -821,7 +834,11 @@ const styles = StyleSheet.create({
   deliveryTimeText: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat' },
   deliveryText: { fontSize: 14, color: '#666', fontFamily: 'Montserrat', marginRight: 8 },
   deliveryTime: { fontWeight: '700', color: '#1A1A1A' },
-
+  disabledTab: {
+    opacity: 0.4,
+    backgroundColor: '#d3d3d3',   // light grey
+    borderColor: '#b8b8b8',
+  },
   // Badge
   superFastBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E7F8F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   badgeIcon: { width: 12, height: 12, marginRight: 4, resizeMode: 'contain' },
@@ -859,8 +876,8 @@ const styles = StyleSheet.create({
   accessoriesScroll: { paddingHorizontal: 16, paddingBottom: 20 },
 
   // Tab Styles
-  tabButton: { width: '50%', paddingVertical: 15, backgroundColor: '#ffffffff', justifyContent: 'center', alignItems: 'center', borderRadius: 60, margin: 3, borderWidth: .5, borderColor: '#c1c1c1ff' },
-  tabText: { marginRight: 6, fontSize: 16, color: '#000', fontFamily: 'Montserrat', fontWeight: 'bold', },
+  tabButton: { width: '50%', paddingVertical: 15, backgroundColor: '#a8a2a2ff', justifyContent: 'center', alignItems: 'center', borderRadius: 60, margin: 3, borderWidth: .5, borderColor: '#c1c1c1ff' },
+  tabText: { marginRight: 6, fontSize: 16, color: '#cbc0c0ff', fontFamily: 'Montserrat', fontWeight: 'bold', },
   activeTabText: { color: '#fff', fontWeight: 'bold' },
   flexRow: { flexDirection: 'row', alignItems: 'center' },
 
@@ -873,6 +890,7 @@ const styles = StyleSheet.create({
   googlePayImage: { width: 20, height: 20 },
   payUsingText: { fontSize: 13, color: '#666' },
   googlePayText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  googlePayText1: { fontSize: 10, fontWeight: '300', color: '#666565ff' },
   changeButton: { flexDirection: 'row', alignItems: 'center' },
   changeButtonText: { fontSize: 16, fontWeight: '600', color: '#000' },
 

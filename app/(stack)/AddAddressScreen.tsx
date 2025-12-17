@@ -20,8 +20,15 @@ export default function AddAddressScreen() {
 
   const router = useRouter();
   const params = useLocalSearchParams();
+  const rawAddress = params.address
+    ? JSON.parse(params.address as string)
+    : null;
   const latitude = params.lat ? Number(params.lat) : null;
   const longitude = params.lng ? Number(params.lng) : null;
+  const address = params.address
+
+  console.log(address, '88898998nnkj');
+
 
   const [orderingFor, setOrderingFor] = useState('myself');
   const [addressType, setAddressType] = useState('Home');
@@ -31,9 +38,9 @@ export default function AddAddressScreen() {
     addressLine1: '',
     addressLine2: '',
     landmark: '',
-    city: '',
-    state: 'Kerala',
-    pincode: '',
+    city: rawAddress?.town || rawAddress?.suburb || '',
+    state: rawAddress?.state || 'Kerala',
+    pincode: rawAddress?.postcode || '',
     latitude: latitude,
     longitude: longitude,
   });
@@ -145,7 +152,7 @@ export default function AddAddressScreen() {
                 <Feather
                   name="home"
                   size={20}
-                  color={addressType === 'Home' ? '#1a5c3a' : '#666'}
+                  color={addressType === 'Home' ? '#646564ff' : '#666'}
                 />
                 <Text
                   style={[
@@ -167,7 +174,7 @@ export default function AddAddressScreen() {
                 <Feather
                   name="briefcase"
                   size={20}
-                  color={addressType === 'Work' ? '#1a5c3a' : '#666'}
+                  color={addressType === 'Work' ? '#646564ff' : '#666'}
                 />
                 <Text
                   style={[
@@ -189,7 +196,7 @@ export default function AddAddressScreen() {
                 <Feather
                   name="map-pin"
                   size={20}
-                  color={addressType === 'Other' ? '#1a5c3a' : '#666'}
+                  color={addressType === 'Other' ? '#646564ff' : '#666'}
                 />
                 <Text
                   style={[
@@ -288,14 +295,14 @@ export default function AddAddressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a5c3a',
+    backgroundColor: '#646564ff',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: '#1a5c3a',
+    backgroundColor: '#646564ff',
   },
   backButton: {
     marginRight: 16,
@@ -308,7 +315,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    backgroundColor: '#1a5c3a',
+    backgroundColor: '#646564ff',
     paddingHorizontal: 16,
   },
   card: {
@@ -344,7 +351,7 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#1a5c3a',
+    borderColor: '#646564ff',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -353,7 +360,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#1a5c3a',
+    backgroundColor: '#646564ff',
   },
   radioText: {
     fontSize: 16,
@@ -378,7 +385,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   addressTypeButtonActive: {
-    borderColor: '#1a5c3a',
+    borderColor: '#646564ff',
     backgroundColor: '#e8f5e9',
   },
   addressTypeText: {
@@ -387,7 +394,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   addressTypeTextActive: {
-    color: '#1a5c3a',
+    color: '#646564ff',
     fontWeight: '600',
   },
   locationBox: {
@@ -415,7 +422,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   changeButtonText: {
-    color: '#1a5c3a',
+    color: '#646564ff',
     fontSize: 14,
     fontWeight: '600',
   },
@@ -450,14 +457,14 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   confirmButton: {
-    backgroundColor: '#a8d5ba',
+    backgroundColor: '#000',
     borderRadius: 8,
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
   },
   confirmButtonText: {
-    color: '#1a5c3a',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

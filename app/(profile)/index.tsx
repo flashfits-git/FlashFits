@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, StatusBar, Animated } from 'react-native';
 import { Ionicons, MaterialIcons, Entypo } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAddress } from '../AddressContext';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Alert } from 'react-native';
@@ -10,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const ProfilePage = () => {
     const router = useRouter();
     const [scaleValues] = useState(menuItems.map(() => new Animated.Value(1)));
+    const { setSelectedAddress, setAddresses} = useAddress();
 
     const handleNavigation = async (title: string) => {
         if (title === 'Logout') {
@@ -24,7 +26,9 @@ const ProfilePage = () => {
                         onPress: async () => {
                             await SecureStore.deleteItemAsync('token');
                             await SecureStore.deleteItemAsync('selectedAddress');
-                            await SecureStore.deleteItemAsync("addressSelectedOnce"); 
+                            await SecureStore.setItemAsync("addressSelectedOnce", "false");
+                            setSelectedAddress(null)
+                            setAddresses([])
                             router.replace('/(auth)');
                         },
                     },
@@ -32,7 +36,6 @@ const ProfilePage = () => {
             );
             return;
         }
-
         const screenName = title.replace(/\s+/g, '').toLowerCase();
         router.push({
             pathname: `/(profile)/${screenName}`,
@@ -88,17 +91,17 @@ const ProfilePage = () => {
                             </TouchableOpacity>
                         </View>
                         <View style={styles.profileInfo}>
-                            <Text style={styles.nameText}>John Doe</Text>
-                            <Text style={styles.emailText}>john.doe@example.com</Text>
+                            {/* <Text style={styles.nameText}>John Doe</Text>
+                            <Text style={styles.emailText}>john.doe@example.com</Text> */}
                             <View style={styles.phoneContainer}>
                                 <Ionicons name="call" size={14} color="#666" />
                                 <Text style={styles.phoneText}>+91 813 883 4116</Text>
                             </View>
                         </View>
-                        <TouchableOpacity style={styles.editProfileButton}>
+                        {/* <TouchableOpacity style={styles.editProfileButton}>
                             <Text style={styles.editButtonText}>Edit Profile</Text>
                             <Ionicons name="create-outline" size={16} color="#464646ff" />
-                        </TouchableOpacity>
+                        </TouchableOpacity> */}
                     </View>
                 </LinearGradient>
 
@@ -112,19 +115,20 @@ const ProfilePage = () => {
                         <Text style={styles.statLabel}>Orders</Text>
                     </View>
                     <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
+                    <View style={[styles.statItem, { opacity: 0.4 }]} pointerEvents="none">
                         <View style={[styles.statIconContainer, { backgroundColor: '#FFF3E0' }]}>
                             <MaterialIcons name="card-giftcard" size={24} color="#FF9800" />
                         </View>
                         <Text style={styles.statNumber}>5</Text>
                         <Text style={styles.statLabel}>Coupons</Text>
                     </View>
+
                     <View style={styles.statDivider} />
-                    <View style={styles.statItem}>
+                    <View style={[styles.statItem, { opacity: 0.4 }]} pointerEvents="none">
                         <View style={[styles.statIconContainer, { backgroundColor: '#E8F5E9' }]}>
                             <MaterialIcons name="account-balance-wallet" size={24} color="#4CAF50" />
                         </View>
-                        <Text style={styles.statNumber}>₹500</Text>
+                        <Text style={styles.statNumber}>₹0</Text>
                         <Text style={styles.statLabel}>Wallet</Text>
                     </View>
                 </View>
@@ -206,45 +210,45 @@ const ProfilePage = () => {
 };
 
 const menuItems = [
-    { 
-        title: 'Orders', 
+    {
+        title: 'Orders',
         subtitle: 'Track your orders',
         icon: <Ionicons name="cube-outline" size={24} color="#2196F3" />,
         color: '#E3F2FD'
     },
-    { 
-        title: 'My Wallet', 
-        subtitle: 'Manage your balance',
-        icon: <MaterialIcons name="account-balance-wallet" size={24} color="#4CAF50" />,
-        color: '#E8F5E9'
-    },
-    { 
-        title: 'Coupons', 
-        subtitle: 'View available offers',
-        icon: <MaterialIcons name="card-giftcard" size={24} color="#FF9800" />,
-        color: '#FFF3E0',
-        isNew: true 
-    },
-    { 
-        title: 'Address', 
+    // {
+    //     title: 'My Wallet',
+    //     subtitle: 'Manage your balance',
+    //     icon: <MaterialIcons name="account-balance-wallet" size={24} color="#4CAF50" />,
+    //     color: '#E8F5E9'
+    // },
+    // {
+    //     title: 'Coupons',
+    //     subtitle: 'View available offers',
+    //     icon: <MaterialIcons name="card-giftcard" size={24} color="#FF9800" />,
+    //     color: '#FFF3E0',
+    //     isNew: true
+    // },
+    {
+        title: 'Address',
         subtitle: 'Manage delivery addresses',
         icon: <Ionicons name="location-outline" size={24} color="#F44336" />,
         color: '#FFEBEE'
     },
-    { 
-        title: 'Help and Support', 
+    {
+        title: 'Help and Support',
         subtitle: 'Get help anytime',
         icon: <Ionicons name="help-circle-outline" size={24} color="#9C27B0" />,
         color: '#F3E5F5'
     },
-    { 
-        title: 'About Us', 
+    {
+        title: 'About Us',
         subtitle: 'Learn more about us',
         icon: <Ionicons name="information-circle-outline" size={24} color="#00BCD4" />,
         color: '#E0F7FA'
     },
-    { 
-        title: 'Logout', 
+    {
+        title: 'Logout',
         subtitle: 'Sign out of your account',
         icon: <MaterialIcons name="logout" size={24} color="#F44336" />,
         color: '#FFEBEE'

@@ -34,9 +34,9 @@ export const listenOrderUpdates = async (callback) => {
       console.log("📦 Order update:", updateData);
       callback(updateData);
     });
-    socket.on('trialPhaseStart', (data) => {
-  console.log('Received trialPhaseStart:', data);
-});
+//     socket.on('trialPhaseStart', (data) => {
+//   console.log('Received trialPhaseStart:', data);
+// });
   } else {
     console.error("Socket not initialized");
   }

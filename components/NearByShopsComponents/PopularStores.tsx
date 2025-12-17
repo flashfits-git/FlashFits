@@ -3,23 +3,28 @@ import { useNavigation } from '@react-navigation/native'; // ✅ Fix navigation
 import { Star } from 'lucide-react-native'; // optional
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 
-const PopularStores = ({merchantData}) => {
+const PopularStores = ({ merchantData, productsByMerchant }) => {
   const navigation = useNavigation(); // ✅ Hook for navigation
 
-//     merchantData.forEach((merchant) => {
-//   console.log('Merchant ID:', merchant._id);
-// });
-  
-// const DUMMY_STORES = [
-//   { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
-//   { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
-//   { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
-//   { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
-// ];
+  //     merchantData.forEach((merchant) => {
+  //   console.log('Merchant ID:', merchant._id);
+  // });
+// console.log(productsByMerchant,'productsByMerchantproductsByMerchantproductsByMerchant');
+
+  // const DUMMY_STORES = [
+  //   { id: '1', name: 'Adidas Originals', rating: '10 mins', address:'Vytila juntion, piller no 123' },
+  //   { id: '2', name: 'Nike Store', rating: '12 mins',address:'Vytila juntion, piller no 123' },
+  //   { id: '3', name: 'Puma Select', rating: '15 mins' ,address:'Vytila juntion, piller no 123'},
+  //   { id: '4', name: 'Zara Outlet', rating: '8 mins',address:'Vytila juntion, piller no 123' },
+  // ];
+    const filteredMerchants = merchantData.filter(
+    (m) => (productsByMerchant[m._id]?.length || 0) > 0
+  );
+
 
   return (
     <View style={styles.wrapper}>
-      {merchantData.map((item) => (
+      {filteredMerchants.map((item) => (
         <View key={item._id} style={styles.inputContainer} >
           <TouchableOpacity
             style={styles.header}
@@ -31,17 +36,19 @@ const PopularStores = ({merchantData}) => {
           >
             <View style={styles.leftBlock}>
               <Text style={styles.storeName}>{item.shopName}</Text>
-              <Text style={styles.ratingText1}>
-                                {item.address
-                                ? [item.address.street, item.address.city, item.address.state, item.address.postalCode, item.address.country]
-                                    .filter(Boolean)
-                                    .join(', ')
-                                : 'No address'}
+              <Text style={styles.ratingText}>
+                {item.address
+                  ? [item.address.city, item.address.state, item.address.country]
+                    .filter(Boolean)
+                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+                    .join(', ')
+                  : 'No address'}
               </Text>
             </View>
-            <Text style={styles.ratingText}>⭐{item.rating ?? 'No rating'}</Text>
+            <Text style={styles.ratingText}>⭐{item.ratings ?? 'No rating'}</Text>
           </TouchableOpacity>
-          <CardinStores merchantId={item._id} />
+          <CardinStores merchantId={item._id} products={productsByMerchant[item._id] || []} />
+
         </View>
       ))}
     </View>
@@ -64,7 +71,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 8,
-    elevation: 5,
+    elevation: 1,
     marginBottom: 16,
   },
   header: {
@@ -77,25 +84,25 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
-    fontFamily:'Montserrat'
+    fontFamily: 'Montserrat'
   },
   ratingText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    fontFamily:'Montserrat',
-    opacity:.5
+    fontFamily: 'Montserrat',
+    opacity: .5
   },
-    ratingText1: {
+  ratingText1: {
     fontSize: 10,
     fontWeight: '600',
     color: '#333',
-    fontFamily:'Montserrat',
-    opacity:.5
+    fontFamily: 'Montserrat',
+    opacity: .5
   },
-    leftBlock: {
-  flexDirection: 'column',
-}
+  leftBlock: {
+    flexDirection: 'column',
+  }
 });
 
 export default PopularStores;
