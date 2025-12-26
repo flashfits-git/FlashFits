@@ -7,6 +7,8 @@ import {
   Platform,
   ScrollView
 } from 'react-native';
+import { RefreshControl } from 'react-native';
+
 import { useNavigation } from '@react-navigation/native';
 import Loader from '@/components/Loader/Loader';
 import Footer from '../../components/Footer';
@@ -19,6 +21,7 @@ export default function WishlistScreen() {
   const navigation = useNavigation();
 
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState([]);
 
   // Scroll logic refs
@@ -27,26 +30,39 @@ export default function WishlistScreen() {
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [showStickySearch, setShowStickySearch] = useState(false);
 
-  useEffect(() => {
-    getNewArrivalsProducts();
-  }, []);
-
-  const getNewArrivalsProducts = async () => {
+  const fetchWishlist = async () => {
     try {
       const response = await getMyWishlist();
-      console.log(response.data, 'responceresponceresponceresponceresponce');
 
-      setNewArrivalsProducts(response?.data?.map(w => ({
-        wishlistId: w._id,
-        addedAt: w.addedAt,
-        ...w.product,     // 👈 flatten product
-      })));
+      setNewArrivalsProducts(
+        response?.data?.map(w => ({
+          wishlistId: w._id,
+          addedAt: w.addedAt,
+          ...w.product, // flatten product
+        })) || []
+      );
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching wishlist:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchWishlist();
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+
+
 
   // ------------------------------
   // TAB BAR SCROLL LOGIC
@@ -95,11 +111,11 @@ export default function WishlistScreen() {
     <View style={styles.container}>
       <HeaderWishlist />
       <Animated.FlatList
-        data={[1]}               // <-- only one item to allow scrolling
+        data={[1]}
         keyExtractor={() => "wishlist-scroll"}
-        renderItem={() => null} // no items rendered
+        renderItem={() => null}
         ListHeaderComponent={
-          <WhishlistCard product={newArrivalsProducts} /> // unchanged
+          <WhishlistCard product={newArrivalsProducts} />
         }
         contentContainerStyle={{ paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
@@ -108,6 +124,13 @@ export default function WishlistScreen() {
           { useNativeDriver: false }
         )}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="black"
+          />
+        }
       />
 
       <Footer />

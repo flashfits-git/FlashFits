@@ -11,17 +11,29 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import HearderForProfileComponents from '../../components/ProfilePageComponents/HearderForProfileComponents';
 import { getAddresses } from '../api/productApis/cartProduct';
-
+import * as SecureStore from 'expo-secure-store';
 const AddressPage = () => {
   const router = useRouter();
   const [addresses, setAddresses] = useState([]);
-
+  console.log(addresses,'addressesaddressesaddresses');
+  
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     fetchAddresses();
   }, []);
 
   const fetchAddresses = async () => {
     try {
+      // 🔐 0️⃣ CHECK TOKEN FIRST
+      const token = await SecureStore.getItemAsync('token');
+
+      if (!token) {
+        console.log('No token found → skipping address API');
+        setLoading(false);
+        return; // ❌ STOP HERE — NO API CALL
+      }
+
+
       const res = await getAddresses();
       setAddresses(res?.addresses || []);
     } catch (error) {
@@ -73,7 +85,7 @@ const AddressPage = () => {
                 <Text style={styles.deleteText}>Delete</Text>
               </TouchableOpacity>
 
-             <TouchableOpacity style={[styles.editButton, { opacity: 0.3 }]}>
+              <TouchableOpacity style={[styles.editButton, { opacity: 0.3 }]}>
                 <MaterialIcons name="edit" size={20} color="green" />
                 <Text style={styles.editText}>Edit</Text>
               </TouchableOpacity>
@@ -176,12 +188,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    backgroundColor:'#000'
+    backgroundColor: '#000'
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color:'#fff'
+    color: '#fff'
   },
 });
 

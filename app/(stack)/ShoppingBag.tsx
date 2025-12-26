@@ -50,7 +50,7 @@ const CartBag = () => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const { selectedAddress } = useAddress();
+  const { selectedAddress,setSelectedAddress,addresses,setAddresses } = useAddress();
 
   useEffect(() => {
     const checkFirstTime = async () => {
@@ -71,6 +71,9 @@ const CartBag = () => {
     }
   }, [shouldAskAddress]);
 
+  // console.log(cartItems, 'cartItemscartItemscartItemscartItems');
+
+
 
   const handleAddressChange = async (address) => {
     setAddress(address);
@@ -80,25 +83,36 @@ const CartBag = () => {
 
   const fetchCart = async (showLoader = true) => {
     try {
+      const saved = await SecureStore.getItemAsync('selectedAddress');
+      if (!saved) {
+        console.log('No address selected → reopening modal');
+        setTimeout(() => addressRef.current?.open(), 200);
+        return;
+      }
 
       if (showLoader) setLoading(true);
-      const cartData = await getCartbyPassAdress(selectedAddress._id);
+
+      // Determine if current address is serviceable
+      const isServiceable = selectedAddress?.addressType !== 'Non-serviceable' && selectedAddress?.isServiceable !== false;
+
+
+      console.log(isServiceable, 'isServiceableisServiceableisServiceable');
+
+      // Call API with both addressId and serviceable flag
+      const cartData = await getCartbyPassAdress(selectedAddress._id, isServiceable);
+
+      console.log(cartData, 'cartDatacartData');
+
+
       const items = cartData.items || [];
-      setDeliveryCharge(items[0]?.merchantDelivery.deliveryCharge || 0);
+      setDeliveryCharge(items[0]?.merchantDelivery?.deliveryCharge || 0);
       setCartItems(items);
       setCartCount(items.length);
-      // Animate content entrance
+
+      // Animations...
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        })
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
       ]).start();
 
     } catch (err) {
@@ -110,11 +124,38 @@ const CartBag = () => {
     }
   };
 
-
   useEffect(() => {
-    fetchCart();
-    console.log(selectedAddress._id, 'selectedAddressselectedAddress');
+    const init = async () => {
+      const token = await SecureStore.getItemAsync('token');
+
+      // 🔐 Stop if user not logged in
+      if (!token) {
+        console.log('No token found → skipping cart API');
+        setLoading(false);
+        return;
+      }
+
+      // 📍 Stop if address not selected yet
+      // if (!selectedAddress?._id) {
+      //   console.log('No address selected → waiting');
+      //   return;
+      // }
+
+      // if (!saved) {
+      //   console.log('No address selected → reopening modal');
+      //   setTimeout(() => addressRef.current?.open(), 200);
+      //   return;
+      // }
+
+      console.log(selectedAddress._id, 'selectedAddress');
+
+      // ✅ Safe to call API now
+      fetchCart();
+    };
+
+    init();
   }, [selectedAddress]);
+
 
   // Handle scroll-based animations
   useEffect(() => {
@@ -173,6 +214,9 @@ const CartBag = () => {
     setRefreshing(true);
     await fetchCart(false);
   };
+
+  // console.log(productData,'productDataproductDataproductDataproductData');
+
 
   const productData = cartItems.map((item) => {
     const product = item.productId || {};
@@ -282,18 +326,22 @@ const CartBag = () => {
     }
   };
 
-  const SlideToPay = ({ label, onComplete }) => {
+  const SlideToPay = ({ label, onComplete, serviceable = false }) => {
+    const disabled = serviceable;
     const slideAnimation = useRef(new Animated.Value(0)).current;
 
     const panResponder = useRef(
       PanResponder.create({
-        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponder: () => !serviceable, // ← Disable touch if serviceable
+        onMoveShouldSetPanResponder: () => !serviceable,
         onPanResponderMove: (_, gestureState) => {
-          if (gestureState.dx > 0 && gestureState.dx <= maxSlide) {
+          if (!serviceable && gestureState.dx > 0 && gestureState.dx <= maxSlide) {
             slideAnimation.setValue(gestureState.dx);
           }
         },
         onPanResponderRelease: (_, gestureState) => {
+          if (serviceable) return;
+
           if (gestureState.dx >= maxSlide * 0.7) {
             Animated.timing(slideAnimation, {
               toValue: maxSlide,
@@ -314,59 +362,53 @@ const CartBag = () => {
       })
     ).current;
 
-    if (label === 'tryandbuy') {
-      return (
-        <View style={styles.slideToPayContainer}>
-          <LinearGradient
-            colors={['#111111ff', '#1c1c1cd9']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.slideTrack}
-          >
-            {/* Try and Buy: Red Arrows */}
-            <Animated.View
-              style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-              {...panResponder.panHandlers}
-            >
-              <View style={styles.slideArrows}>
-                <Ionicons name="chevron-forward" size={18} color="#000" />
-                <Ionicons name="chevron-forward" size={18} color="#000" />
-              </View>
-            </Animated.View>
-            <Text style={styles.slideText}>Try & Buy</Text>
-          </LinearGradient>
-        </View>
-      );
-    }
+    // serviceable styles
+    const containerStyle = disabled
+      ? [styles.slideToPayContainer, { opacity: 0.6 }]
+      : styles.slideToPayContainer;
 
-    if (label === 'prepaid') {
-      return (
-        <View style={styles.slideToPayContainer} >
-          <LinearGradient
-            colors={['#61b3f6ff', '#61b3f6d1']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.slideTrack}
-          >
-            {/* Prepaid: Blue Arrows */}
-            <Animated.View
-              style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-              {...panResponder.panHandlers}
-            >
-              <View style={styles.slideArrows}>
-                <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
-                <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
-              </View>
-            </Animated.View>
-            <Text style={styles.slideText}>Pay Now</Text>
-          </LinearGradient>
-        </View>
-      );
-    }
+    const trackColors = ['#000000', '#1a1a1a'];
 
-    // fallback (should not occur if only used for these two labels)
-    return null;
+    const textColor = disabled ? '#666' : '#fff';
+    const arrowColor = label === 'tryandbuy' ? '#666' : '#aaa';
+
+    return (
+      <View style={containerStyle}>
+        <LinearGradient
+          colors={disabled ? ['#e0e0e0', '#d0d0d0'] : trackColors}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.slideTrack}
+        >
+          <Animated.View
+            style={[
+              styles.slideThumb,
+              { transform: [{ translateX: slideAnimation }] },
+              disabled && { backgroundColor: '#bbb' }, // dull thumb
+            ]}
+            {...(disabled ? {} : panResponder.panHandlers)} // remove handlers when disabled
+          >
+            <View style={styles.slideArrows}>
+              <Ionicons name="chevron-forward" size={18} color={arrowColor} />
+              <Ionicons name="chevron-forward" size={18} color={arrowColor} />
+            </View>
+          </Animated.View>
+
+          <Text style={[styles.slideText, { color: textColor }]}>
+            {disabled ? 'Delivery Unavailable' : label === 'tryandbuy' ? 'Try & Buy' : 'Pay Now'}
+          </Text>
+        </LinearGradient>
+
+        {disabled && (
+          <Text style={styles.disabledHintText}>
+            Change delivery location to proceed
+          </Text>
+        )}
+      </View>
+    );
   };
+  // console.log(productData,'productDataproductDataproductData');
+
 
   if (loading) return <Loader />;
   if (cartItems.length === 0) {
@@ -407,7 +449,7 @@ const CartBag = () => {
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => router.push('/(tabs)/favorites')}
+            onPress={() => router.push('/(tabs)/Wishlist')}
             style={styles.wishlistButton}
             activeOpacity={0.7}
           >
@@ -507,7 +549,7 @@ const CartBag = () => {
                 style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}
               />
               <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
-                Pay Order
+                Pay Now
               </Text>
             </View>
           </TouchableOpacity>
@@ -697,8 +739,10 @@ const CartBag = () => {
                 colors={['#F8F9FA', '#FFFFFF']}
                 style={styles.exploreGradient}
               >
-                <Text style={styles.exploreButtonText}>EXPLORE STORE MORE</Text>
-                <Text style={styles.exploreSubtext}>Discover similar products</Text>
+                <Text style={styles.exploreButtonText}>
+                  {productData.length > 0 ? `EXPLORE ${productData[0].merchantName.toUpperCase()} MORE` : 'EXPLORE STORE MORE'}
+                </Text>
+                <Text style={styles.exploreSubtext}>Try Multiple Sizes and Styles on your Cart</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -726,7 +770,11 @@ const CartBag = () => {
                 </TouchableOpacity>
               </View>
             </View>
-            <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
+            <SlideToPay
+              label="prepaid"
+              onComplete={handlePaymentComplete}
+              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+            />
           </>
         )}
         {activeTab === 'TryandBuy' && (
@@ -743,8 +791,8 @@ const CartBag = () => {
                       Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
                     </Text>
                     <Text style={styles.googlePayText1}>
-                      Return Charge will be deducted when you keep the Cart. 
-                    {/* (₹{totalValue.toLocaleString()}) */}
+                      Return Charge will be deducted when you keep the Cart.
+                      {/* (₹{totalValue.toLocaleString()}) */}
                     </Text>
                     {/* <Text style={styles.googlePayText1}>
                       We applies return charge deduction on keeping the cart.
@@ -753,7 +801,11 @@ const CartBag = () => {
                 </View>
               </View>
             </View>
-            <SlideToPay label="tryandbuy" onComplete={handlePaymentComplete} />
+            <SlideToPay
+              label="tryandbuy"
+              onComplete={handlePaymentComplete}
+              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+            />
           </>
         )}
       </View>
@@ -853,7 +905,7 @@ const styles = StyleSheet.create({
   totalValueText: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'Montserrat' },
 
   // Coupon Section
-  couponSection: { marginVertical: 12 },
+  // couponSection: { marginVertical: 12 },
   couponButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#cbfed7ff', padding: 16, borderRadius: 12, borderColor: '#FFE0B2' },
   couponLeft: { flexDirection: 'row', alignItems: 'center' },
   couponIcon: { fontSize: 24, marginRight: 12 },
@@ -863,7 +915,7 @@ const styles = StyleSheet.create({
 
   // Explore Section
   exploreSection: { marginVertical: 16 },
-  exploreButton: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
+  exploreButton: { borderWidth: 2, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
   exploreGradient: { paddingVertical: 20, paddingHorizontal: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16 },
   exploreButtonText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5, marginBottom: 4 },
   exploreSubtext: { color: '#666', fontSize: 12, fontFamily: 'Montserrat' },
@@ -883,6 +935,13 @@ const styles = StyleSheet.create({
 
   // Payment Method
   slideToPayContainer: { marginBottom: 20 },
+  disabledHintText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 8,
+    fontFamily: 'Montserrat',
+  },
   paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0', },
   paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   paymentMethodLeft: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },

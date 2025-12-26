@@ -16,7 +16,7 @@ import {
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
-import { addressModalRef } from "./_layout";
+import { RefreshControl } from 'react-native';
 import PopupCart from '../../components/HomeComponents/PopupCart';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import Carousel from '@/components/HomeComponents/Carousel';
@@ -29,8 +29,10 @@ import Footer from '../../components/Footer';
 import Loader from '@/components/Loader/Loader';
 import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
-import {getMyWishlist} from '../api/productApis/products'
-import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context
+import { getMyWishlist } from '../api/productApis/products'
+import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
+import CategorySwitcher from '@/components/HomeComponents/CategorySwitcher';
+import { GenderProvider } from '@/app/GenderContext'
 
 const HEADER_HEIGHT = 70;
 const SCROLL_THRESHOLD = 5;
@@ -39,10 +41,8 @@ export default function Home() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  // ---------------- CONTEXT ----------------
   const { selectedAddress, setSelectedAddress } = useAddress(); // <-- now from context
 
-  // ---------------- LOCAL STATES ----------------
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,9 +50,32 @@ export default function Home() {
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
+  const [isActive, setIsActive] = useState(true)
+  const [refreshing, setRefreshing] = useState(false);
+  const [isServiceable, setIsServiceable] = useState<boolean | null>(null);
+
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadInitialData(),
+        syncWishlistVariants(),
+      ]);
+    } catch (e) {
+      console.error('Refresh error:', e);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadInitialData, syncWishlistVariants]);
+
+  useEffect(() => {
+    return () => setIsActive(false);
+  }, []);
 
   // ------------------- LOAD DATA -------------------
   const loadInitialData = useCallback(async () => {
+    setLoading(true);
     try {
       const [products, viewed, storedAddress] = await Promise.all([
         fetchnewArrivalsProductsData(),
@@ -77,52 +100,34 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!isActive) return;
+
     loadInitialData();
   }, []);
 
-useEffect(() => {
-  const syncWishlistVariants = async () => {
+  useEffect(() => {
+    syncWishlistVariants();
+  }, [syncWishlistVariants]);
+
+  const syncWishlistVariants = useCallback(async () => {
     try {
       const response = await getMyWishlist();
       const wishlist = response?.data || [];
 
-      // 🔑 Extract variant IDs
-      const variantIds = wishlist
-        .map(item => item?.product?.variant?._id)
-        .filter(Boolean);
+      const wishlistMap = wishlist.reduce((acc: any, item: any) => {
+        const variantId = item?.product?.variant?._id;
+        const wishlistItemId = item?._id;
+        if (variantId && wishlistItemId) {
+          acc[String(variantId)] = String(wishlistItemId);
+        }
+        return acc;
+      }, {});
 
-      // 🔐 Store in SecureStore
-      await SecureStore.setItemAsync(
-        'Wishlist',
-        JSON.stringify(variantIds)
-      );
-
-      console.log('Wishlist variant IDs stored:', variantIds);
-    } catch (error) {
-      console.error('Wishlist sync error:', error);
+      await SecureStore.setItemAsync('Wishlist', JSON.stringify(wishlistMap));
+    } catch (e) {
+      console.error(e);
     }
-  };
-
-  syncWishlistVariants();
-}, []);
-
-  useEffect(() => {
-    const reCheck = async () => {
-
-      console.log('88888k');
-      let saved = await SecureStore.getItemAsync('selectedAddress');
-      // const res = await getAddresses();
-      // setAddresses(res.addresses || []);
-
-      if (!saved) {
-        setTimeout(() => addressModalRef.current?.open(), 200);
-      }
-    };
-    reCheck();
-  }, [selectedAddress]);
-
-
-
+  }, []);
 
   // ------------------- TAB BAR SCROLL -------------------
   useEffect(() => {
@@ -164,6 +169,7 @@ useEffect(() => {
         <Carousel />
         <HomeCategorySwitcherShops />
         <RecentlyViewed product={recentlyViewed} />
+        <CategorySwitcher />
         <ParentCategoryIndexing products={newArrivalsProducts} />
       </>
     ),
@@ -174,87 +180,89 @@ useEffect(() => {
 
   return (
     <>
-      <View style={styles.container}>
-        <Banner />
+      <GenderProvider>
+        <View style={styles.container}>
+          <Banner />
 
-        {/* FIXED HEADER */}
-        <View style={styles.header} >
-          <View style={styles.locationWrapper}>
-            <Ionicons
-              name="location-outline"
-              size={30}
-              color="black"
-              style={styles.locationIcon}
-            />
+          {/* FIXED HEADER */}
+          <View style={styles.header} >
+            <View style={styles.locationWrapper}>
+              <Ionicons
+                name="location-outline"
+                size={30}
+                color="black"
+                style={styles.locationIcon}
+              />
 
-            <TouchableOpacity onPress={() => {
-              try {
-                addressModalRef.current?.open();
-              } catch (err) {
-                console.log("Modal open error:", err);
-              }
-            }}
-              style={{ paddingVertical: 20 }}>
-              <View
-                style={styles.locationTextWrapper}
-              >
-                <View style={styles.locationRow}>
-                  <Text style={styles.cityText} numberOfLines={1}>
-                    {selectedAddress
-                      ? [
-                        selectedAddress.addressLine1,
-                        selectedAddress.area,
-                        selectedAddress.city,
-                      ]
-                        .map((v) => v?.trim())
-                        .filter(Boolean)
-                        .join(', ')
-                      : 'Select Location'}
-                  </Text>
+              <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen")}
+                style={{ paddingVertical: 20 }}>
+                <View
+                  style={styles.locationTextWrapper}
+                >
+                  <View style={styles.locationRow}>
+                    <Text style={styles.cityText} numberOfLines={1}>
+                      {selectedAddress?.addressType === 'Non-serviceable'
+                        ? 'Oops! We don’t deliver here yet' // or use selectedAddress.fullMessage
+                        : selectedAddress
+                          ? [
+                            selectedAddress.addressLine1,
+                            selectedAddress.area,
+                            selectedAddress.city,
+                          ].filter(Boolean).join(', ')
+                          : 'Select Location'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.subRow}>
+                    <Text style={styles.subText} numberOfLines={1}>
+                      {selectedAddress?.addressType === 'Non-serviceable'
+                        ? 'We’ll be there soon'
+                        : selectedAddress?.addressType || 'Explore trending styles around you!'}
+                    </Text>
+                    <TouchableOpacity>
+                      <Ionicons
+                        name="chevron-down-outline"
+                        size={16}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
+              </TouchableOpacity>
+            </View>
 
-                <View style={styles.subRow}>
-                  <Text style={styles.subText} numberOfLines={1}>
-                    {selectedAddress
-                      ? `${selectedAddress.addressType}`
-                      : 'Explore trending styles around you!'}
-                  </Text>
-
-                  <TouchableOpacity>
-                    <Ionicons
-                      name="chevron-down-outline"
-                      size={16}
-                      color="black"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableOpacity>
+            <View style={styles.notificationIcon}>
+              <SearchCartProfileButton />
+            </View>
           </View>
 
-          <View style={styles.notificationIcon}>
-            <SearchCartProfileButton />
-          </View>
+          {/* MAIN CONTENT */}
+          <Animated.FlatList
+            data={[]}
+            renderItem={null}
+            ListHeaderComponent={Header}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            keyExtractor={() => 'dummy'}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="black"
+              />
+            }
+          />
+
+
+          {/* <PopupCart isTabBarVisible={isTabBarVisible} /> */}
+          <Footer />
         </View>
-
-        {/* MAIN CONTENT */}
-        <Animated.FlatList
-          data={[]}
-          renderItem={null}
-          ListHeaderComponent={Header}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-            { useNativeDriver: false },
-          )}
-          scrollEventThrottle={16}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          keyExtractor={() => 'dummy'}
-        />
-
-        <PopupCart isTabBarVisible={isTabBarVisible} />
-        <Footer />
-      </View>
+      </GenderProvider>
     </>
   );
 }

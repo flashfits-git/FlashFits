@@ -5,41 +5,49 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  ScrollView,
   Pressable,
-  TouchableWithoutFeedback,
   FlatList,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import tryDoorstep from '../assets/images/shoppingbag/footer/17.png';
+import inminutes from '../assets/images/shoppingbag/footer/18.png';
+import tryandbuy from '../assets/images/shoppingbag/footer/19.png';
+import intsantreturn from '../assets/images/shoppingbag/footer/20.png';
+
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const steps = [
   {
     icon: 'pricetag-outline',
-    title: 'Try at your doorstep @ ₹0',
-    desc: 'Order multiple styles/sizes with no upfront cost.',
+    title: 'Try at your doorstep',
+    desc: 'Order multiple styles/sizes with no upfront commitment.',
+    iconImage: tryDoorstep,
   },
   {
     icon: 'rocket-outline',
     title: 'Get item in minitues',
     desc: 'Get your selection delivered in minutes',
+    iconImage: inminutes,
   },
   {
     icon: 'card-outline',
     title: 'Try First, Pay Later',
     desc: 'Our Delivery executive wait for your trying, Only pay for what you keep—discounts auto-applied.',
+    iconImage: tryandbuy,
   },
   {
     icon: 'refresh-circle-outline',
     title: 'Instant Returns',
     desc: 'Return what you don’t want instantly, no questions asked.',
+    iconImage: intsantreturn,
   },
 ];
 
 const Footer = () => {
   const COLLAPSED_HEIGHT = 70
-  const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.5
+  const EXPANDED_HEIGHT = SCREEN_HEIGHT * 0.35
 
   const animatedHeight = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
   const [isExpanded, setIsExpanded] = useState(false);
@@ -98,13 +106,31 @@ const Footer = () => {
                   contentContainerStyle={styles.stepsContainer}
                   renderItem={({ item }) => (
                     <View style={styles.step}>
-                      <Ionicons name={item.icon} size={30} color="#000" style={styles.icon} />
+                      {/* Optional small icon */}
+                      <Ionicons
+                        name={item.icon}
+                        size={26}
+                        color="#111"
+                        style={styles.icon}
+                      />
+
                       <View style={styles.textWrap}>
                         <Text style={styles.stepTitle}>{item.title}</Text>
                         <Text style={styles.stepDesc}>{item.desc}</Text>
+
+                        {/* 🔥 Image under text */}
+                        <View style={styles.imageWrapper}>
+                          <Image
+                            source={item.iconImage}
+                            style={styles.stepImage}
+                            resizeMode="contain"
+                          />
+                        </View>
+
                       </View>
                     </View>
                   )}
+
                 />
 
                 {/* Paging Dots */}
@@ -148,32 +174,57 @@ const Footer = () => {
 };
 
 const styles = StyleSheet.create({
-absoluteFooter: {
-  position: 'absolute',
-  bottom: 0,
-  width: '100%',
-},
-footer: {
-  backgroundColor: '#ffffffff',
-  borderTopRightRadius: 26,
-  borderTopLeftRadius: 26,
-  shadowColor: '#000',
-  shadowRadius: 12,
-  shadowOffset: { height: -6 },
-  shadowOpacity: 0.10,
-  elevation: 6,
-  overflow: 'hidden',
-  zIndex: 30,
-  // Border color and width for top, left, and right
-  borderTopColor: '#d3d3d3',   // light grey
-  borderLeftColor: '#d3d3d3',
-  borderRightColor: '#d3d3d3',
-  borderTopWidth: 0.5,
-  borderLeftWidth: 0.5,
-  borderRightWidth: 0.5,
-  paddingBottom: 20,
-  height:200
-},
+  absoluteFooter: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+  },
+  footer: {
+    backgroundColor: '#ffffffff',
+    borderTopRightRadius: 26,
+    borderTopLeftRadius: 26,
+    shadowColor: '#000',
+    shadowRadius: 12,
+    shadowOffset: { height: -6 },
+    shadowOpacity: 0.10,
+    elevation: 6,
+    overflow: 'hidden',
+    zIndex: 30,
+    // Border color and width for top, left, and right
+    borderTopColor: '#d3d3d3',   // light grey
+    borderLeftColor: '#d3d3d3',
+    borderRightColor: '#d3d3d3',
+    borderTopWidth: 0.5,
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    paddingBottom: 20,
+    height: 200
+  },
+  imageWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginTop: 30,
+    // marginRight:10
+  },
+
+  stepImage: {
+    width: SCREEN_WIDTH * 0.6, // 👈 image width control
+    height: 120,
+    marginRight:40
+  },
+
+  textWrap: {
+    flex: 1,
+    paddingRight: 10,
+  },
+
+  step: {
+    flexDirection: 'row',
+    width: SCREEN_WIDTH,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+  },
   upArrowButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,8 +271,8 @@ footer: {
     color: '#111',
     textAlign: 'left',
     flex: 1,
-    paddingLeft:10,
-    margin:3
+    paddingLeft: 10,
+    margin: 3
   },
   stepsContainer: {
     minHeight: 62,

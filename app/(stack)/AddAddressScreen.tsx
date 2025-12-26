@@ -10,13 +10,17 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams } from "expo-router";
 import { createAddress } from '../../app/api/productApis/cartProduct';
+import { useAddress } from '../AddressContext';
+
 
 export default function AddAddressScreen() {
+  const { setSelectedAddress } = useAddress();
 
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -84,7 +88,9 @@ export default function AddAddressScreen() {
 
     try {
       const response = await createAddress(addressData);
-
+      console.log(response, 'responseresponser4434esponseresponse');
+      await SecureStore.setItemAsync('selectedAddress', JSON.stringify(response.address));
+      setSelectedAddress(response.address)
       alert("Address added successfully!");
       router.replace("/(tabs)");
 

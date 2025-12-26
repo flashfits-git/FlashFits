@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import {
     View,
     Text,
@@ -13,10 +13,32 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { listenOrderUpdates } from "../../sockets/order.socket";
+import OrderCompletionScreen from "./OrderCompletionScreen";
+
+
+type OrderData = {
+    _id?: string;
+    orderStatus?: string;
+    estimatedTime?: string | number;
+    customerDeliveryStatus?: string;
+    otp?: string;
+    items?: Item[];
+    trialPhaseStart?: string | number | null;
+    trialPhaseDuration?: number;
+    deliveryRiderDetails?: {
+        name?: string;
+        phone?: string;
+    };
+    returnCharge?: number;
+    [k: string]: any;
+};
 
 export default function ReturnItemsPage() {
-    const { items, otp, orderId } = useLocalSearchParams();
+    const { items, otp, orderId, orderData } = useLocalSearchParams();
+    const parsedOrderData = orderData ? JSON.parse(orderData as string) : null;
     const returnItems = items ? JSON.parse(items as string) : [];
+    const [showCompletion, setShowCompletion] = useState(false);
+    const [completedOrder, setCompletedOrder] = useState<OrderData | null>(null);
 
     useEffect(() => {
         let socketRef;
@@ -30,7 +52,8 @@ export default function ReturnItemsPage() {
                     orderStatus === "otp-verified-return"
                 ) {
                     console.log("✅ otp-verified-return detected — redirecting");
-                    router.replace("/(stack)/OrderDetail/OrderCompletionScreen");
+                    setCompletedOrder(parsedOrderData);
+                    setShowCompletion(true);
                 }
             });
         };
@@ -40,9 +63,14 @@ export default function ReturnItemsPage() {
         return () => {
             if (socketRef) {
                 socketRef.off("orderUpdate");
+                
             }
         };
     }, [orderId]);
+
+    if (showCompletion && completedOrder) {
+        return <OrderCompletionScreen orderData={completedOrder} />;
+    }
 
 
     const handleHandover = () => {

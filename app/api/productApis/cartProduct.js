@@ -3,7 +3,7 @@ import * as SecureStore from 'expo-secure-store';
 
 
 export const AddProducttoCart = async (productData) => {
-  console.log(productData,'DFD');
+  // console.log(productData,'DFD');
   try {
     const response = await api.post('user/cart/add', productData); // replace '/cart/add' with your actual endpoint
     // console.log(response.data,'33333333333333333');
@@ -26,12 +26,15 @@ export const GetCart = async () => {
   }
 };
 
-export const getCartbyPassAdress = async (addressId) => {
+  export const getCartbyPassAdress = async (addressId, serviceable) => {
   try {
-    const response = await api.get(`user/cart/${addressId}`);
+    const response = await api.post('user/cart', {
+      addressId,
+      serviceable, // ← sending true/false
+    });
     return response.data;
   } catch (error) {
-    console.error("Error fetching cart:", error);
+    console.error('Error fetching cart:', error);
     throw error;
   }
 };

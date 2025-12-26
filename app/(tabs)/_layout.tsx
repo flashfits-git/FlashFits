@@ -9,10 +9,9 @@ import {
   Easing,
   View,
   StatusBar,
-  TouchableOpacity,
-  ActivityIndicator,
 } from 'react-native';
 import * as Location from 'expo-location';
+import { checkDeliveryAvailability } from '../api/auth';
 import * as SecureStore from 'expo-secure-store';
 import { Modalize } from 'react-native-modalize';
 import Colors from '../../assets/theme/Colors';
@@ -45,29 +44,6 @@ const distanceInMeters = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-/**
- * RETURNS address if within 300m radius
- */
-const findNearestAddress = (currLat, currLng, list) => {
-  let nearest = null;
-
-  list.forEach((addr) => {
-    if (!addr.location?.coordinates) return;
-
-    const [lng, lat] = addr.location.coordinates;
-    const dist = distanceInMeters(currLat, currLng, lat, lng);
-
-    if (dist <= 300) {
-      nearest = addr;
-    }
-  });
-
-  return nearest;
-};
-
-// --------------------------------------------
-//                TAB ICON
-// --------------------------------------------
 const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
@@ -126,58 +102,58 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
 function TabsWithCart() {
   return (
     <>
-    <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        animation: 'none',
-        tabBarHideOnKeyboard: true,
-        tabBarShowLabel: false,
-        tabBarStyle: {
-          position: 'absolute',
-          height: Platform.OS === 'ios' ? 80 : 90,
-          backgroundColor: '#fff',
-          borderTopLeftRadius: 30,
-          borderTopRightRadius: 30,
-          paddingTop: 18,
-          paddingBottom: 10,
-        },
-        tabBarActiveTintColor: Colors.dark1,
-        tabBarInactiveTintColor: Colors.dark1,
-        tabBarIcon: ({ color, focused }) => {
-          let iconName = 'home-outline';
-          let label = 'Home';
+      <Tabs
+        screenOptions={({ route }) => ({
+          headerShown: false,
+          animation: 'none',
+          tabBarHideOnKeyboard: true,
+          tabBarShowLabel: false,
+          tabBarStyle: {
+            position: 'absolute',
+            height: Platform.OS === 'ios' ? 80 : 90,
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 30,
+            borderTopRightRadius: 30,
+            paddingTop: 18,
+            paddingBottom: 10,
+          },
+          tabBarActiveTintColor: Colors.dark1,
+          tabBarInactiveTintColor: Colors.dark1,
+          tabBarIcon: ({ color, focused }) => {
+            let iconName = 'home-outline';
+            let label = 'Home';
 
-          if (route.name === 'index') {
-            iconName = focused ? 'home' : 'home-outline';
-            label = 'Home';
-          } else if (route.name === 'Categories') {
-            iconName = focused ? 'grid' : 'grid-outline';
-            label = 'Categories';
-          } else if (route.name === 'FlashfitsStores') {
-            iconName = focused ? 'storefront' : 'storefront-outline';
-            label = 'Stores';
-          } else if (route.name === 'Wishlist') {
-            iconName = focused ? 'heart' : 'heart-outline';
-            label = 'Wishlist';
-          }
+            if (route.name === 'index') {
+              iconName = focused ? 'home' : 'home-outline';
+              label = 'Home';
+            } else if (route.name === 'Categories') {
+              iconName = focused ? 'grid' : 'grid-outline';
+              label = 'Categories';
+            } else if (route.name === 'FlashfitsStores') {
+              iconName = focused ? 'storefront' : 'storefront-outline';
+              label = 'Stores';
+            } else if (route.name === 'Wishlist') {
+              iconName = focused ? 'heart' : 'heart-outline';
+              label = 'Wishlist';
+            }
 
-          return (
-            <AnimatedIconWrapper
-              focused={focused}
-              iconName={iconName}
-              color={color}
-              label={label}
-            />
-          );
-        },
-      })}
-    >
-      <Tabs.Screen name="index" />
-      <Tabs.Screen name="Categories" />
-      <Tabs.Screen name="FlashfitsStores" />
-      <Tabs.Screen name="Wishlist" />
-    </Tabs>
-     <AddressSelectionModalize ref={addressModalRef} />
+            return (
+              <AnimatedIconWrapper
+                focused={focused}
+                iconName={iconName}
+                color={color}
+                label={label}
+              />
+            );
+          },
+        })}
+      >
+        <Tabs.Screen name="index" />
+        <Tabs.Screen name="Categories" />
+        <Tabs.Screen name="FlashfitsStores" />
+        <Tabs.Screen name="Wishlist" />
+      </Tabs>
+      {/* <AddressSelectionModalize ref={addressModalRef} /> */}
     </>
   );
 }
@@ -190,111 +166,138 @@ export default function TabLayout() {
   const addressModalRef = useRef(null);
 
   const { addresses, setAddresses, setSelectedAddress } = useAddress();
-  
+
 
   const [loading, setLoading] = useState(true);
 
-  // --------------------------------------------
-  //          FIRST MOUNT → LOCATION + ADDRESS
-  // --------------------------------------------
-useEffect(() => {
-  
-  const init = async () => {
-    try {
-      setLoading(true);
+  useEffect(() => {
+    const init = async () => {
+      try {
+        setLoading(true);
 
-      // 1️⃣ PERMISSION
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      console.log(status,'status');
-      
-      if (status !== "granted") {
-        console.log("Location permission denied");
-      }
+        // 1️⃣ Check token
+        const token = await SecureStore.getItemAsync('token');
+        if (!token) {
+          console.log('Guest user → skipping delivery check');
+          setLoading(false);
+          return;
+        }
 
-      // 2️⃣ GET CURRENT GPS (still ok to keep for later use)
-      let currentLoc = await Location.getCurrentPositionAsync({});
-      const { latitude: currLat, longitude: currLng } = currentLoc.coords;
-      console.log(currLat,currLng,'currLatcurrLatcurrLatcurrLat');
-      
-      // 3️⃣ FETCH USER ADDRESSES
-      const res = await getAddresses();
-      const userAddresses = res?.addresses || [];
-      // console.log(userAddresses,'userAddressesuserAddressesuserAddressesuserAddresses');
-      
-      setAddresses(userAddresses);
+        let isServiceable = false;
+        let nonServiceableMessage = 'Delivery not available in your area';
 
-      // 4️⃣ GET SAVED ADDRESS
-      let saved = await SecureStore.getItemAsync("selectedAddress");
-      let savedAddress = saved ? JSON.parse(saved) : null;
+        // 2️⃣ Get location permission
+        const { status } = await Location.requestForegroundPermissionsAsync();
 
-      // 5️⃣ USE SAVED ADDRESS (NO AUTO-ASSIGNING ANYTHING)
-      if (savedAddress) {
-        setSelectedAddress(savedAddress);
+        if (status === 'granted') {
+          try {
+            await SecureStore.deleteItemAsync('selectedAddress');
+            // 🔴 FOR TESTING: Force out-of-zone location (uncomment to test non-serviceable)
+            // const lat = 28.7041; // Delhi
+            // const lng = 77.1025;
+            // ✅ NORMAL: Use real device location
+            const location = await Location.getCurrentPositionAsync({});
+            const lat = location.coords.latitude;
+            const lng = location.coords.longitude;
+
+            // 3️⃣ Call API
+            const response = await checkDeliveryAvailability(lat, lng);
+
+            console.log(response, 'responserespons666eresponseresponse');
+
+
+            // Success + serviceable
+            if (response?.success === true && response?.serviceable === true) {
+              isServiceable = true;
+            }
+            // Explicit non-serviceable (includes 403 responses that Axios resolves)
+            else if (response?.success === false && response?.serviceable === false) {
+              isServiceable = false;
+              nonServiceableMessage = response.message || nonServiceableMessage;
+            }
+            // Any other unexpected success=false case
+            else {
+              isServiceable = false;
+            }
+
+          } catch (apiError: any) {
+            // console.error('Delivery check failed:', apiError);
+
+            console.log(apiError, 'apiErrorapiErrorapiError');
+            
+
+            // Axios rejects on 4xx/5xx → error has .response
+            // if (apiError.response) {
+            //   if (apiError.response.status === 403) {
+            //     isServiceable = false;
+            //     nonServiceableMessage =
+            //       apiError.response.data?.message || 'Delivery not available in your area';
+            //   } else {
+            //     isServiceable = false;
+            //     nonServiceableMessage = 'Service temporarily unavailable';
+            //   }
+            // } else {
+            //   // Network error, timeout, etc.
+            //   isServiceable = false;
+            //   nonServiceableMessage = 'Unable to verify location. Please try again.';
+            // }
+          }
+        } else {
+          console.log('Location permission denied');
+          isServiceable = false;
+          nonServiceableMessage = 'Location permission required to check delivery';
+        }
+
+        console.log(isServiceable, 'isServiceableisServiceable');
+
+        // 4️⃣ NON-SERVICEABLE: Set placeholder and exit early
+        if (!isServiceable) {
+          const nonServiceableAddress = {
+            addressLine1: 'Delivery not available',
+            area: 'in your area',
+            city: '',
+            state: '',
+            addressType: 'Non-serviceable',
+            isServiceable: false,
+            fullMessage: nonServiceableMessage,
+          };
+
+          await SecureStore.setItemAsync('selectedAddress', JSON.stringify(nonServiceableAddress));
+          // setSelectedAddress(nonServiceableAddress);
+
+          setLoading(false);
+          return; // ← Critical: stop here, don't fetch addresses or open modal
+        }
+
+        // 5️⃣ SERVICEABLE: Continue normally
+        const res = await getAddresses();
+        const userAddresses = res?.addresses || [];
+
+        setAddresses(userAddresses);
+
+        const saved = await SecureStore.getItemAsync('selectedAddress');
+        const savedAddress = saved ? JSON.parse(saved) : null;
+
+        if (savedAddress) {
+          setSelectedAddress(savedAddress);
+          setLoading(false);
+          return;
+        }
+        console.log(userAddresses, 'userAddressesuserAddresses');
+
+        // 6️⃣ No saved address → open modal
+        setTimeout(() => addressModalRef.current?.open(), 500);
+
         setLoading(false);
-        return;
-      }
-
-      // 6️⃣ If no saved address → open modal for user selection
-      setTimeout(() => addressModalRef.current?.open(), 300);
-
-    } catch (err) {
-      console.log("INIT ERR:", err);
-
-            // 3️⃣ FETCH USER ADDRESSES
-      const res = await getAddresses();
-      const userAddresses = res?.addresses || [];
-      setAddresses(userAddresses);
-
-      // 4️⃣ GET SAVED ADDRESS
-      let saved = await SecureStore.getItemAsync("selectedAddress");
-      let savedAddress = saved ? JSON.parse(saved) : null;
-
-      // 5️⃣ USE SAVED ADDRESS (NO AUTO-ASSIGNING ANYTHING)
-      if (savedAddress) {
-        setSelectedAddress(savedAddress);
+      } catch (err) {
+        console.error('App init failed:', err);
         setLoading(false);
-        return;
       }
+    };
 
-      // 6️⃣ If no saved address → open modal for user selection
-      setTimeout(() => addressModalRef.current?.open(), 300);
-    }
+    init();
+  }, [setAddresses, setSelectedAddress]);
 
-    setLoading(false);
-  };
-
-  init();
-}, []);
-
-  // --------------------------------------------
-  //         WHEN MODAL CLOSES → VERIFY
-  // --------------------------------------------
-  // const reCheck = async () => {
-
-  //   console.log('reCheck');
-    
-  //   let saved = await SecureStore.getItemAsync('selectedAddress');
-
-  //   const res = await getAddresses();
-  //   setAddresses(res.addresses || []);
-
-  //   if (!saved) {
-  //     setTimeout(() => addressModalRef.current?.open(), 200);
-  //   }
-  // };
-
-  // // --------------------------------------------
-  // //             SELECT ADDRESS
-  // // --------------------------------------------
-  // const selectAddress = async (item) => {
-  //   setSelectedAddress(item);
-  //   await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
-  //   addressModalRef.current?.close();
-  // };
-
-  // --------------------------------------------
-  //                UI RETURN
-  // --------------------------------------------
   return (
     <View
       style={{
@@ -304,103 +307,7 @@ useEffect(() => {
       }}
     >
       <TabsWithCart />
-
-      {/* ------------------------------------------ */}
-      {/*                ADDRESS MODAL               */}
-      {/* ------------------------------------------ */}
-{/* <Modalize
-  ref={addressModalRef}
-  adjustToContentHeight
-  handleStyle={{ backgroundColor: '#ccc' }}
-  modalStyle={{ padding: 20 }}
-  onClosed={reCheck}
->
-        {loading ? (
-          <ActivityIndicator size="large" color="black" />
-        ) : addresses.length === 0 ? (
-          <View style={{ padding: 20, alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 10 }}>
-              No Address Found
-            </Text>
-
-            <TouchableOpacity
-              onPress={() => {
-                addressModalRef.current?.close();
-                router.push('/(stack)/SelectLocationScreen');
-              }}
-              style={{
-                backgroundColor: '#000',
-                paddingVertical: 12,
-                paddingHorizontal: 20,
-                borderRadius: 10,
-                width: '100%',
-                alignItems: 'center',
-              }}
-            >
-              <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>
-                Add Address
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={{ padding: 20, width: '100%' }}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 15,
-              }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: '700' }}>Select Address</Text>
-
-              <TouchableOpacity
-                onPress={() => {
-                  addressModalRef.current?.close();
-                  router.push('/(stack)/SelectLocationScreen');
-                }}
-                style={{
-                  backgroundColor: '#000',
-                  paddingVertical: 8,
-                  paddingHorizontal: 15,
-                  borderRadius: 8,
-                }}
-              >
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>
-                  Add Address
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {addresses.map((item) => (
-              <TouchableOpacity
-                key={item._id}
-                onPress={() => selectAddress(item)}
-                style={{
-                  padding: 15,
-                  borderRadius: 12,
-                  borderWidth: 1,
-                  borderColor: '#ddd',
-                  marginBottom: 12,
-                  backgroundColor: '#fafafa',
-                }}
-              >
-                <Text style={{ fontSize: 14, fontWeight: '700' }}>
-                  {item.addressType}
-                </Text>
-
-                <Text style={{ fontSize: 13, color: '#555', marginTop: 3 }}>
-                  {item.addressLine1}
-                </Text>
-
-                <Text style={{ fontSize: 13, marginTop: 5 }}>
-                  {item.name} • {item.phone}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </Modalize> */}
+      <AddressSelectionModalize ref={addressModalRef} />
     </View>
   );
 }

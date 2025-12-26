@@ -64,7 +64,7 @@ const ProfilePage = () => {
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Modern Header with Gradient */}
                 <LinearGradient
-                    colors={['#000', '#343434ff']}
+                    colors={['#626262ff', '#343434ff']}
                     style={styles.headerGradient}
                 >
                     <View style={styles.header}>
@@ -77,32 +77,6 @@ const ProfilePage = () => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* Enhanced Profile Card */}
-                    <View style={styles.profileCard}>
-                        <View style={styles.avatarContainer}>
-                            <LinearGradient
-                                colors={['#383838ff', '#171717ff']}
-                                style={styles.avatar}
-                            >
-                                <Ionicons name="person" size={48} color="#fff" />
-                            </LinearGradient>
-                            <TouchableOpacity style={styles.editAvatarButton}>
-                                <Ionicons name="camera" size={16} color="#fff" />
-                            </TouchableOpacity>
-                        </View>
-                        <View style={styles.profileInfo}>
-                            {/* <Text style={styles.nameText}>John Doe</Text>
-                            <Text style={styles.emailText}>john.doe@example.com</Text> */}
-                            <View style={styles.phoneContainer}>
-                                <Ionicons name="call" size={14} color="#666" />
-                                <Text style={styles.phoneText}>+91 813 883 4116</Text>
-                            </View>
-                        </View>
-                        {/* <TouchableOpacity style={styles.editProfileButton}>
-                            <Text style={styles.editButtonText}>Edit Profile</Text>
-                            <Ionicons name="create-outline" size={16} color="#464646ff" />
-                        </TouchableOpacity> */}
-                    </View>
                 </LinearGradient>
 
                 {/* Quick Stats */}
@@ -259,27 +233,21 @@ const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
         backgroundColor: '#f8f9fa',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+        // paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     container: {
         flex: 1,
     },
     headerGradient: {
         paddingBottom: 24,
-        borderBottomLeftRadius: 30,
-        borderBottomRightRadius: 30,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 12,
-        elevation: 8,
+        borderRadius: 30,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
-        paddingTop: 8,
+        paddingTop: 20,
     },
     backButton: {
         width: 40,

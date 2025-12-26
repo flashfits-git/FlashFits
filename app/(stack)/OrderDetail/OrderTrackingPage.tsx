@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -296,17 +297,6 @@ const statusToSteps = (orderStatus?: string, prevSteps?: OrderStep[]): OrderStep
 
 const OrderTrackingPage: React.FC = () => {
 
-
-  const STATIC_USER = {
-    latitude: 12.9716,
-    longitude: 77.5946,
-  };
-
-  const STATIC_RIDER = {
-    latitude: 12.9352,
-    longitude: 77.6245,
-  };
-
   const [mapUserLocation, setMapUserLocation] = useState<LatLng>(null);
   const [mapRiderLocation, setMapRiderLocation] = useState<LatLng>(null);
   const [showCompletion, setShowCompletion] = useState(false);
@@ -322,7 +312,6 @@ const OrderTrackingPage: React.FC = () => {
   };
 
   const [orderData, setOrderData] = useState<OrderData | null>(null);
-  console.log(orderData, '56677');
   const [isDelivered, setIsDelivered] = useState<boolean>(false);
   const [trialPhaseComplete, setTrialPhaseComplete] = useState<boolean>(false);
   const modalRef = useRef<Modalize>(null);
@@ -528,7 +517,7 @@ const OrderTrackingPage: React.FC = () => {
       const userFromOrder = coordsArrayToLatLng(data?.deliveryLocation?.coordinates);
       const riderFromPickup = coordsArrayToLatLng(data?.pickupLocation?.coordinates);
 
-      setMapUserLocation(userFromOrder ?? STATIC_USER);
+      if (userFromOrder) setMapUserLocation(userFromOrder);
 
       const latestTracking =
         Array.isArray(data?.deliveryTracking) && data.deliveryTracking.length > 0
@@ -536,7 +525,11 @@ const OrderTrackingPage: React.FC = () => {
           coordsArrayToLatLng(data.deliveryTracking[data.deliveryTracking.length - 1]?.coordinates)
           : null;
 
-      setMapRiderLocation(latestTracking ?? riderFromPickup ?? STATIC_RIDER);
+      if (latestTracking) {
+        setMapRiderLocation(latestTracking);
+      } else if (riderFromPickup) {
+        setMapRiderLocation(riderFromPickup);
+      }
 
       setOrderData(data);
 
@@ -703,6 +696,8 @@ const OrderTrackingPage: React.FC = () => {
       console.log("Final Payment Failed →", error);
     }
   };
+  console.log(items,'itemsitemsitemsitemsitemsitems');
+  
 
   const callDeliveryPartner = (phone?: string) => {
     if (!phone) return;
@@ -711,6 +706,7 @@ const OrderTrackingPage: React.FC = () => {
 
   const hasReturnItems = items.some((item) => item.tryStatus === "returned");
   const allItemsSelected = items.length > 0 && items.every((item) => item.tryStatus === "keep" || item.tryStatus === "returned");
+
 
   if (showCompletion && completedOrder) {
     return <OrderCompletionScreen orderData={completedOrder} />;
@@ -741,10 +737,20 @@ const OrderTrackingPage: React.FC = () => {
               showMap ??
             } */}
             <View style={styles.mapSection}>
-              <OSMDeliveryMap
-                userLocation={mapUserLocation ?? STATIC_USER}
-                riderLocation={mapRiderLocation ?? STATIC_RIDER}
-              />
+              {!mapUserLocation || !mapRiderLocation ? (
+                <View style={styles.mapLoader}>
+                  <ActivityIndicator size="large" color="#2563eb" />
+                  <Text style={styles.mapLoaderText}>Loading live delivery map</Text>
+                  <Text style={styles.mapLoaderSubText}>
+                    Fetching rider & route information…
+                  </Text>
+                </View>
+              ) : (
+                <OSMDeliveryMap
+                  userLocation={mapUserLocation}
+                  riderLocation={mapRiderLocation}
+                />
+              )}
             </View>
 
             <LinearGradient colors={["#eee", "#eee", "#fffefeff"]} start={{ x: 0, y: 1 }} end={{ x: 0, y: 0 }} style={styles.statusCard}>
@@ -783,7 +789,7 @@ const OrderTrackingPage: React.FC = () => {
                     <React.Fragment key={step.id}>
                       <View style={styles.stepContainer}>
                         <View style={[styles.stepCircle, step.completed ? styles.stepCompleted : styles.stepIncomplete]}>
-                          {step.completed ? <CheckCircle size={18} color="#fff" /> : <Clock size={18} color="#fff" />}
+                          {step.completed ? <CheckCircle size={18} color="#95f966ff" /> : <Clock size={18} color="#fff" />}
                         </View>
                         <Text style={[styles.stepLabel, step.completed ? styles.stepLabelActive : styles.stepLabelInactive]}>{step.label}</Text>
                       </View>
@@ -912,7 +918,7 @@ const OrderTrackingPage: React.FC = () => {
                     <Image source={{ uri: item.image }} style={styles.packageImage} />
                     <View style={{ flex: 1 }}>
                       <Text style={styles.packageName}>{item.name}</Text>
-                      <Text style={styles.packagePrice}>₹{item.price}</Text>
+                      <Text style={styles.packagePrice}>₹{item.price}, {item.size}</Text>
                       <Text style={styles.packageQty}>Qty: {item.quantity}</Text>
                     </View>
                   </View>
@@ -1059,7 +1065,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   arrivalText: {
-    fontSize: 25,
+    fontSize: 18,
     fontWeight: "700",
     color: "#000",
     letterSpacing: -0.2,
@@ -1104,7 +1110,7 @@ const styles = StyleSheet.create({
   },
   stepCompleted: {
     backgroundColor: "#1a1a1a",
-    borderColor: "#ffffff",
+    borderColor: "#95f966ff",
   },
   stepIncomplete: {
     backgroundColor: "#2a2a2a",
@@ -1116,13 +1122,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   stepLabelActive: {
-    color: "#ffffff",
+    color: "#95f966ff",
   },
   stepLabelInactive: {
     color: "#737373",
   },
   lineActive: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#95f966ff",
   },
   lineInactive: {
     backgroundColor: "#404040",
@@ -1144,6 +1150,28 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#ffffff",
     letterSpacing: 1,
+  },
+  mapLoader: {
+    flex: 1,
+    backgroundColor: "#f8fafc", // softer than grey
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 16,
+    paddingVertical: 24,
+  },
+
+  mapLoaderText: {
+    marginTop: 14,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#111827",
+    letterSpacing: 0.3,
+  },
+
+  mapLoaderSubText: {
+    marginTop: 6,
+    fontSize: 13,
+    color: "#6b7280",
   },
 
   // Item Selection

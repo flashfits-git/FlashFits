@@ -2,7 +2,7 @@ import api from '../../axiosConfig';
 
 export const googleLogin = async (userData) => {
     try {
-        const response = await api.post('user/googleLogin',userData);
+        const response = await api.post('user/googleLogin', userData);
         return response.data;
     } catch (error) {
         console.error('Login error:', error);
@@ -10,9 +10,9 @@ export const googleLogin = async (userData) => {
     }
 };
 
-export const signup=async({email,password})=>{
-    try{
-        const response =await api.post('user/signup',{email,password})
+export const signup = async ({ email, password }) => {
+    try {
+        const response = await api.post('user/signup', { email, password })
         return response.data
     }
     catch (error) {
@@ -20,10 +20,10 @@ export const signup=async({email,password})=>{
         throw error;
     }
 }
-    
-export const phoneLogin=async({phoneNumber})=>{
-    try{
-        const response =await api.post('user/phoneLogin',{phoneNumber})
+
+export const phoneLogin = async ({ phoneNumber }) => {
+    try {
+        const response = await api.post('user/phoneLogin', { phoneNumber })
         return response.data
     }
     catch (error) {
@@ -31,3 +31,19 @@ export const phoneLogin=async({phoneNumber})=>{
         throw error;
     }
 }
+
+export const checkDeliveryAvailability = async (
+    lat,
+    lng
+) => {
+    try {
+        const res = await api.post('user/checkDeliveryAvailability', {
+            lat,
+            lng,
+        });
+        return res.data;
+    } catch (error) {
+        console.log('Axios error:', error);
+        // return error;
+    }
+};

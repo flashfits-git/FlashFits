@@ -8,6 +8,7 @@ import { UpdateCartQuantity } from '../../app/api/productApis/cartProduct';
 export default function BagProduct({ product, onDelete, onQuantityChange }) {
   const navigation = useNavigation();
   const [updatingQuantity, setUpdatingQuantity] = useState(null);
+// console.log(product,'productproductproduct');
 
 const handleQuantityChange = async (cartId, newQty) => {
   if (!cartId || typeof newQty !== 'number' || newQty < 1) {

@@ -16,7 +16,7 @@ interface ConfirmSelectionModalProps {
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, orderId, otp, items = [], totalPayable }, ref) => {
+  ({ onCancel, orderId, otp, items = [], totalPayable , orderData}, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
 
     const handleCancel = () => onCancel?.();
@@ -50,6 +50,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
             orderId,
             otp,
             items: JSON.stringify(items),
+            orderData
           },
         });
       } catch (e) {

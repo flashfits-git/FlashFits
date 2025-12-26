@@ -340,11 +340,11 @@ export default OrdersScreen;
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#fff",
   },
   wrapper: {
     flex: 1, // ← keep only if you continue to use wrapper anywhere else
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#fff",
   },
   container: {
     flex: 1,

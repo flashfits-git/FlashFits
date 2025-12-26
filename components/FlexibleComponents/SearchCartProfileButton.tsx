@@ -1,19 +1,31 @@
 import * as React from 'react';
+import { useState } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { GetCart } from '../../app/api/productApis/cartProduct';
 import Colors from '../../assets/theme/Colors';
 import { useCart } from '../../app/ContextParent';
-
+import * as SecureStore from 'expo-secure-store';
 function SearchCartProfileButton() {
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
-
+const [loading, setLoading] = useState(true);
   // Fetch cart data on component mount
   React.useEffect(() => {
     const fetchCart = async () => {
       try {
+
+              // 🔐 0️⃣ CHECK TOKEN FIRST
+      const token = await SecureStore.getItemAsync('token');
+
+      if (!token) {
+        console.log('No token found → skipping address API');
+        setLoading(false);
+        return; // ❌ STOP HERE — NO API CALL
+      }
+
+
         const response = await GetCart();
         // console.log(response.items,'4444g4g3g');
         // Set the cart count (assuming it's the number of items in the array)

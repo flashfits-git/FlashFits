@@ -1,7 +1,7 @@
 // services/api.js
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import Constants from "expo-constants";
+import * as SecureStore from 'expo-secure-store';
 
 const { BACKEND_URL } = Constants.expoConfig.extra;
 // const api = axios.create({
@@ -19,7 +19,7 @@ const api = axios.create({
 
 // Add interceptor to attach token to each request
 api.interceptors.request.use(
-  
+
   async (config) => {
     const token = await SecureStore.getItemAsync('token');
     if (token) {

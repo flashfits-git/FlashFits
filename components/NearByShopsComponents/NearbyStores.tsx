@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
 // import { Ionicons } from '@expo/vector-icons';
@@ -37,23 +37,50 @@ const NearbyStores = ({ merchantData, productsByMerchant }) => {
               })
             }
           >
-            <View style={styles.leftBlock}>
-              <Text style={styles.storeName}>
-                {item.shopName
-                  ? item.shopName.charAt(0).toUpperCase() + item.shopName.slice(1)
-                  : ''}
-              </Text> 
-              <Text style={styles.ratingText}>
-                {item.address
-                  ? [item.address.city, item.address.state, item.address.country]
-                    .filter(Boolean)
-                    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-                    .join(', ')
-                  : 'No address'}
-              </Text>
+            {/* Left side: Logo + Name */}
+            <View style={styles.leftRow}>
+              {/* Logo */}
+              <View style={styles.logoWrapper}>
+                {item.logo?.url ? (
+                  <Image
+                    source={{ uri: item.logo.url }}
+                    style={styles.logo}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <View style={styles.logoPlaceholder}>
+                    <Text style={styles.logoText}>
+                      {item.shopName?.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Name + Address */}
+              <View style={styles.leftBlock}>
+                <Text style={styles.storeName}>{item.shopName.charAt(0).toUpperCase() + item.shopName.slice(1)}</Text>
+
+                <Text style={styles.ratingText} numberOfLines={1}>
+                  {item.address
+                    ? `${item.address
+                      ? [
+                        item.address.city,
+                        item.address.state,
+                        item.address.country,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')
+                      : 'No address'
+                    }`
+                    : 'No address'}
+                </Text>
+              </View>
+
             </View>
-            <Text style={styles.timeText}>30 min</Text>
+
+            {/* Right side */}
           </TouchableOpacity>
+
           <CardinStores merchantId={item._id} products={productsByMerchant[item._id] || []} />
         </View>
       )}
@@ -81,7 +108,47 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  leftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    overflow: 'hidden',
+  },
+
+  logoWrapper: {
+    width: 44,
+    height: 44,          // 👈 1:1 square
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f2f2f2',
+    marginRight: 10,
+  },
+
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+
+  logoPlaceholder: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e5e5e5',
+  },
+
+  logoText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#555',
+  },
+
+  leftBlock: {
+    flexDirection: 'column',
+    flexShrink: 1,
+    overflow: 'hidden', // 👈 important
   },
   timeText: {
     fontSize: 13,

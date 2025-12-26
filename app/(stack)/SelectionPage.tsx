@@ -27,6 +27,8 @@ export default function SelectionPage() {
   const router = useRouter();
   const route = useRoute();
   const { query, subCatName, filterss, categoryPath } = route.params || {};
+  console.log(filterss,'filterssfilterssfilterssfilterss');
+  
   const { cartItems, cartCount } = useCart();
 
   const [loading, setLoading] = useState(false);
@@ -113,6 +115,8 @@ export default function SelectionPage() {
   // Fetch filtered products
   const fetchFiltered = useCallback(async () => {
     try {
+      // console.log(query,'queryqueryquery');
+      
       setIsLoadingProducts(true);
 
       const apiFilters = {

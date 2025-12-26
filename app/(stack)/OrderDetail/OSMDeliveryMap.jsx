@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { WebView } from "react-native-webview";
 
 export default function OSMDeliveryMap({ userLocation, riderLocation }) {
-  const webviewRef = useRef(null);
+  const webviewRef = useRef(null);  
 
   // 🔄 Update rider marker in map
   useEffect(() => {
@@ -32,24 +32,23 @@ const generateOSMHTML = (user, rider) => `
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Include the official Leaflet.curve plugin -->
+  <script src="https://cdn.jsdelivr.net/npm/leaflet.curve@0.9.0/leaflet.curve.js"></script>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-
-<style>
-  html, body { height: 100%; margin: 0; }
-  #map { width: 100%; height: 100%; }
-  .leaflet-control-zoom { display: none !important; }
-  .arc-line { stroke: #1e90ff; stroke-width: 4; fill: none; opacity: 0.8; }
-</style>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #map { width: 100%; height: 100%; }
+    .leaflet-control-zoom { display: none !important; }
+  </style>
 </head>
-
 <body>
   <div id="map"></div>
 
   <script>
-
     // Initialize Map
     var map = L.map('map', {
       zoomControl: false,
@@ -61,10 +60,11 @@ const generateOSMHTML = (user, rider) => `
       maxZoom: 19
     }).addTo(map);
 
-    // User marker
+    // User (Pickup) marker - blue circle
     var userMarker = L.circleMarker([${user.latitude}, ${user.longitude}], {
       radius: 10,
       color: "#2563eb",
+      weight: 3,
       fillColor: "#3b82f6",
       fillOpacity: 1
     }).addTo(map);
@@ -73,129 +73,99 @@ const generateOSMHTML = (user, rider) => `
     var riderIcon = L.icon({
       iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
       iconSize: [40, 40],
-      iconAnchor: [20, 40]
+      iconAnchor: [20, 40],
+      popupAnchor: [0, -40]
     });
 
-    var riderMarker = L.marker(
-      [${rider.latitude}, ${rider.longitude}],
-      { icon: riderIcon }
-    ).addTo(map);
+    var riderMarker = L.marker([${rider.latitude}, ${rider.longitude}], {
+      icon: riderIcon
+    }).addTo(map);
 
-    // Fit map to both points
+    // Fit bounds to show both points
     var bounds = L.latLngBounds([
       [${user.latitude}, ${user.longitude}],
       [${rider.latitude}, ${rider.longitude}]
     ]);
-    map.fitBounds(bounds, { padding: [50, 50] });
+    map.fitBounds(bounds, { padding: [80, 80] });
 
-    // ---------- ARC BETWEEN USER AND RIDER ----------
-    var arcLine;
+    // Curved arc layer
+    var curvedPath = L.curve([
+      'M', [${user.latitude}, ${user.longitude}],
+      'C', 
+        [(${user.latitude} + ${rider.latitude}) / 2 + 0.005, (${user.longitude} + ${rider.longitude}) / 2 - 0.02],
+        [(${user.latitude} + ${rider.latitude}) / 2 - 0.005, (${user.longitude} + ${rider.longitude}) / 2 + 0.02],
+      'S', [${rider.latitude}, ${rider.longitude}]
+    ], {
+      color: '#1e90ff',
+      weight: 5,
+      opacity: 0.9,
+      fill: false
+    }).addTo(map);
 
-    function drawArc(startLat, startLng, endLat, endLng) {
-      if (arcLine) map.removeLayer(arcLine);
+    // Function to update the curved path when rider moves
+    function updateCurvedPath(newRiderLat, newRiderLng) {
+      if (curvedPath) map.removeLayer(curvedPath);
 
-      // Calculate control point (midpoint with altitude)
-      var latMid = (startLat + endLat) / 2;
-      var lngMid = (startLng + endLng) / 2 + 0.01; // curve amount
-
-      var curvePoints = [
-        [startLat, startLng],
-        [latMid, lngMid],
-        [endLat, endLng]
-      ];
-
-      arcLine = L.curve([
-        "M",[startLat, startLng],
-        "Q",[latMid, lngMid],[endLat, endLng]
+      curvedPath = L.curve([
+        'M', [${user.latitude}, ${user.longitude}],
+        'C', 
+          [(${user.latitude} + newRiderLat) / 2 + 0.005, (${user.longitude} + newRiderLng) / 2 - 0.02],
+          [(${user.latitude} + newRiderLat) / 2 - 0.005, (${user.longitude} + newRiderLng) / 2 + 0.02],
+        'S', [newRiderLat, newRiderLng]
       ], {
-        color: "#1e90ff",
-        weight: 4,
+        color: '#1e90ff',
+        weight: 5,
         opacity: 0.9
       }).addTo(map);
     }
 
-    // Leaflet.curve plugin inline
-    L.Curve = L.Path.extend({
-      options: {},
-      initialize: function(path, options) {
-        L.setOptions(this, options);
-        this._setPath(path);
-      },
-      _setPath: function(path) {
-        this._pathData = path;
-      },
-      getPath: function() { return this._pathData; },
-      _update: function() {
-        if (!this._path) return;
-        this._path.setAttribute("d", this._convertPath());
-      },
-      _convertPath: function() {
-        var data = this._pathData;
-        var str = "";
-        for (var i = 0; i < data.length; i++) {
-          var p = data[i];
-          if (typeof p === "string") {
-            str += p;
-          } else {
-            var latlng = L.latLng(p);
-            var point = this._map.latLngToSvgPoint(latlng);
-            str += point.x + " " + point.y + " ";
-          }
-        }
-        return str;
-      },
-      _project: function() { this._update(); }
-    });
-
-    L.curve = function(path, options) {
-      return new L.Curve(path, options);
-    };
-
-    // Draw initial arc
-    drawArc(
-      ${user.latitude}, ${user.longitude},
-      ${rider.latitude}, ${rider.longitude}
-    );
-
-    // ---------- Smooth Move Rider + Update Arc ----------
+    // Smooth move rider marker and update arc
     function smoothMove(marker, newLat, newLng) {
-      var duration = 1000;
-      var frames = 60;
-      var interval = duration / frames;
+      const duration = 1000;
+      const steps = 60;
+      const interval = duration / steps;
 
-      var pos = marker.getLatLng();
-      var dLat = (newLat - pos.lat) / frames;
-      var dLng = (newLng - pos.lng) / frames;
-      var frame = 0;
+      const start = marker.getLatLng();
+      let step = 0;
 
-      var timer = setInterval(() => {
-        frame++;
-        var lat = pos.lat + dLat * frame;
-        var lng = pos.lng + dLng * frame;
+      const timer = setInterval(() => {
+        step++;
+        const progress = step / steps;
+        
+        const lat = start.lat + (newLat - start.lat) * progress;
+        const lng = start.lng + (newLng - start.lng) * progress;
 
         marker.setLatLng([lat, lng]);
+        updateCurvedPath(lat, lng);
 
-        // update arc
-        drawArc(
-          ${user.latitude}, ${user.longitude},
-          lat, lng
-        );
-
-        if (frame >= frames) clearInterval(timer);
+        if (step >= steps) {
+          clearInterval(timer);
+          updateCurvedPath(newLat, newLng); // final update
+        }
       }, interval);
     }
 
-    // Receive live updates from React Native
-    document.addEventListener("message", (event) => {
+    // Listen for messages from React Native
+    window.addEventListener('message', (event) => {
       try {
-        var data = JSON.parse(event.data);
+        const data = JSON.parse(event.data);
+        if (data.type === 'UPDATE_RIDER') {
+          smoothMove(riderMarker, data.lat, data.lng);
+        }
+      } catch (e) {
+        console.error('Parse error:', e);
+      }
+    });
 
-        if (data.type === "UPDATE_RIDER") {
+    // Also support React Native WebView injectedJavaScript
+    document.addEventListener('message', (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'UPDATE_RIDER') {
           smoothMove(riderMarker, data.lat, data.lng);
         }
       } catch (e) {}
     });
-
   </script>
 </body>
 </html>

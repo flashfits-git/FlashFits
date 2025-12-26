@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions,TextInput, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions, TextInput, ActivityIndicator } from "react-native";
 import { WebView } from "react-native-webview";
 import { useRouter } from "expo-router";
 import * as Location from "expo-location";
+import { Ionicons } from '@expo/vector-icons';
+
 
 const screen = Dimensions.get("window");
 
@@ -84,8 +86,8 @@ export default function SelectLocationScreen() {
                 }
             );
             const json = await resp.json();
-            console.log(json.display_name,'json');
-            
+            console.log(json.display_name, 'json');
+
             setAddress(json.display_name || "Unknown location");
             setParamAddress(json.address || "Unknown location");
         } catch {
@@ -93,8 +95,8 @@ export default function SelectLocationScreen() {
         }
     };
 
- console.log(ParamAddress,'address');
- 
+    console.log(ParamAddress, 'address');
+
     const sendToWebview = (js: string) => {
         webviewRef.current?.injectJavaScript(js + "; true;");
     };
@@ -134,15 +136,24 @@ export default function SelectLocationScreen() {
 
     return (
         <View style={{ flex: 1 }}>
-            {/* Search Bar */}
-            <View style={styles.searchBar}>
-                <TextInput
-                    style={styles.searchInput}
-                    placeholder="Search location"
-                    value={searchQuery}
-                    onChangeText={setSearchQuery}
-                    onSubmitEditing={handleSearch}
-                />
+            <View style={styles.topHeader}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => router.back()}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="chevron-back" size={24} color="#000" />
+                </TouchableOpacity>
+
+                <View style={styles.searchBar}>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search Delivery location"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        onSubmitEditing={handleSearch}
+                    />
+                </View>
             </View>
 
             {/* WebView Map */}
@@ -219,12 +230,17 @@ const mapHTML = (lat: number, lng: number) => `
         height: 100%;
         margin: 0;
       }
+      /* extra safety */
+      .leaflet-control-zoom {
+        display: none !important;
+      }
     </style>
   </head>
   <body>
     <div id="map"></div>
     <script>
-      const map = L.map('map').setView([${lat}, ${lng}], 17);
+      const map = L.map('map', { zoomControl: false })
+        .setView([${lat}, ${lng}], 17);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19
@@ -249,18 +265,25 @@ const mapHTML = (lat: number, lng: number) => `
 
 const styles = StyleSheet.create({
     searchBar: {
-        position: "absolute",
-        top: 40,
-        width: "90%",
-        alignSelf: "center",
-        zIndex: 20,
+        flex: 1,          // 👈 takes remaining width
     },
     searchInput: {
-        backgroundColor: "#fff",
-        borderRadius: 10,
-        padding: 12,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 18,
         fontSize: 16,
     },
+    topHeader: {
+        position: 'absolute',
+        top: 60,
+        left: 12,
+        right: 12,
+        zIndex: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+
     markerFixed: {
         position: "absolute",
         top: screen.height / 2 - 40,
@@ -283,12 +306,30 @@ const styles = StyleSheet.create({
         padding: 10,
         borderRadius: 6,
     },
+    backButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+    },
+    backText: {
+        fontSize: 20,
+        fontWeight: '600',
+    },
+
     addressContainer: {
         position: "absolute",
         bottom: 0,
         width: "100%",
         backgroundColor: "#fff",
-        padding: 20,
+        padding: 25,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
         elevation: 10,
@@ -303,7 +344,7 @@ const styles = StyleSheet.create({
     },
     setLocationBtn: {
         backgroundColor: "rgba(0, 0, 0, 1)",
-        padding: 14,
+        padding: 20,
         borderRadius: 10,
         marginTop: 15,
         alignItems: "center",

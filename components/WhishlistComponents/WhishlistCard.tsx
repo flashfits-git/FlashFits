@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    height: 250,
+    height: 210,
     width: '100%',
     resizeMode: 'cover',
   },
