@@ -11,6 +11,7 @@ import {
   StatusBar,
   ActivityIndicator,
 } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -85,7 +86,9 @@ const SavedAddressesScreen = () => {
   const renderAddressItem = ({ item }: { item: Address }) => (
     <TouchableOpacity
       style={styles.addressCard}
-      onPress={() => {
+      onPress={ async() => {
+        await SecureStore.setItemAsync('selectedAddress', JSON.stringify(item));
+
         // ✅ Set selected address in context
         setSelectedAddress(item);
 

@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
+  ActivityIndicator
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -33,7 +34,7 @@ export default function AddAddressScreen() {
 
   console.log(address, '88898998nnkj');
 
-
+  const [submitting, setSubmitting] = useState(false);
   const [orderingFor, setOrderingFor] = useState('myself');
   const [addressType, setAddressType] = useState('Home');
   const [formData, setFormData] = useState({
@@ -87,15 +88,20 @@ export default function AddAddressScreen() {
     };
 
     try {
+      setSubmitting(true);
       const response = await createAddress(addressData);
       console.log(response, 'responseresponser4434esponseresponse');
       await SecureStore.setItemAsync('selectedAddress', JSON.stringify(response.address));
       setSelectedAddress(response.address)
-      alert("Address added successfully!");
+      // alert("Address added successfully!");
+      console.log("Address added and saved to SecureStore");
       router.replace("/(tabs)");
 
     } catch (error) {
+      console.error("Error saving address:", error);
       alert("Error saving address");
+    } finally {
+      setSubmitting(false); // ✅ stop loader
     }
   };
 
@@ -287,9 +293,22 @@ export default function AddAddressScreen() {
 
 
             {/* Confirm button */}
-            <TouchableOpacity style={styles.confirmButton} onPress={handleSubmit}>
-              <Text style={styles.confirmButtonText}>Confirm address</Text>
+            <TouchableOpacity
+              style={[
+                styles.confirmButton,
+                submitting && { opacity: 0.7 }
+              ]}
+              onPress={handleSubmit}
+              activeOpacity={0.8}
+              disabled={submitting}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.confirmButtonText}>Confirm address</Text>
+              )}
             </TouchableOpacity>
+
           </View>
         </ScrollView>
 

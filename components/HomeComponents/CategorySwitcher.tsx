@@ -1,18 +1,20 @@
 // components/HomeComponents/CategorySwitcher.tsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
   ActivityIndicator,
   Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { fetchCategories } from '../../app/api/categories';
 import { useGender } from '../../app/GenderContext';
+
+const { width } = Dimensions.get('window');
 
 type Category = {
   _id: string;
@@ -22,8 +24,20 @@ type Category = {
   image?: { url: string };
 };
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = width * 0.21;
+const CATEGORY_IMAGES: Record<string, any> = {
+  't-shirts': require('../../assets/images/1.jpg'),
+  'shirts': require('../../assets/images/2.jpg'),
+  'shoes': require('../../assets/images/3.jpg'),
+  'jeans': require('../../assets/images/4.jpg'),
+  'dresses': require('../../assets/images/premium_photo-1673384389447-5a4364e7c93b.avif'),
+  'accessories': require('../../assets/images/premium_photo-1675186049409-f9f8f60ebb5e.avif'),
+  'default': require('../../assets/images/shopshed.jpg'),
+};
+
+const getCategoryImage = (name: string) => {
+  const key = name.toLowerCase().replace(/\s+/g, '-');
+  return CATEGORY_IMAGES[key] || CATEGORY_IMAGES.default;
+};
 
 const CategorySwitcher = () => {
   const router = useRouter();
@@ -45,14 +59,11 @@ const CategorySwitcher = () => {
     loadCategories();
   }, []);
 
-  // Determine which sub-categories to show
   const subCategories = useMemo(() => {
     if (selectedGender === 'All') {
-      // Show ALL level-1 categories when "All" is selected
       return categories.filter(c => c.level === 1);
     }
 
-    // For specific gender: find the matching level-0 parent
     const level0Parents = categories.filter(c => c.level === 0);
     const matchingParent = level0Parents.find(parent => {
       const nameLower = parent.name.toLowerCase();
@@ -60,9 +71,7 @@ const CategorySwitcher = () => {
       return nameLower.includes(genderLower) || nameLower.includes('unisex');
     });
 
-    if (!matchingParent) {
-      return [];
-    }
+    if (!matchingParent) return [];
 
     return categories.filter(
       c => c.level === 1 && c.parentId === matchingParent._id
@@ -74,13 +83,12 @@ const CategorySwitcher = () => {
       let selectedParentId = parentId;
 
       if (selectedGender === 'All') {
-        // Fallback to first level-0 parent when in "All" mode
         const firstParent = categories.find(c => c.level === 0);
-        selectedParentId = firstParent?._id || null;
+        selectedParentId = firstParent?._id || undefined;
       }
 
       router.push({
-        pathname: '(stack)/SelectionPage',
+        pathname: '/(stack)/SelectionPage',
         params: {
           filterss: JSON.stringify({
             priceRange: [0, 10000],
@@ -90,7 +98,7 @@ const CategorySwitcher = () => {
           }),
           subCatName,
         },
-      });
+      } as any);
     },
     [router, categories, selectedGender]
   );
@@ -98,54 +106,43 @@ const CategorySwitcher = () => {
   if (loading) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#333" />
+        <ActivityIndicator size="small" color="#1A1A1A" />
       </View>
     );
   }
 
-  // console.log(subCategories, 'subCategoriessubCategoriessubCategories');
-
-
-  if (subCategories.length === 0) {
-    return null;
-  }
+  if (subCategories.length === 0) return null;
 
   return (
     <View style={styles.container}>
       <FlatList
         data={subCategories}
-        horizontal
-        showsHorizontalScrollIndicator={false}
+        numColumns={4}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.horizontalList}
-        decelerationRate="fast"
-        snapToInterval={CARD_WIDTH + 12} // card width + marginRight
-        snapToAlignment="start"
+        columnWrapperStyle={styles.columnWrapper}
+        contentContainerStyle={styles.gridContent}
+        scrollEnabled={false}
         renderItem={({ item }) => {
           const parent = categories.find(c => c._id === item.parentId);
+          const localImage = getCategoryImage(item.name);
+
           return (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => handleViewAll(item.name, item._id, parent?._id)} // Fixed: added ()
-              activeOpacity={0.8}
+              onPress={() => handleViewAll(item.name, item._id, parent?._id)}
+              activeOpacity={0.7}
             >
-              <View style={styles.imageContainer}>
-                {item.image?.url ? (
-                  <Image
-                    source={{ uri: item.image.url }}
-                    style={styles.cardImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.placeholderImage} />
-                )}
-                <View style={styles.gradientOverlay} />
+              <View style={styles.squareContainer}>
+                <Image
+                  source={item.image?.url ? { uri: item.image.url } : localImage}
+                  style={styles.squareImage}
+                  contentFit="cover"
+                  transition={200}
+                />
               </View>
-              <View style={styles.cardTextContainer}>
-                <Text style={styles.cardText} numberOfLines={2}>
-                  {item.name}
-                </Text>
-              </View>
+              <Text style={styles.cardText} numberOfLines={2}>
+                {item.name}
+              </Text>
             </TouchableOpacity>
           );
         }}
@@ -159,49 +156,55 @@ const CategorySwitcher = () => {
   );
 };
 
+const ITEM_WIDTH = (width - 48) / 4;
+
 const styles = StyleSheet.create({
-  container: { marginVertical: 16 },
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  horizontalList: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  container: {
+    marginVertical: 16,
+    paddingHorizontal: 12,
+  },
+  loader: { height: 100, justifyContent: 'center', alignItems: 'center' },
+  gridContent: {
+    paddingBottom: 8,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
   },
   card: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH * 1.15,
-    marginRight: 12,
+    width: ITEM_WIDTH,
+    alignItems: 'center',
+    gap: 6,
+  },
+  squareContainer: {
+    width: ITEM_WIDTH - 10,
+    height: ITEM_WIDTH - 10,
     borderRadius: 12,
+    backgroundColor: '#fff',
     overflow: 'hidden',
-    backgroundColor: '#f0f0f0',
-    elevation: 3,
+    // Premium Shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
   },
-  imageContainer: {
-    height: CARD_WIDTH * 0.75, // 👈 reduced image height
-    position: 'relative',
-  },
-  cardImage: { width: '100%', height: '100%' },
-  placeholderImage: { width: '100%', height: '100%', backgroundColor: '#ddd' },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-  },
-  cardTextContainer: {
-    padding: 8,
-    alignItems: 'center',
-    backgroundColor: 'white',
+  squareImage: {
+    width: '100%',
+    height: '100%',
   },
   cardText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#334155',
+    fontFamily: 'Montserrat',
     textAlign: 'center',
-    color: '#333',
+    marginTop: 2,
   },
-  emptyContainer: { padding: 20 },
-  emptyText: { color: '#999' },
+  emptyContainer: { padding: 20, alignItems: 'center' },
+  emptyText: { color: '#94A3B8', fontSize: 13 },
 });
 
-export default CategorySwitcher;
+export default memo(CategorySwitcher);

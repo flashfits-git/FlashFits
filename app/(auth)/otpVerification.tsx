@@ -446,7 +446,7 @@ const OTPInput = () => {
                     Verify & Continue
                   </Text>
                   {isComplete && (
-                    <AntDesign name="arrowright" size={20} color="#FFFFFF" />
+                    <AntDesign name="arrow-right" size={20} color="#FFFFFF" />
                   )}
                 </>
               )}

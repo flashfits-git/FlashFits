@@ -1,17 +1,16 @@
 // components/HomeComponents/HomeCategorySwitcherShops.tsx (or your file)
+import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo } from 'react';
 import {
-  View,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  FlatList,
-  StyleSheet,
+  View
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import ShopCardsHome from '../HomeComponents/ShopCardsHome';
 import { getMerchants } from '../../app/api/merchatApis/getMerchantHome';
-import { normalizeCategory } from '../../app/utilities/categoryUtils';
 import { useGender } from '../../app/GenderContext';
+import { normalizeCategory } from '../../app/utilities/categoryUtils';
+import ShopGridHome from '../HomeComponents/ShopGridHome';
 
 const CATEGORIES: ('All' | 'Men' | 'Women' | 'Kids')[] = ['All', 'Men', 'Women', 'Kids'];
 
@@ -24,6 +23,8 @@ const CategorySwitcherShops = () => {
     const fetchMerchants = async () => {
       try {
         const res = await getMerchants();
+        // console.log(res,'3323w');
+
         setMerchantData(res?.merchants || []);
       } catch (err) {
         console.error('Error fetching merchants:', err);
@@ -62,14 +63,8 @@ const CategorySwitcherShops = () => {
     return map;
   }, [merchantData]);
 
-  const splitShops = useMemo(() => {
-    const data = categoryMap[selectedGender] || [];
-    const mid = Math.ceil(data.length / 2);
-
-    return {
-      firstRow: data.slice(0, mid),
-      secondRow: data.slice(mid),
-    };
+  const filteredMerchants = useMemo(() => {
+    return categoryMap[selectedGender] || [];
   }, [categoryMap, selectedGender]);
 
   return (
@@ -95,40 +90,8 @@ const CategorySwitcherShops = () => {
         ))}
       </View>
 
-      {/* Shops List */}
-      {/* Row 1 */}
-      <FlatList
-        data={splitShops.firstRow}
-        keyExtractor={(item) => item._id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.subCategoryList}
-        renderItem={({ item, index }) => (
-          <ShopCardsHome
-            title={item.shopName}
-            index={index}
-            merchantId={item._id}
-            shopData={item}
-          />
-        )}
-      />
-
-      {/* Row 2 */}
-      <FlatList
-        data={splitShops.secondRow}
-        keyExtractor={(item) => item._id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.subCategoryList}
-        renderItem={({ item, index }) => (
-          <ShopCardsHome
-            title={item.shopName}
-            index={index}
-            merchantId={item._id}
-            shopData={item}
-          />
-        )}
-      />
+      {/* Shops Grid */}
+      <ShopGridHome merchants={filteredMerchants} />
 
     </View>
   );

@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // Already imported
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const DressCard = ({ product, onPress }) => {
   const imageUrl = product?.images?.[0]?.url;
@@ -46,7 +45,7 @@ export default function Card({ product }) {
 
   const handlePress = () => {
     router.push({
-      pathname: '(stack)/ProductDetail/productdetailpage',
+      pathname: '/ProductDetail/productdetailpage',
       params: {
         id: product?._id,
         variantId: product?.variantId,
@@ -55,7 +54,7 @@ export default function Card({ product }) {
   };
 
   return <DressCard product={product} onPress={handlePress} />;
-} 
+}
 
 const styles = StyleSheet.create({
   cardContainer: {
@@ -71,8 +70,8 @@ const styles = StyleSheet.create({
     // shadowOffset: { width: 0, height: 1 },
     // shadowOpacity: 0.1,
     // shadowRadius: 2,
-  }, 
-   shadowWrapper: {
+  },
+  shadowWrapper: {
     // shadowColor: '#000',
     // shadowOffset: { width: 0, height: 4 },
     // shadowOpacity: 0.3,

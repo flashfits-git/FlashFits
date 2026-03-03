@@ -58,7 +58,7 @@ const HeaderBag = forwardRef(({ onOpenAddressModal }: HeaderBagProps, ref) => {
       <View style={styles.headerWrapper}>
         {/* BACK BUTTON */}
         <TouchableOpacity
-          onPress={() => router.replace('/(tabs)')}
+          onPress={() => router.back()}
           style={styles.backButton}
         >
           <Ionicons name="chevron-back" size={24} color="#333" />

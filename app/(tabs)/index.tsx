@@ -1,38 +1,35 @@
+import Banner from '@/components/HomeComponents/Banner';
+import Carousel from '@/components/HomeComponents/Carousel';
+import CategorySwitcher from '@/components/HomeComponents/CategorySwitcher';
+import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
+import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
+import Loader from '@/components/Loader/Loader';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, {
-  useState,
-  useRef,
-  useEffect,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
+  useState,
 } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
   Animated,
   Platform,
+  RefreshControl,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
-import { RefreshControl } from 'react-native';
-import PopupCart from '../../components/HomeComponents/PopupCart';
-import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import Carousel from '@/components/HomeComponents/Carousel';
-import Banner from '@/components/HomeComponents/Banner';
-import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
-import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
 import Colors from '../../assets/theme/Colors';
-import { fetchnewArrivalsProductsData } from '../api/productApis/products';
+import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
 import Footer from '../../components/Footer';
-import Loader from '@/components/Loader/Loader';
-import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
-import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
-import { getMyWishlist } from '../api/productApis/products'
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
-import CategorySwitcher from '@/components/HomeComponents/CategorySwitcher';
-import { GenderProvider } from '@/app/GenderContext'
+import { fetchnewArrivalsProductsData, getMyWishlist } from '../api/productApis/products';
+import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 
 const HEADER_HEIGHT = 70;
 const SCROLL_THRESHOLD = 5;
@@ -82,6 +79,7 @@ export default function Home() {
         getPreviouslyViewed(),
         SecureStore.getItemAsync('selectedAddress'),
       ]);
+      console.log( viewed, 'viewsss');
 
       setNewArrivalsProducts(products || []);
       setRecentlyViewed(viewed || []);
@@ -128,6 +126,8 @@ export default function Home() {
       console.error(e);
     }
   }, []);
+
+
 
   // ------------------- TAB BAR SCROLL -------------------
   useEffect(() => {
@@ -180,89 +180,84 @@ export default function Home() {
 
   return (
     <>
-      <GenderProvider>
-        <View style={styles.container}>
-          <Banner />
+      <View style={styles.container}>
+        <Banner />
 
-          {/* FIXED HEADER */}
-          <View style={styles.header} >
-            <View style={styles.locationWrapper}>
-              <Ionicons
-                name="location-outline"
-                size={30}
-                color="black"
-                style={styles.locationIcon}
-              />
+        {/* FIXED HEADER */}
+        <View style={styles.header} >
+          <View style={styles.locationWrapper}>
+            <Ionicons
+              name="location-outline"
+              size={30}
+              color="black"
+              style={styles.locationIcon}
+            />
 
-              <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen")}
-                style={{ paddingVertical: 20 }}>
-                <View
-                  style={styles.locationTextWrapper}
-                >
-                  <View style={styles.locationRow}>
-                    <Text style={styles.cityText} numberOfLines={1}>
-                      {selectedAddress?.addressType === 'Non-serviceable'
-                        ? 'Oops! We don’t deliver here yet' // or use selectedAddress.fullMessage
-                        : selectedAddress
-                          ? [
-                            selectedAddress.addressLine1,
-                            selectedAddress.area,
-                            selectedAddress.city,
-                          ].filter(Boolean).join(', ')
-                          : 'Select Location'}
-                    </Text>
-                  </View>
-
-                  <View style={styles.subRow}>
-                    <Text style={styles.subText} numberOfLines={1}>
-                      {selectedAddress?.addressType === 'Non-serviceable'
-                        ? 'We’ll be there soon'
-                        : selectedAddress?.addressType || 'Explore trending styles around you!'}
-                    </Text>
-                    <TouchableOpacity>
-                      <Ionicons
-                        name="chevron-down-outline"
-                        size={16}
-                        color="black"
-                      />
-                    </TouchableOpacity>
-                  </View>
+            <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen" as any)}
+              style={{ paddingVertical: 20 }}>
+              <View
+                style={styles.locationTextWrapper}
+              >
+                <View style={styles.locationRow}>
+                  <Text style={styles.cityText} numberOfLines={1}>
+                    {selectedAddress?.addressType === 'Non-serviceable'
+                      ? 'Oops! We don’t deliver here' // or use selectedAddress.fullMessage
+                      : selectedAddress
+                        ? [
+                          selectedAddress.addressLine1,
+                          selectedAddress.area,
+                          selectedAddress.city,
+                        ].filter(Boolean).join(', ')
+                        : 'Select Location'}
+                  </Text>
                 </View>
-              </TouchableOpacity>
-            </View>
 
-            <View style={styles.notificationIcon}>
-              <SearchCartProfileButton />
-            </View>
+                <View style={styles.subRow}>
+                  <Text style={styles.subText} numberOfLines={1}>
+                    {selectedAddress?.addressType === 'Non-serviceable'
+                      ? 'We’ll be there soon'
+                      : selectedAddress?.addressType || 'Explore trending styles around you!'}
+                  </Text>
+                  <TouchableOpacity>
+                    <Ionicons
+                      name="chevron-down-outline"
+                      size={16}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
 
-          {/* MAIN CONTENT */}
-          <Animated.FlatList
-            data={[]}
-            renderItem={null}
-            ListHeaderComponent={Header}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-              { useNativeDriver: false }
-            )}
-            scrollEventThrottle={16}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 100 }}
-            keyExtractor={() => 'dummy'}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor="black"
-              />
-            }
-          />
-
-
-          {/* <PopupCart isTabBarVisible={isTabBarVisible} /> */}
-          <Footer />
+          <View style={styles.notificationIcon}>
+            <SearchCartProfileButton />
+          </View>
         </View>
-      </GenderProvider>
+
+        <Animated.FlatList
+          data={[]}
+          renderItem={null}
+          ListHeaderComponent={Header}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          keyExtractor={() => 'dummy'}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="black"
+            />
+          }
+        />
+
+        <Footer />
+      </View>
     </>
   );
 }
@@ -281,7 +276,7 @@ const styles = StyleSheet.create({
   locationWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   locationIcon: { marginRight: 6, marginTop: 2 },
   locationTextWrapper: { flex: 1, paddingRight: 14 },
-  locationRow: { flexDirection: 'row', alignItems: 'center' },
+  locationRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   cityText: {
     fontSize: 14,
     color: Colors.dark1,

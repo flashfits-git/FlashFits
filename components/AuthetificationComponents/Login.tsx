@@ -139,7 +139,7 @@ export default function PhoneLogin() {
                       style={styles.flag}
                     />
                     <Text style={styles.code}>+91</Text>
-                    <AntDesign name="down" size={12} color="#64748b" />
+                    {/* <AntDesign name="down" size={12} color="#64748b" /> */}
                   </TouchableOpacity>
 
                   <View style={styles.divider} />
@@ -185,8 +185,8 @@ export default function PhoneLogin() {
                     <LinearGradient
                       colors={
                         phoneNumber.length === 10
-                          ? ["#74737aff", "#000122ff"]
-                          : ["#e2e8f0", "#e2e8f0"]
+                          ? ["rgba(0, 0, 0, 1)",'rgba(0, 0, 0, 0.93)', "rgba(0, 0, 0, 0.61)"]
+                          : ["#eee", "#eee"]
                       }
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
@@ -279,6 +279,7 @@ centerWrapper: {
   phoneInput: {
     flex: 1,
     fontSize: 17,
+    marginLeft: 5,
     fontWeight: "600",
     color: "#1e293b",
     fontFamily: Platform.select({ ios: "System", android: "Roboto" }),
@@ -305,7 +306,7 @@ centerWrapper: {
   },
   continueTxt: { fontSize: 18, fontWeight: "700" },
   txtActive: { color: "#ffffff" },
-  txtDisabled: { color: "#94a3b8" },
+  txtDisabled: { color: "#000000ff" },
 
   /* ── TERMS ── */
   termsBox: { alignItems: "center", paddingHorizontal: 16 },

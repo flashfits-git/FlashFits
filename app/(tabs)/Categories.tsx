@@ -13,7 +13,7 @@ import {
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
 import { useNavigation, useRouter } from 'expo-router';
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { fetchCategories } from '../api/categories.js';
+import { fetchCategories } from '../api/categories';
 import Loader from '@/components/Loader/Loader';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;

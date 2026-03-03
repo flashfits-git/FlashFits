@@ -18,13 +18,15 @@ import Colors from '../../assets/theme/Colors';
 import { getAddresses } from '../api/productApis/cartProduct';
 import AddressSelectionModalize from '../../components/AddressModalize/AddressSelectionModalize';
 
-export const addressModalRef = React.createRef();
+// export const addressModalRef = React.createRef();
 // ⭐ ADDRESS CONTEXT
 import { useAddress } from '../AddressContext';
 
 // --------------------------------------------
 //   DISTANCE HELPERS MOVED OUTSIDE useEffect
 // --------------------------------------------
+
+const ADDRESS_MODAL_SHOWN_KEY = 'addressModalShown';
 const toRad = (x: number) => (x * Math.PI) / 180;
 
 const distanceInMeters = (lat1, lon1, lat2, lon2) => {
@@ -162,12 +164,9 @@ function TabsWithCart() {
 //            MAIN SCREEN (CLEAN)
 // --------------------------------------------
 export default function TabLayout() {
-  // const router = useRouter();
   const addressModalRef = useRef(null);
 
-  const { addresses, setAddresses, setSelectedAddress } = useAddress();
-
-
+  const { setAddresses, setSelectedAddress } = useAddress();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -178,7 +177,6 @@ export default function TabLayout() {
         // 1️⃣ Check token
         const token = await SecureStore.getItemAsync('token');
         if (!token) {
-          console.log('Guest user → skipping delivery check');
           setLoading(false);
           return;
         }
@@ -186,124 +184,102 @@ export default function TabLayout() {
         let isServiceable = false;
         let nonServiceableMessage = 'Delivery not available in your area';
 
-        // 2️⃣ Get location permission
+        // 2️⃣ Location permission
         const { status } = await Location.requestForegroundPermissionsAsync();
 
-        if (status === 'granted') {
-          try {
-            await SecureStore.deleteItemAsync('selectedAddress');
-            // 🔴 FOR TESTING: Force out-of-zone location (uncomment to test non-serviceable)
-            // const lat = 28.7041; // Delhi
-            // const lng = 77.1025;
-            // ✅ NORMAL: Use real device location
-            const location = await Location.getCurrentPositionAsync({});
-            const lat = location.coords.latitude;
-            const lng = location.coords.longitude;
-
-            // 3️⃣ Call API
-            const response = await checkDeliveryAvailability(lat, lng);
-
-            console.log(response, 'responserespons666eresponseresponse');
-
-
-            // Success + serviceable
-            if (response?.success === true && response?.serviceable === true) {
-              isServiceable = true;
-            }
-            // Explicit non-serviceable (includes 403 responses that Axios resolves)
-            else if (response?.success === false && response?.serviceable === false) {
-              isServiceable = false;
-              nonServiceableMessage = response.message || nonServiceableMessage;
-            }
-            // Any other unexpected success=false case
-            else {
-              isServiceable = false;
-            }
-
-          } catch (apiError: any) {
-            // console.error('Delivery check failed:', apiError);
-
-            console.log(apiError, 'apiErrorapiErrorapiError');
-            
-
-            // Axios rejects on 4xx/5xx → error has .response
-            // if (apiError.response) {
-            //   if (apiError.response.status === 403) {
-            //     isServiceable = false;
-            //     nonServiceableMessage =
-            //       apiError.response.data?.message || 'Delivery not available in your area';
-            //   } else {
-            //     isServiceable = false;
-            //     nonServiceableMessage = 'Service temporarily unavailable';
-            //   }
-            // } else {
-            //   // Network error, timeout, etc.
-            //   isServiceable = false;
-            //   nonServiceableMessage = 'Unable to verify location. Please try again.';
-            // }
-          }
-        } else {
-          console.log('Location permission denied');
+        if (status !== 'granted') {
           isServiceable = false;
-          nonServiceableMessage = 'Location permission required to check delivery';
+          nonServiceableMessage = 'Location permission required';
+        } else {
+          const location = await Location.getCurrentPositionAsync({});
+          const { latitude, longitude } = location.coords;
+
+          const response = await checkDeliveryAvailability(latitude, longitude);
+
+          // 🟢 SERVICEABLE
+          if (response?.success === true) {
+            isServiceable = true;
+
+            const res = await getAddresses();
+            const userAddresses = res?.addresses || [];
+            setAddresses(userAddresses);
+
+            const saved = await SecureStore.getItemAsync('selectedAddress');
+
+            // Restore saved
+            if (saved) {
+              setSelectedAddress(JSON.parse(saved));
+              setLoading(false);
+              return;
+            }
+
+            // Auto-pick first
+            if (userAddresses.length > 0) {
+              const first = userAddresses[0];
+              await SecureStore.setItemAsync(
+                'selectedAddress',
+                JSON.stringify(first)
+              );
+              setSelectedAddress(first);
+              setLoading(false);
+              return;
+            }
+
+            // 🔴 OPEN MODAL (ONLY ONCE)
+            const modalShown = await SecureStore.getItemAsync(
+              ADDRESS_MODAL_SHOWN_KEY
+            );
+
+            if (!modalShown) {
+              setTimeout(() => {
+                addressModalRef.current?.open();
+              }, 300);
+
+              await SecureStore.setItemAsync(
+                ADDRESS_MODAL_SHOWN_KEY,
+                'true'
+              );
+            }
+
+            setLoading(false);
+            return;
+          }
+
+          // 🔴 NON-SERVICEABLE
+          if (response?.success === false) {
+            const nonServiceableAddress = {
+              addressLine1: 'Delivery not available',
+              area: 'in your area',
+              addressType: 'Non-serviceable',
+              isServiceable: false,
+              fullMessage: response.message || nonServiceableMessage,
+            };
+
+            await SecureStore.setItemAsync(
+              'selectedAddress',
+              JSON.stringify(nonServiceableAddress)
+            );
+
+            setLoading(false);
+            return;
+          }
         }
-
-        console.log(isServiceable, 'isServiceableisServiceable');
-
-        // 4️⃣ NON-SERVICEABLE: Set placeholder and exit early
-        if (!isServiceable) {
-          const nonServiceableAddress = {
-            addressLine1: 'Delivery not available',
-            area: 'in your area',
-            city: '',
-            state: '',
-            addressType: 'Non-serviceable',
-            isServiceable: false,
-            fullMessage: nonServiceableMessage,
-          };
-
-          await SecureStore.setItemAsync('selectedAddress', JSON.stringify(nonServiceableAddress));
-          // setSelectedAddress(nonServiceableAddress);
-
-          setLoading(false);
-          return; // ← Critical: stop here, don't fetch addresses or open modal
-        }
-
-        // 5️⃣ SERVICEABLE: Continue normally
-        const res = await getAddresses();
-        const userAddresses = res?.addresses || [];
-
-        setAddresses(userAddresses);
-
-        const saved = await SecureStore.getItemAsync('selectedAddress');
-        const savedAddress = saved ? JSON.parse(saved) : null;
-
-        if (savedAddress) {
-          setSelectedAddress(savedAddress);
-          setLoading(false);
-          return;
-        }
-        console.log(userAddresses, 'userAddressesuserAddresses');
-
-        // 6️⃣ No saved address → open modal
-        setTimeout(() => addressModalRef.current?.open(), 500);
-
-        setLoading(false);
       } catch (err) {
-        console.error('App init failed:', err);
+        console.error('Init failed', err);
         setLoading(false);
       }
     };
 
     init();
-  }, [setAddresses, setSelectedAddress]);
+  }, []);
 
   return (
     <View
       style={{
         flex: 1,
         backgroundColor: '#fff',
-        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 44,
+        paddingTop:
+          Platform.OS === 'android' ? StatusBar.currentHeight : 44,
       }}
     >
       <TabsWithCart />

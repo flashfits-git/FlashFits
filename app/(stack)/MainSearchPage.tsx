@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
+  ActivityIndicator,
+  FlatList,
+  Image,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  FlatList,
-  Image,
-  StyleSheet,
+  View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 
 // Sample data (unchanged)
 const viralSearches = [
@@ -24,50 +25,57 @@ const viralSearches = [
   { title: 'Party wear', icon: '🕺' },
 ];
 
-const previouslyViewed = [
-  { id: '1', title: 'Black Solid Tie Up Max...', price: 799, oldPrice: 1129, image: 'https://via.placeholder.com/100x140' },
-  { id: '2', title: 'Black One Shoulder M...', price: 1159, oldPrice: 1279, image: 'https://via.placeholder.com/100x140' },
-  { id: '3', title: 'Dark Green Dress', price: 1699, oldPrice: 0, image: 'https://via.placeholder.com/100x140' },
-  { id: '4', title: 'Red Strapless Dress', price: 779, oldPrice: 0, image: 'https://via.placeholder.com/100x140' },
-];
-
-const newDrops = [
-  { id: '5', title: 'Solid Slip Dress', price: 399, image: 'https://via.placeholder.com/100x140' },
-  { id: '6', title: 'Nude Shorts', price: 549, image: 'https://via.placeholder.com/100x140' },
-  { id: '7', title: 'Breast Lift Cups', price: 349, image: 'https://via.placeholder.com/100x140' },
-  { id: '8', title: 'Lace Stockings', price: 249, image: 'https://via.placeholder.com/100x140' },
-];
+interface Product {
+  id?: string;
+  _id?: string;
+  name?: string;
+  price?: number;
+  mrp?: number;
+  variants?: any;
+  images?: any[];
+}
 
 export default function SearchScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [lastSearches, setLastSearches] = useState([]);
-  const [suggestions, setSuggestions] = useState([]);
+  const [lastSearches, setLastSearches] = useState<string[]>([]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [recentlyViewedProducts, setRecentlyViewedProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
 
-  // Load last searches from AsyncStorage when component mounts
+  // Load last searches and products from API
   useEffect(() => {
-    const loadLastSearches = async () => {
+    const loadData = async () => {
       try {
+        setLoadingProducts(true);
+        // Load last searches
         const storedSearches = await AsyncStorage.getItem('lastSearches');
         if (storedSearches) {
           setLastSearches(JSON.parse(storedSearches));
         }
+
+        // Fetch actual recently viewed products from local storage
+        const viewed = await getPreviouslyViewed();
+        console.log(viewed, 'viewedFromStorage');
+
+        setRecentlyViewedProducts(viewed || []);
       } catch (error) {
-        console.error('Error loading last searches:', error);
+        console.error('Error loading search screen data:', error);
+      } finally {
+        setLoadingProducts(false);
       }
     };
-    loadLastSearches();
+    loadData();
   }, []);
 
-  // Save a new search query to AsyncStorage
   const saveSearch = async (query) => {
     if (!query.trim()) return;
     try {
       const updatedSearches = [
         query.trim(),
         ...lastSearches.filter((item) => item !== query.trim()),
-      ].slice(0, 5); // Keep only the last 5 searches
+      ].slice(0, 5);
       setLastSearches(updatedSearches);
       await AsyncStorage.setItem('lastSearches', JSON.stringify(updatedSearches));
     } catch (error) {
@@ -75,7 +83,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Clear all last searches
   const clearSearches = async () => {
     try {
       setLastSearches([]);
@@ -85,7 +92,6 @@ export default function SearchScreen() {
     }
   };
 
-  // Handle search input change and filter suggestions
   const handleSearchInput = (text) => {
     setSearchQuery(text);
     if (text.trim().length > 0) {
@@ -102,27 +108,32 @@ export default function SearchScreen() {
     }
   };
 
-  // Handle search submission
   const handleSearchSubmit = () => {
-  if (searchQuery.trim()) {
-    saveSearch(searchQuery);
+    if (searchQuery.trim()) {
+      saveSearch(searchQuery);
+      setShowSuggestions(false);
+      router.replace({
+        pathname: '/SelectionPage',
+        params: { query: searchQuery.trim() },
+      });
+    }
+  };
+
+  const handleSelectSearch = (query) => {
+    setSearchQuery(query);
+    saveSearch(query);
     setShowSuggestions(false);
     router.replace({
       pathname: '/SelectionPage',
-      params: { query: searchQuery.trim() }, // 🔥 pass query
+      params: { query },
     });
-  }
   };
 
-  // Handle suggestion or last search selection
-  const handleSelectSearch = (query) => {
-  setSearchQuery(query);
-  saveSearch(query);
-  setShowSuggestions(false);
-  router.replace({
-    pathname: '/SelectionPage',
-    params: { query },
-  });
+  const navigateToProduct = (id: string) => {
+    router.push({
+      pathname: '/ProductDetail/productdetailpage' as any,
+      params: { id },
+    });
   };
 
   return (
@@ -133,8 +144,8 @@ export default function SearchScreen() {
           <Ionicons name="arrow-back" size={24} />
         </TouchableOpacity>
         <TextInput
-          placeholder="Search"
-          placeholderTextColor="black"
+          placeholder="Search items, brands and more"
+          placeholderTextColor="#94A3B8"
           style={styles.searchInput}
           value={searchQuery}
           onChangeText={handleSearchInput}
@@ -142,7 +153,7 @@ export default function SearchScreen() {
           returnKeyType="search"
         />
         <TouchableOpacity onPress={handleSearchSubmit}>
-          <Ionicons name="search" size={24} />
+          <Ionicons name="search" size={24} color="#1E293B" />
         </TouchableOpacity>
       </View>
 
@@ -189,77 +200,60 @@ export default function SearchScreen() {
           </View>
         )}
 
-        {/* Categories */}
-        <View style={styles.categories}>
-          <TouchableOpacity style={styles.categoryButton}>
-            <Text>Categories</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryButton}>
-            <Text>Product ID</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.categoryButton}>
-            <Text>Find stores</Text>
-          </TouchableOpacity>
-        </View>
 
-        {/* Viral Searches */}
+        {/* Previously Viewed (Recently Viewed) */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Viral Searches 🔥</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {viralSearches.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.viralItem}
-                onPress={() => handleSelectSearch(item.title)}
-              >
-                <View style={styles.viralIcon}>
-                  <Text style={{ fontSize: 24 }}>{item.icon}</Text>
-                </View>
-                <Text style={styles.viralText}>{item.title}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          <Text style={styles.sectionTitle}>Recently Viewed</Text>
+          {loadingProducts ? (
+            <ActivityIndicator size="small" color="#000" style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={recentlyViewedProducts}
+              numColumns={2}
+              scrollEnabled={false}
+              keyExtractor={(item) => item.id || item._id || Math.random().toString()}
+              contentContainerStyle={{ marginTop: 12 }}
+              renderItem={({ item }) => {
+                const imageUrl =
+                  item.variants?.images?.[0]?.url ||
+                  item.images?.[0]?.url ||
+                  item.variants?.[0]?.images?.[0]?.url ||
+                  'https://via.placeholder.com/150';
 
-        {/* Previously Viewed */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Previously Viewed</Text>
-          <FlatList
-            data={previouslyViewed}
-            numColumns={2}
-            scrollEnabled={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.productCard}>
-                <Image source={{ uri: item.image }} style={styles.productImage} />
-                <Text style={styles.productTitle}>{item.title}</Text>
-                <View style={styles.priceRow}>
-                  <Text style={styles.productPrice}>₹{item.price}</Text>
-                  {item.oldPrice !== 0 && (
-                    <Text style={styles.oldPrice}> ₹{item.oldPrice}</Text>
-                  )}
-                </View>
-              </View>
-            )}
-          />
-        </View>
+                const price =
+                  item.variants?.price ||
+                  item.price ||
+                  item.variants?.[0]?.price;
 
-        {/* New Drops */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>New Drops 🔥</Text>
-          <FlatList
-            data={newDrops}
-            numColumns={2}
-            scrollEnabled={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.productCard}>
-                <Image source={{ uri: item.image }} style={styles.productImage} />
-                <Text style={styles.productTitle}>{item.title}</Text>
-                <Text style={styles.productPrice}>₹{item.price}</Text>
-              </View>
-            )}
-          />
+                const mrp =
+                  item.variants?.mrp ||
+                  item.mrp ||
+                  item.variants?.[0]?.mrp;
+
+                return (
+                  <TouchableOpacity
+                    style={styles.productCard}
+                    onPress={() => navigateToProduct(item.id || item._id)}
+                  >
+                    <Image
+                      source={{ uri: imageUrl }}
+                      style={styles.productImage}
+                    />
+                    <Text style={styles.productTitle} numberOfLines={1}>{item.name}</Text>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.productPrice}>₹{price}</Text>
+                      {mrp && mrp > price && (
+                        <Text style={styles.oldPrice}>₹{mrp}</Text>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={
+                <Text style={styles.emptyText}>No recently viewed products</Text>
+              }
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -270,50 +264,60 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: 20,
   },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    marginBottom: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
   },
   searchInput: {
     flex: 1,
-    height: 60,
-    backgroundColor: '#f1f1f1',
-    marginHorizontal: 8,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    fontSize: 15,
+    height: 48,
+    backgroundColor: '#F8FAFC',
+    marginHorizontal: 12,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    fontSize: 14,
+    color: '#1E293B',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   suggestionsContainer: {
     position: 'absolute',
-    top: 80,
+    top: 110,
     left: 16,
     right: 16,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    maxHeight: 200,
-    zIndex: 10,
-    elevation: 5,
+    borderRadius: 12,
+    maxHeight: 250,
+    zIndex: 100,
+    elevation: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
   },
   suggestionsList: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
   suggestionItem: {
-    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#F1F5F9',
   },
   suggestionText: {
     fontSize: 14,
+    color: '#334155',
+  },
+  section: {
+    paddingHorizontal: 16,
+    marginVertical: 16,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -321,83 +325,96 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1E293B',
+    fontFamily: 'Montserrat',
+  },
   clearText: {
-    fontSize: 14,
-    color: '#ff4444',
+    fontSize: 13,
+    color: '#EF4444',
+    fontWeight: '600',
   },
   lastSearchItem: {
-    backgroundColor: '#f1f1f1',
+    backgroundColor: '#F1F5F9',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   lastSearchText: {
-    fontSize: 14,
-  },
-  categories: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  categoryButton: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-  },
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '500',
   },
   viralItem: {
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: 24,
   },
   viralIcon: {
-    backgroundColor: '#f1f1f1',
-    padding: 10,
+    backgroundColor: '#F8FAFC',
+    padding: 12,
     borderRadius: 50,
-    marginBottom: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   viralText: {
-    fontSize: 12,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748B',
+    textAlign: 'center',
   },
   productCard: {
-    flex: 1,
-    backgroundColor: '#f9f9f9',
+    flex: 0.5,
+    backgroundColor: '#fff',
     margin: 6,
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 8,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   productImage: {
     width: '100%',
-    height: 120,
+    height: 160,
     borderRadius: 8,
+    backgroundColor: '#F8FAFC',
   },
   productTitle: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: '500',
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 4,
   },
   productPrice: {
     fontSize: 14,
-    fontWeight: 'bold',
-    marginTop: 4,
+    fontWeight: '700',
+    color: '#0F172A',
   },
   oldPrice: {
     fontSize: 12,
     textDecorationLine: 'line-through',
-    color: '#999',
+    color: '#94A3B8',
     marginLeft: 6,
+  },
+  emptyText: {
+    color: '#94A3B8',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 20,
+    fontStyle: 'italic',
   },
 });
