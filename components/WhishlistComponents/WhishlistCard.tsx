@@ -22,7 +22,7 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
   const imageUrl = variant?.images?.[0]?.url;
   const price = variant?.price || 0;
   const mrp = variant?.mrp || 0;
-  const discount = variant?.discount || (mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0);
+  // const discount = variant?.discount || (mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0);
 
   const isLiked = variantId ? isInWishlist(variantId) : true; // Default true since it's the wishlist page
 
@@ -67,7 +67,8 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
           </TouchableOpacity>
 
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '4.5'}</Text>
+            <Ionicons name="star" size={10} color="#028a34" />
+            <Text style={styles.ratingValue}>{product.ratings || '4.2'}</Text>
           </View>
         </View>
       </View>
@@ -83,9 +84,7 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
         {mrp > price ? (
           <Text style={styles.oldPrice}>₹{mrp}</Text>
         ) : null}
-        {discount > 0 && (
-          <Text style={styles.discount}>{discount}% off</Text>
-        )}
+        <Text style={styles.discount}>20-30 mins</Text>
       </View>
     </TouchableOpacity>
   );
@@ -165,6 +164,12 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
+  ratingValue: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-Bold',
+  },
   noImage: {
     backgroundColor: '#F2F2F2',
     justifyContent: 'center',
@@ -239,7 +244,7 @@ const styles = StyleSheet.create({
   },
   discount: {
     fontSize: 11,
-    color: '#ff6666',
+    color: '#242424ff',
     marginLeft: 6,
     fontWeight: '600',
     fontFamily: 'Manrope-SemiBold',
