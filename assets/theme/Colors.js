@@ -1,21 +1,17 @@
 const Colors = {
-  dark1: '#0D1F23',
-  dark2: '#132E35',
-  dark3: '#2D4A53',
-  mid1: '#69818D',
-  light1: '#AFB3B7',
-  accent: '#f4f5f7',
-  Red: '#ff0000b4',
-  Blue: '#0084ffda',
-  Black: '#1a191ab4',
-  White: '#fffb4',
-  Green: '#1ec15792',
-  Yellow: '#ffe100a0',
-  Grey: '#cacacaffb4',
-  // Add other color mappings as needed
-
+  primary: '#0F0F0F',
+  secondary: '#8E8E93',
+  accent: '#00F5A0',
+  background: '#FFFFFF',
+  surface: '#F2F2F2',
+  dark1: '#0F0F0F',
+  dark2: '#1C1C1E',
+  dark3: '#2D2D2D',
+  black: '#0F0F0F',
+  white: '#FFFFFF',
+  grey: '#bfbfc4ff',
+  red: '#FF3B30',
+  green: '#34C759',
 };
-
-
 
 export default Colors;

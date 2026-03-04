@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React, { memo, useRef } from 'react';
 import {
   Dimensions,
@@ -75,7 +75,7 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
 
 const RecentlyViewed = ({ product = [], accecories = [], deataiPageproducts = [] }: any) => {
   const scrollRef = useRef<ScrollView>(null);
-  const navigation = useNavigation<any>();
+  const router = useRouter();
 
   const dataToRender =
     deataiPageproducts.length > 0
@@ -97,12 +97,15 @@ const RecentlyViewed = ({ product = [], accecories = [], deataiPageproducts = []
             key={p._id || p.id || index}
             product={p}
             onPress={() =>
-              navigation.navigate('ProductDetail/productdetailpage', {
-                id: p._id || p.id,
-                variantId:
-                  Array.isArray(p.variants)
-                    ? p.variants[0]?._id
-                    : p.variants?._id || p.variantId,
+              router.push({
+                pathname: '/ProductDetail/productdetailpage' as any,
+                params: {
+                  id: p._id || p.id,
+                  variantId:
+                    Array.isArray(p.variants)
+                      ? p.variants[0]?._id
+                      : p.variants?._id || p.variantId,
+                }
               })
             }
           />
@@ -145,7 +148,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 0,
-    backgroundColor: '#c41e3a',
+    backgroundColor: '#0F0F0F',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderTopRightRadius: 4,
@@ -154,8 +157,9 @@ const styles = StyleSheet.create({
   bestsellerText: {
     color: '#fff',
     fontSize: 9,
-    fontWeight: 'bold',
+    fontWeight: '800',
     textTransform: 'uppercase',
+    fontFamily: 'Manrope-ExtraBold',
   },
   wishlistButton: {
     position: 'absolute',
@@ -171,8 +175,9 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#1c1c1c',
+    color: '#0F0F0F',
     marginBottom: 4,
+    fontFamily: 'Manrope-Bold',
   },
   ratingRow: {
     flexDirection: 'row',
@@ -187,13 +192,15 @@ const styles = StyleSheet.create({
   },
   ratingValue: {
     fontSize: 11,
-    fontWeight: 'bold',
-    color: '#1c1c1c',
+    fontWeight: '700',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-Bold',
   },
   deliveryTime: {
     fontSize: 11,
-    color: '#666',
+    color: '#8E8E93',
     fontWeight: '500',
+    fontFamily: 'Manrope-Medium',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -203,13 +210,15 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#1c1c1c',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-ExtraBold',
   },
   oldPrice: {
     fontSize: 11,
-    color: '#888',
+    color: '#8E8E93',
     textDecorationLine: 'line-through',
     marginLeft: 4,
+    fontFamily: 'Manrope-Medium',
   },
   addButton: {
     flexDirection: 'row',

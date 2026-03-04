@@ -1,4 +1,3 @@
-import Banner from '@/components/HomeComponents/Banner';
 import Carousel from '@/components/HomeComponents/Carousel';
 import CategorySwitcher from '@/components/HomeComponents/CategorySwitcher';
 import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
@@ -16,6 +15,7 @@ import React, {
 } from 'react';
 import {
   Animated,
+  Easing,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -26,6 +26,7 @@ import {
 import Colors from '../../assets/theme/Colors';
 import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
 import Footer from '../../components/Footer';
+import AnimatedSearchBar from '../../components/HomeComponents/AnimatedSearchBar';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
 import { fetchnewArrivalsProductsData, getMyWishlist } from '../api/productApis/products';
@@ -33,6 +34,7 @@ import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 
 const HEADER_HEIGHT = 70;
 const SCROLL_THRESHOLD = 5;
+const ANIMATION_DURATION = 700;
 
 export default function Home() {
   const router = useRouter();
@@ -50,6 +52,51 @@ export default function Home() {
   const [isActive, setIsActive] = useState(true)
   const [refreshing, setRefreshing] = useState(false);
   const [isServiceable, setIsServiceable] = useState<boolean | null>(null);
+
+  // ------------------- HEADER ANIMATION -------------------
+  const headerAnim = useRef(new Animated.Value(0)).current; // 0 = expanded, 1 = collapsed
+  const isHeaderCollapsed = useRef(false);
+
+  const collapseHeader = useCallback(() => {
+    if (isHeaderCollapsed.current) return;
+    isHeaderCollapsed.current = true;
+    Animated.timing(headerAnim, {
+      toValue: 1,
+      duration: ANIMATION_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [headerAnim]);
+
+  const expandHeader = useCallback(() => {
+    if (!isHeaderCollapsed.current) return;
+    isHeaderCollapsed.current = false;
+    Animated.timing(headerAnim, {
+      toValue: 0,
+      duration: ANIMATION_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [headerAnim]);
+
+  // Animated values derived from headerAnim
+  const headerHeight = headerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [HEADER_HEIGHT, 0],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = headerAnim.interpolate({
+    inputRange: [0, 0.5],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const headerTranslateY = headerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -HEADER_HEIGHT],
+    extrapolate: 'clamp',
+  });
 
 
   const onRefresh = useCallback(async () => {
@@ -79,7 +126,7 @@ export default function Home() {
         getPreviouslyViewed(),
         SecureStore.getItemAsync('selectedAddress'),
       ]);
-      console.log( viewed, 'viewsss');
+      console.log(viewed, 'viewsss');
 
       setNewArrivalsProducts(products || []);
       setRecentlyViewed(viewed || []);
@@ -129,12 +176,21 @@ export default function Home() {
 
 
 
-  // ------------------- TAB BAR SCROLL -------------------
+  // ------------------- TAB BAR + HEADER SCROLL -------------------
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
+      const delta = clampedValue - currentOffset.current;
 
-      if (clampedValue < currentOffset.current - 5) {
+      // Scrolling DOWN (finger moves up) → collapse header + hide tab bar
+      if (delta > SCROLL_THRESHOLD) {
+        collapseHeader();
+        setIsTabBarVisible(false);
+        navigation.setOptions({ tabBarStyle: { display: 'none' } });
+      }
+      // Scrolling UP (finger moves down) → expand header + show tab bar
+      else if (delta < -SCROLL_THRESHOLD) {
+        expandHeader();
         setIsTabBarVisible(true);
         navigation.setOptions({
           tabBarStyle: {
@@ -151,16 +207,13 @@ export default function Home() {
             paddingBottom: Platform.OS === 'ios' ? 10 : 10,
           },
         });
-      } else if (clampedValue > currentOffset.current + 5) {
-        setIsTabBarVisible(false);
-        navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
 
       currentOffset.current = clampedValue;
     });
 
     return () => scrollOffset.removeListener(listener);
-  }, []);
+  }, [collapseHeader, expandHeader]);
 
   // ------------------- HEADER -------------------
   const Header = useMemo(
@@ -181,10 +234,18 @@ export default function Home() {
   return (
     <>
       <View style={styles.container}>
-        <Banner />
-
-        {/* FIXED HEADER */}
-        <View style={styles.header} >
+        {/* COLLAPSIBLE LOCATION HEADER */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              height: headerHeight,
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+              overflow: 'hidden',
+            },
+          ]}
+        >
           <View style={styles.locationWrapper}>
             <Ionicons
               name="location-outline"
@@ -201,7 +262,7 @@ export default function Home() {
                 <View style={styles.locationRow}>
                   <Text style={styles.cityText} numberOfLines={1}>
                     {selectedAddress?.addressType === 'Non-serviceable'
-                      ? 'Oops! We don’t deliver here' // or use selectedAddress.fullMessage
+                      ? 'Oops! We don\'t deliver here'
                       : selectedAddress
                         ? [
                           selectedAddress.addressLine1,
@@ -215,7 +276,7 @@ export default function Home() {
                 <View style={styles.subRow}>
                   <Text style={styles.subText} numberOfLines={1}>
                     {selectedAddress?.addressType === 'Non-serviceable'
-                      ? 'We’ll be there soon'
+                      ? 'We\'ll be there soon'
                       : selectedAddress?.addressType || 'Explore trending styles around you!'}
                   </Text>
                   <TouchableOpacity>
@@ -231,9 +292,12 @@ export default function Home() {
           </View>
 
           <View style={styles.notificationIcon}>
-            <SearchCartProfileButton />
+            <SearchCartProfileButton hideSearchIcon={true} />
           </View>
-        </View>
+        </Animated.View>
+
+        {/* SEARCH BAR — always visible */}
+        <AnimatedSearchBar />
 
         <Animated.FlatList
           data={[]}
@@ -281,14 +345,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.dark1,
     fontWeight: 'bold',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope-Bold',
   },
   subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   subText: {
     fontSize: 10,
     color: Colors.dark2,
     fontWeight: '300',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope',
   },
   notificationIcon: { marginRight: 20 },
 });

@@ -1,5 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import React, { memo } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
@@ -58,7 +58,7 @@ const DressCard = memo(({ item, onPress }: { item: SelectedProduct; onPress: () 
 ));
 
 const ImageCardHome = ({ products }: { products: Product[] }) => {
-    const navigation = useNavigation<any>();
+    const router = useRouter();
 
     const availableVariants = products
         .map(product => {
@@ -76,9 +76,12 @@ const ImageCardHome = ({ products }: { products: Product[] }) => {
         .filter((item): item is SelectedProduct => item !== null);
 
     const handleCardPress = (item: SelectedProduct) => {
-        navigation.navigate('ProductDetail/productdetailpage', {
-            id: item._id,
-            variantId: item.selectedVariant._id
+        router.push({
+            pathname: '/ProductDetail/productdetailpage' as any,
+            params: {
+                id: item._id,
+                variantId: item.selectedVariant._id
+            }
         });
     };
 

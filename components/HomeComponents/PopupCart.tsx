@@ -1,17 +1,15 @@
+import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
   Animated,
-  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import Colors from '../../assets/theme/Colors';
 
-const PopupCart = ({ isTabBarVisible }) => {
+const PopupCart = ({ isTabBarVisible }: { isTabBarVisible?: boolean }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -45,7 +43,7 @@ const PopupCart = ({ isTabBarVisible }) => {
           <TouchableOpacity
             style={styles.button}
             onPress={() => router.push('/(stack)/OrderDetail/OrderTrackingPage')
-           
+
             }
           >
             <Text style={styles.buttonText}>Track Order</Text>
@@ -67,15 +65,15 @@ const styles = StyleSheet.create({
     margin: 30,
   },
   cartBox: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 5,
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 6,
-    shadowColor: '#1E3A8A',
+    shadowColor: '#0F0F0F',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
+    shadowOpacity: 0.1,
     shadowRadius: 6,
   },
   contentWrapper: {
@@ -90,7 +88,7 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 12,
     marginRight: 12,
-    backgroundColor: '#cfe0f4',
+    backgroundColor: '#F2F2F2',
   },
   details: {
     flex: 4,
@@ -98,33 +96,33 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 12,
-    fontWeight: '400',
-    color: '#000',
+    fontWeight: '700',
+    color: '#0F0F0F',
     marginBottom: 4,
     width: 100,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope-Bold',
   },
   saveText: {
     fontSize: 9,
-    color: '#256D1B',
-    fontWeight: '500',
-    fontFamily: 'Montserrat',
+    color: '#00F5A0',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   button: {
-    backgroundColor: Colors.dark1,
+    backgroundColor: '#0F0F0F',
     paddingVertical: 15,
     paddingHorizontal: 25,
     borderRadius: 8,
-    shadowColor: '#1E40AF',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
   buttonText: {
     color: '#FFFFFF',
-    fontWeight: '400',
+    fontWeight: '700',
     fontSize: 14,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope-Bold',
   },
 });
 

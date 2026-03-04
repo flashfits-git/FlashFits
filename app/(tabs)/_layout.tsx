@@ -1,22 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Tabs, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import * as Location from 'expo-location';
+import { Tabs } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  Text,
-  Platform,
-  StyleSheet,
   Animated,
   Easing,
-  View,
+  Platform,
   StatusBar,
+  Text,
+  View
 } from 'react-native';
-import * as Location from 'expo-location';
-import { checkDeliveryAvailability } from '../api/auth';
-import * as SecureStore from 'expo-secure-store';
-import { Modalize } from 'react-native-modalize';
 import Colors from '../../assets/theme/Colors';
-import { getAddresses } from '../api/productApis/cartProduct';
 import AddressSelectionModalize from '../../components/AddressModalize/AddressSelectionModalize';
+import { checkDeliveryAvailability } from '../api/auth';
+import { getAddresses } from '../api/productApis/cartProduct';
 
 // export const addressModalRef = React.createRef();
 // ⭐ ADDRESS CONTEXT
@@ -58,7 +56,7 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
       }),
       Animated.timing(bgAnim, {
         toValue: focused ? 1 : 0,
-        duration: 500,
+        duration: 1000,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: false,
       }),
@@ -67,7 +65,7 @@ const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
 
   const backgroundColor = bgAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: ['transparent', Colors.accent],
+    outputRange: ['transparent', Colors.grey],
   });
 
   return (

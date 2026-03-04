@@ -1,21 +1,20 @@
-import React, { useState, useRef, useEffect } from "react";
+import { AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Dimensions,
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  SafeAreaView,
+  View
 } from "react-native";
-import { AntDesign } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import logo from "../../assets/loaders/logo.png";
 
 const { width, height } = Dimensions.get("window");
@@ -85,7 +84,7 @@ export default function PhoneLogin() {
   // ── Render ─────────────────────────────────────────────────────────
   return (
     <View style={styles.centerWrapper}>
-    <LinearGradient colors={["#ffffffff", "#ffffffff", "#ffffffff"]} style={styles.gradient}>
+      <LinearGradient colors={["#ffffffff", "#ffffffff", "#ffffffff"]} style={styles.gradient}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -185,7 +184,7 @@ export default function PhoneLogin() {
                     <LinearGradient
                       colors={
                         phoneNumber.length === 10
-                          ? ["rgba(0, 0, 0, 1)",'rgba(0, 0, 0, 0.93)', "rgba(0, 0, 0, 0.61)"]
+                          ? ["rgba(0, 0, 0, 1)", 'rgba(0, 0, 0, 0.93)', "rgba(0, 0, 0, 0.61)"]
                           : ["#eee", "#eee"]
                       }
                       start={{ x: 0, y: 0 }}
@@ -220,27 +219,27 @@ export default function PhoneLogin() {
           </ScrollView>
         </KeyboardAvoidingView>
 
-    </LinearGradient>
-     </View>
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   gradient: { flex: 1 },
 
-scrollContainer: {
-  flexGrow: 1,
-  paddingHorizontal: 24,
-  paddingBottom: 48,
-  alignItems: "center",
-  justifyContent: "center", // <-- Center vertically
-},
-centerWrapper: {
-  flex: 1,
-  alignItems: "center",
-  justifyContent: "center", // <-- Vertically center
-  // paddingHorizontal: 24,
-},
+  scrollContainer: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingBottom: 48,
+    alignItems: "center",
+    justifyContent: "center", // <-- Center vertically
+  },
+  centerWrapper: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center", // <-- Vertically center
+    // paddingHorizontal: 24,
+  },
 
   /* ── LOGO ── */
   logoWrapper: { marginBottom: 10, alignItems: "center" },
@@ -255,11 +254,11 @@ centerWrapper: {
   },
 
   label: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#475569",
-    marginBottom: 12,
-    fontFamily: Platform.select({ ios: "System", android: "Roboto" }),
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F0F0F",
+    marginBottom: 8,
+    fontFamily: "Manrope-Bold",
   },
 
   /* ── INPUT ── */
@@ -275,14 +274,14 @@ centerWrapper: {
   countryPicker: { flexDirection: "row", alignItems: "center", },
   flag: { width: 28, height: 20, borderRadius: 4, marginRight: 8 },
   code: { fontSize: 17, fontWeight: "700", color: "#1e293b", marginRight: 6 },
-  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1",marginLeft:2 },
+  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1", marginLeft: 2 },
   phoneInput: {
     flex: 1,
     fontSize: 17,
     marginLeft: 5,
     fontWeight: "600",
     color: "#1e293b",
-    fontFamily: Platform.select({ ios: "System", android: "Roboto" }),
+    fontFamily: "Manrope-SemiBold",
   },
 
   /* ── PROGRESS ── */
@@ -304,9 +303,9 @@ centerWrapper: {
     paddingVertical: 18,
     gap: 8,
   },
-  continueTxt: { fontSize: 18, fontWeight: "700" },
+  continueTxt: { fontSize: 18, fontWeight: "700", fontFamily: "Manrope-Bold" },
   txtActive: { color: "#ffffff" },
-  txtDisabled: { color: "#000000ff" },
+  txtDisabled: { color: "#888" },
 
   /* ── TERMS ── */
   termsBox: { alignItems: "center", paddingHorizontal: 16 },

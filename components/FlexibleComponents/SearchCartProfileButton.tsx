@@ -1,34 +1,34 @@
-import * as React from 'react';
-import { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { GetCart } from '../../app/api/productApis/cartProduct';
-import Colors from '../../assets/theme/Colors';
-import { useCart } from '../../app/ContextParent';
 import * as SecureStore from 'expo-secure-store';
-function SearchCartProfileButton() {
+import * as React from 'react';
+import { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { GetCart } from '../../app/api/productApis/cartProduct';
+import { useCart } from '../../app/ContextParent';
+
+const ICON_COLOR = '#0F0F0F';
+
+function SearchCartProfileButton({ hideSearchIcon = false }: { hideSearchIcon?: boolean }) {
   const router = useRouter();
   const { cartCount, setCartCount } = useCart();
-const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   // Fetch cart data on component mount
   React.useEffect(() => {
     const fetchCart = async () => {
       try {
 
-              // 🔐 0️⃣ CHECK TOKEN FIRST
-      const token = await SecureStore.getItemAsync('token');
+        // 🔐 0️⃣ CHECK TOKEN FIRST
+        const token = await SecureStore.getItemAsync('token');
 
-      if (!token) {
-        console.log('No token found → skipping address API');
-        setLoading(false);
-        return; // ❌ STOP HERE — NO API CALL
-      }
+        if (!token) {
+          console.log('No token found → skipping address API');
+          setLoading(false);
+          return; // ❌ STOP HERE — NO API CALL
+        }
 
 
         const response = await GetCart();
-        // console.log(response.items,'4444g4g3g');
-        // Set the cart count (assuming it's the number of items in the array)
         setCartCount(response.items?.length || 0);
       } catch (error) {
         console.error('Failed to fetch cart:', error);
@@ -40,23 +40,29 @@ const [loading, setLoading] = useState(true);
 
   return (
     <View style={styles.flx}>
-      <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
-        <Ionicons name="search-outline" size={28} color={Colors.dark1} style={{ paddingHorizontal: 4 }} />
-      </TouchableOpacity>
+      {!hideSearchIcon && (
+        <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
+          <Ionicons name="search" size={24} color={ICON_COLOR} style={{ paddingHorizontal: 4 }} />
+        </TouchableOpacity>
+      )}
 
-      <TouchableOpacity onPress={() => router.push('/ShoppingBag')} style={{ paddingHorizontal: 4 }}>
-        <View style={styles.iconWithBadge}>
-          <Ionicons name="bag-handle-outline" size={24} color="#000" />
-          {cartCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{cartCount}</Text>
-            </View>
-          )}
-        </View>
-      </TouchableOpacity>
+      {!hideSearchIcon && (
+        <TouchableOpacity onPress={() => router.push('/ShoppingBag')} style={{ paddingHorizontal: 4 }}>
+          <View style={styles.iconWithBadge}>
+            <Ionicons name="bag-handle" size={22} color={ICON_COLOR} />
+            {cartCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{cartCount}</Text>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity onPress={() => router.push('/(profile)')}>
-        <Ionicons name="person-outline" size={26} color="#091f5b" style={{ paddingHorizontal: 4 }} />
+        <View style={styles.profileCircle}>
+          <Ionicons name="person" size={18} color={ICON_COLOR} />
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -67,7 +73,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: 10,
   },
   iconWithBadge: {
     position: 'relative',
@@ -76,7 +82,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -6,
     right: -6,
-    backgroundColor: 'red',
+    backgroundColor: '#FF3B30',
     borderRadius: 8,
     width: 16,
     height: 16,
@@ -87,6 +93,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  profileCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#F2F2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
   },
 });
 

@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
   FlatList,
@@ -42,7 +42,7 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
 
 // Wrapper Component with navigation
 export default function WishlistCard({ product = [] }) {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -54,11 +54,14 @@ export default function WishlistCard({ product = [] }) {
           <DressCard
             product={item}
             onPress={() =>
-              navigation.navigate('ProductDetail/productdetailpage', {
-                id: item._id || item.id,
-                variantId: Array.isArray(item.variants)
-                  ? item.variants[0]?._id
-                  : item.variants?._id,
+              router.push({
+                pathname: '/ProductDetail/productdetailpage' as any,
+                params: {
+                  id: item._id || item.id,
+                  variantId: Array.isArray(item.variants)
+                    ? item.variants[0]?._id
+                    : item.variants?._id,
+                }
               })
             }
           />
