@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { View, FlatList, Image, Dimensions, Animated } from 'react-native';
+import { Image } from 'expo-image';
+import React, { memo, useEffect, useRef, useState } from 'react';
+import { Animated, Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -11,64 +12,66 @@ const images = [
 ];
 
 const Carousel = () => {
-  const flatListRef = useRef(null);
+  const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
       let nextIndex = (index + 1) % images.length;
-      flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
+      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
       setIndex(nextIndex);
     }, 4000);
 
     return () => clearInterval(interval);
   }, [index]);
 
-  const handleScrollEnd = (e) => {
+  const handleScrollEnd = (e: any) => {
     const offsetX = e.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / width);
     setIndex(newIndex);
   };
 
   return (
-<View style={{ height: height * 0.17, backgroundColor: '#000' }}>
-  <FlatList
-    ref={flatListRef}
-    data={images}
-    horizontal
-    pagingEnabled
-    showsHorizontalScrollIndicator={false}
-    keyExtractor={(_, i) => i.toString()}
-    renderItem={({ item }) => (
-      <View
-        style={{
-          width: width,
-          height: height * 0.17, // Match container height
-          // justifyContent: 'center',
-          // alignItems: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        <Image
-          source={item}
-          style={{
-            width: '100%',
-            height: '100%',
-            resizeMode: 'cover',
-          }}
-        />
-      </View>
-    )}
-    onMomentumScrollEnd={handleScrollEnd}
-    onScroll={Animated.event(
-      [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-      { useNativeDriver: false }
-    )}
-  />
-</View>
-
+    <View style={styles.container}>
+      <FlatList
+        ref={flatListRef}
+        data={images}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(_, i) => i.toString()}
+        renderItem={({ item }) => (
+          <View style={styles.imageContainer}>
+            <Image
+              source={item}
+              style={styles.image}
+              contentFit="cover"
+              transition={200}
+            />
+          </View>
+        )}
+        onMomentumScrollEnd={handleScrollEnd}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
+      />
+    </View>
   );
 };
 
-export default Carousel;
+const styles = StyleSheet.create({
+  container: { height: height * 0.17, backgroundColor: '#000' },
+  imageContainer: {
+    width: width,
+    height: height * 0.17,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+});
+
+export default memo(Carousel);

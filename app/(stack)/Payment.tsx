@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  SafeAreaView,
   PanResponder,
   Animated,
   Dimensions,
@@ -157,7 +156,7 @@ const CartScreen = () => {
               <View style={styles.paymentMethodLeft}>
                 <View style={styles.googlePayIcon}>
                   {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
-                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+                  <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
 
                 </View>
                 <View>
@@ -181,7 +180,7 @@ const CartScreen = () => {
             <View style={styles.paymentMethod}>
               <View style={styles.paymentMethodLeft}>
                 <View style={styles.googlePayIcon}>
-                  <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
+                  <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
                 </View>
                 <View>
                   <Text style={styles.payUsingText}>Pay using</Text>

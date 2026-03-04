@@ -1,9 +1,11 @@
 // services/api.js
 import axios from 'axios';
-import * as SecureStore from 'expo-secure-store';
 import Constants from "expo-constants";
+import { router } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 
-const { BACKEND_URL } = Constants.expoConfig.extra;
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || Constants.manifest2?.extra?.expoConfig?.extra?.BACKEND_URL || "https://ff-api-web-1.onrender.com";
+
 // const api = axios.create({
 //   // baseURL: 'http://192.168.0.106:5000/api/',
 //   baseURL: 'https://55a299101e7c.ngrok-free.app/api/',
@@ -19,7 +21,7 @@ const api = axios.create({
 
 // Add interceptor to attach token to each request
 api.interceptors.request.use(
-  
+
   async (config) => {
     const token = await SecureStore.getItemAsync('token');
     if (token) {
@@ -28,6 +30,23 @@ api.interceptors.request.use(
     return config;
   },
   (error) => Promise.reject(error)
+);
+
+// Add response interceptor to handle 401 errors
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response && error.response.status === 401) {
+      // Clear token and related data
+      await SecureStore.deleteItemAsync('token');
+      await SecureStore.deleteItemAsync('selectedAddress');
+      await SecureStore.setItemAsync("addressSelectedOnce", "false");
+
+      // Redirect to auth
+      router.replace('/(auth)');
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default api;

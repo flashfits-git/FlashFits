@@ -1,354 +1,314 @@
-import React, { useState, useEffect } from 'react';
+import { AntDesign } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Dimensions,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Image,
-  SafeAreaView,
-  ScrollView,
-  Dimensions,
-} from 'react-native';
-import { FontAwesome, AntDesign } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
-import { useRouter } from 'expo-router';
+  View
+} from "react-native";
+import logo from "../../assets/loaders/logo.png";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 export default function PhoneLogin() {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
 
-  const redirectUri = 'https://auth.expo.dev/@shubhamexpo7/FlashFits';
+  // ── Animations ─────────────────────────────────────────────────────
+  const logoScale = useRef(new Animated.Value(0)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const cardSlide = useRef(new Animated.Value(50)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const inputScale = useRef(new Animated.Value(1)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+  const progressWidth = useRef(new Animated.Value(0)).current;
 
-  // const [request, response, promptAsync] = Google.useAuthRequest(
-  //   {
-  //     clientId: '38756562066-okgjrlcfekdntca9af6cps7bgknc0dhr.apps.googleusercontent.com',
-  //     redirectUri,
-  //     scopes: ['profile', 'email'],
-  //   },
-  //   {
-  //     useProxy: true,
-  //   }
-  // );
+  // Entrance
+  useEffect(() => {
+    Animated.parallel([
+      Animated.spring(logoScale, { toValue: 1, tension: 60, friction: 7, useNativeDriver: true }),
+      Animated.timing(logoOpacity, { toValue: 1, duration: 600, useNativeDriver: true }),
+      Animated.spring(cardSlide, { toValue: 0, tension: 60, friction: 8, delay: 150, useNativeDriver: true }),
+      Animated.timing(cardOpacity, { toValue: 1, duration: 600, delay: 150, useNativeDriver: true }),
+    ]).start();
+  }, []);
 
+  // Progress bar
+  useEffect(() => {
+    Animated.spring(progressWidth, {
+      toValue: phoneNumber.length / 10,
+      tension: 80,
+      friction: 8,
+      useNativeDriver: false,
+    }).start();
+  }, [phoneNumber]);
+
+  // ── Handlers ───────────────────────────────────────────────────────
   const handleSendOTP = async () => {
-    try {
-      console.log('OTP sent successfully');
-      router.replace({
-        pathname: '/(auth)/otpVerification',
-        params: { phone: phoneNumber },
-      });
-    } catch (error) {
-      console.error('Failed to send OTP', error);
-    }
+    Animated.sequence([
+      Animated.timing(buttonScale, { toValue: 0.96, duration: 80, useNativeDriver: true }),
+      Animated.timing(buttonScale, { toValue: 1, duration: 80, useNativeDriver: true }),
+    ]).start();
+
+    // TODO: real OTP call
+    router.replace({
+      pathname: "/(auth)/otpVerification",
+      params: { phone: phoneNumber },
+    });
   };
 
-  // useEffect(() => {
-  //   const getUserInfo = async () => {
-  //     if (response?.type === 'success') {
-  //       const { authentication } = response;
-  //       const userInfoResponse = await fetch('https://www.googleapis.com/userinfo/v2/me', {
-  //         headers: {
-  //           Authorization: `Bearer ${authentication?.accessToken}`,
-  //         },
-  //       });
+  const handleFocus = () => {
+    setIsFocused(true);
+    Animated.spring(inputScale, { toValue: 1.015, tension: 80, friction: 7, useNativeDriver: true }).start();
+  };
+  const handleBlur = () => {
+    setIsFocused(false);
+    Animated.spring(inputScale, { toValue: 1, tension: 80, friction: 7, useNativeDriver: true }).start();
+  };
 
-  //       const user = await userInfoResponse.json();
-  //       console.log('User Info:', user);
-  //       await SecureStore.setItemAsync('user_email', user.email);
-  //       await SecureStore.setItemAsync('user_name', user.name);
-  //     }
-  //   };
+  const progressPct = progressWidth.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0%", "100%"],
+  });
 
-  //   getUserInfo();
-  // }, [response]);
-
+  // ── Render ─────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView 
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-      >
-        {/* Logo Section */}
-        <View style={styles.logoContainer}>
-          <Image
-            source={require('../../assets/loaders/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Phone Input Section */}
-        <View style={styles.inputSection}>
-          <View style={styles.inputContainer}>
-            <View style={styles.countrySelector}>
-              <Image
-                source={{ uri: 'https://flagcdn.com/w40/in.png' }}
-                style={styles.flag}
-              />
-              <Text style={styles.countryCode}>+91</Text>
-              <AntDesign name="down" size={12} color="#666" />
-            </View>
-            
-            <View style={styles.divider} />
-            
-            <TextInput
-              style={styles.phoneInput}
-              placeholder="Enter phone number"
-              placeholderTextColor="#999"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={(text) => {
-                const cleaned = text.replace(/[^0-9]/g, '');
-                if (cleaned.length <= 10) {
-                  setPhoneNumber(cleaned);
-                }
-              }}
-            />
-          </View>
-        </View>
-
-        {/* Continue Button */}
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            phoneNumber.length === 10 ? styles.continueButtonActive : styles.continueButtonDisabled,
-          ]}
-          disabled={phoneNumber.length !== 10}
-          onPress={handleSendOTP}
+    <View style={styles.centerWrapper}>
+      <LinearGradient colors={["#ffffffff", "#ffffffff", "#ffffffff"]} style={styles.gradient}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.select({ ios: 0, android: 20 })}
         >
-          <Text style={[
-            styles.continueButtonText,
-            phoneNumber.length === 10 ? styles.continueButtonTextActive : styles.continueButtonTextDisabled
-          ]}>
-            Continue
-          </Text>
-        </TouchableOpacity>
-
-        {/* Divider */}
-        {/* <View style={styles.dividerContainer}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.dividerLine} />
-        </View> */}
-
-        {/* Social Login Buttons */}
-        {/* <View style={styles.socialContainer}>
-          <TouchableOpacity
-            disabled={!request}
-            onPress={() => promptAsync()}
-            style={styles.socialButton}
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+            keyboardShouldPersistTaps="handled"
           >
-            <AntDesign name="google" size={20} color="#000000ff" />
-            <Text style={styles.socialButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+            {/* ── LOGO ── */}
+            <Animated.View
+              style={[
+                styles.logoWrapper,
+                { opacity: logoOpacity, transform: [{ scale: logoScale }] },
+              ]}
+            >
+              <Image
+                source={logo}
+                style={styles.logo}
+                resizeMode="contain"
+              />
+            </Animated.View>
 
-          <TouchableOpacity style={[styles.socialButton, styles.facebookButton]}>
-            <FontAwesome name="facebook" size={20} color="#030303ff" />
-            <Text style={styles.socialButtonText}>Continue with Facebook</Text>
-          </TouchableOpacity>
-        </View> */}
+            {/* ── CARD ── */}
+            <Animated.View
+              style={[
+                styles.cardWrapper,
+                { opacity: cardOpacity, transform: [{ translateY: cardSlide }] },
+              ]}
+            >
+              <View style={styles.card}>
+                {/* Label */}
+                <Text style={styles.label}>Phone Number</Text>
 
-        {/* Terms and Conditions */}
-        {/* <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            By continuing, you agree to our{' '}
-            <Text style={styles.termsLink}>Terms of Service</Text>
-            {' '}and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>
-          </Text>
-        </View> */}
-      </ScrollView>
-    </SafeAreaView>
+                {/* Input */}
+                <Animated.View
+                  style={[
+                    styles.inputBox,
+                    {
+                      transform: [{ scale: inputScale }],
+                      borderColor: isFocused ? "#78787cff" : "#e2e8f0",
+                      backgroundColor: isFocused ? "#ffffff" : "#f8fafc",
+                    },
+                  ]}
+                >
+                  <TouchableOpacity style={styles.countryPicker}>
+                    <Image
+                      source={{ uri: "https://flagcdn.com/w40/in.png" }}
+                      style={styles.flag}
+                    />
+                    <Text style={styles.code}>+91</Text>
+                    {/* <AntDesign name="down" size={12} color="#64748b" /> */}
+                  </TouchableOpacity>
+
+                  <View style={styles.divider} />
+
+                  <TextInput
+                    style={styles.phoneInput}
+                    placeholder="Phone Number"
+                    placeholderTextColor="#94a3b8"
+                    keyboardType="phone-pad"
+                    value={phoneNumber}
+                    onChangeText={(t) => {
+                      const clean = t.replace(/[^0-9]/g, "");
+                      if (clean.length <= 10) setPhoneNumber(clean);
+                    }}
+                    onFocus={handleFocus}
+                    onBlur={handleBlur}
+                    maxLength={10}
+                  />
+                </Animated.View>
+
+                {/* Progress */}
+                <View style={styles.progressBox}>
+                  <View style={styles.progressHeader}>
+                    <Text style={styles.progressTxt}>Progress</Text>
+                    <Text style={styles.progressNum}>{phoneNumber.length}/10</Text>
+                  </View>
+                  <View style={styles.progressTrack}>
+                    <Animated.View style={[styles.progressFill, { width: progressPct }]} />
+                  </View>
+                </View>
+
+                {/* Continue button */}
+                <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.continueBtn,
+                      phoneNumber.length === 10 ? styles.continueActive : styles.continueDisabled,
+                    ]}
+                    disabled={phoneNumber.length !== 10}
+                    onPress={handleSendOTP}
+                    activeOpacity={0.85}
+                  >
+                    <LinearGradient
+                      colors={
+                        phoneNumber.length === 10
+                          ? ["rgba(0, 0, 0, 1)", 'rgba(0, 0, 0, 0.93)', "rgba(0, 0, 0, 0.61)"]
+                          : ["#eee", "#eee"]
+                      }
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      style={styles.gradientBtn}
+                    >
+                      <Text
+                        style={[
+                          styles.continueTxt,
+                          phoneNumber.length === 10 ? styles.txtActive : styles.txtDisabled,
+                        ]}
+                      >
+                        Continue
+                      </Text>
+                      {phoneNumber.length === 10 && (
+                        <AntDesign name="right" size={20} color="#fff" />
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              </View>
+            </Animated.View>
+
+            {/* ── Terms ── */}
+            <View style={styles.termsBox}>
+              <Text style={styles.terms}>
+                By continuing, you agree to our{" "}
+                <Text style={styles.link}>Terms of Service</Text> and{" "}
+                <Text style={styles.link}>Privacy Policy</Text>
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+
+      </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FAFAFA',
-  },
-  container: {
+  gradient: { flex: 1 },
+
+  scrollContainer: {
     flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: height * 0.08,
-    paddingBottom: 40,
+    paddingBottom: 48,
+    alignItems: "center",
+    justifyContent: "center", // <-- Center vertically
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
+  centerWrapper: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center", // <-- Vertically center
+    // paddingHorizontal: 24,
   },
-  logo: {
-    width: width * 0.6,
-    height: 80,
+
+  /* ── LOGO ── */
+  logoWrapper: { marginBottom: 10, alignItems: "center" },
+  logo: { width: width * 0.55, height: 80 },
+
+  /* ── CARD ── */
+  cardWrapper: { width: "100%", marginBottom: 32 },
+  card: {
+    backgroundColor: "#ffffff",
+    borderRadius: 32,
+    padding: 28,
   },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  welcomeTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
+
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F0F0F",
     marginBottom: 8,
-    fontFamily: 'Montserrat',
+    fontFamily: "Manrope-Bold",
   },
-  welcomeSubtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontFamily: 'Montserrat',
-    lineHeight: 22,
+
+  /* ── INPUT ── */
+  inputBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderRadius: 20,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginBottom: 20,
   },
-  inputSection: {
-    marginBottom: 32,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#F0F0F0',
-  },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  flag: {
-    width: 24,
-    height: 18,
-    borderRadius: 3,
-    marginRight: 8,
-  },
-  countryCode: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginRight: 8,
-    fontFamily: 'Montserrat',
-  },
-  divider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#E5E5E5',
-    marginRight: 16,
-  },
+  countryPicker: { flexDirection: "row", alignItems: "center", },
+  flag: { width: 28, height: 20, borderRadius: 4, marginRight: 8 },
+  code: { fontSize: 17, fontWeight: "700", color: "#1e293b", marginRight: 6 },
+  divider: { width: 1, height: 28, backgroundColor: "#cbd5e1", marginLeft: 2 },
   phoneInput: {
     flex: 1,
-    fontSize: 16,
-    color: '#1A1A1A',
-    fontFamily: 'Montserrat',
-    fontWeight: '500',
+    fontSize: 17,
+    marginLeft: 5,
+    fontWeight: "600",
+    color: "#1e293b",
+    fontFamily: "Manrope-SemiBold",
   },
-  continueButton: {
-    borderRadius: 16,
+
+  /* ── PROGRESS ── */
+  progressBox: { marginBottom: 24 },
+  progressHeader: { flexDirection: "row", justifyContent: "space-between", marginBottom: 6 },
+  progressTxt: { fontSize: 12, color: "#64748b", fontWeight: "500" },
+  progressNum: { fontSize: 12, color: "#64748b", fontWeight: "600" },
+  progressTrack: { height: 6, backgroundColor: "#e2e8f0", borderRadius: 3, overflow: "hidden" },
+  progressFill: { height: "100%", backgroundColor: "#04002aff", borderRadius: 3 },
+
+  /* ── BUTTON ── */
+  continueBtn: { borderRadius: 20, overflow: "hidden", shadowColor: "#000" },
+  continueActive: { shadowOpacity: 0.18, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+  continueDisabled: { shadowOpacity: 0, elevation: 0 },
+  gradientBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 32,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    gap: 8,
   },
-  continueButtonActive: {
-    backgroundColor: '#181919ff',
-  },
-  continueButtonDisabled: {
-    backgroundColor: '#F5F5F5',
-  },
-  continueButtonText: {
-    fontSize: 18,
-    fontWeight: '600',
-    fontFamily: 'Montserrat',
-  },
-  continueButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  continueButtonTextDisabled: {
-    color: '#999',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E5E5',
-  },
-  dividerText: {
-    marginHorizontal: 16,
-    fontSize: 14,
-    color: '#999',
-    fontFamily: 'Montserrat',
-  },
-  socialContainer: {
-    marginBottom: 32,
-  },
-  socialButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    paddingVertical: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E5E5',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.04,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  facebookButton: {
-    marginBottom: 0,
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginLeft: 12,
-    fontFamily: 'Montserrat',
-  },
-  termsContainer: {
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  termsText: {
-    fontSize: 13,
-    color: '#666',
-    textAlign: 'center',
-    lineHeight: 18,
-    fontFamily: 'Montserrat',
-  },
-  termsLink: {
-    color: '#1d1e1eff',
-    fontWeight: '600',
-    fontFamily: 'Montserrat',
-  },
+  continueTxt: { fontSize: 18, fontWeight: "700", fontFamily: "Manrope-Bold" },
+  txtActive: { color: "#ffffff" },
+  txtDisabled: { color: "#888" },
+
+  /* ── TERMS ── */
+  termsBox: { alignItems: "center", paddingHorizontal: 16 },
+  terms: { fontSize: 13, color: "#64748b", textAlign: "center", lineHeight: 19 },
+  link: { color: "#1e293b", fontWeight: "700" },
 });

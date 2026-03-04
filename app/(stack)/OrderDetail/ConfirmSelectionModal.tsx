@@ -1,47 +1,130 @@
 import React, { forwardRef, useRef } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Modalize } from "react-native-modalize";
+import RazorpayCheckout from "react-native-razorpay";
+import { router } from "expo-router";
+
 import HandovrModal from "./HandoverModal";
-import * as SecureStore from 'expo-secure-store';
-import { ConfirmClothSelection } from "../../api/orderApis";
+import { finalpaymentInitiate, finalpaymetVerify } from "../../api/orderApis";
 
 interface ConfirmSelectionModalProps {
   onCancel: () => void;
-  order: any;
-  onConfirm: (method?: string) => void;
+  orderId: string;
+  otp?: string;
+  totalPayable?: number;
+  items: any[];
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, order, onConfirm }, ref) => {
+  ({ onCancel, orderId, otp, items = [], totalPayable , orderData}, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
 
     const handleCancel = () => onCancel?.();
 
-    const confirmClothSelection = async () => {
+    const isAllReturned = items.every(
+      item => item.tryStatus === "returned"
+    );
+
+    const buildPayload = () => ({
+      orderId,
+      items: items.map(item => ({
+        itemId: item._id,
+        tryStatus: item.tryStatus,
+        returnReason: item.returnReason || null,
+      })),
+    });
+
+    // 🔹 CASE 1: ALL ITEMS RETURNED
+    const handleReturnAll = async () => {
       try {
-        const res = await ConfirmClothSelection(order);
-        console.log("✅ API Response:", res);
+        ref?.current?.close();
 
-        // Close current modal
-        (ref as any)?.current?.close();
+        const payload = buildPayload();
+        const res = await finalpaymentInitiate(payload);
 
-        // Open handover modal only if API call succeeded
-        if (res?.status === 200 || res?.success) {
-          handoverModalRef.current?.open();
+        if (!res) return;
 
-          // ✅ Set trial phase complete flag in SecureStore
-          await SecureStore.setItemAsync(`trialPhaseComplete_${order}`, "true");
-        } else {
-          console.warn("API did not return success:", res);
-        }
-      } catch (error) {
-        console.error("❌ Error confirming cloth selection:", error);
+        router.replace({
+          pathname: "/(stack)/OrderDetail/ReturnItemsPage",
+          params: {
+            orderId,
+            otp,
+            items: JSON.stringify(items),
+            orderData
+          },
+        });
+      } catch (e) {
+        console.log("Return all failed:", e);
       }
     };
 
+    // 🔹 CASE 2: KEEP + PAY FLOW
+    const handlePaySelected = async () => {
+      try {
+        ref?.current?.close();
+
+        const payload = buildPayload();
+        const res = await finalpaymentInitiate(payload);
+
+        if (!res) return;
+
+        const {
+          amount,
+          key_id,
+          razorpayOrder,
+          orderId: internalOrderId,
+          name,
+          email,
+          contact,
+          currency,
+        } = res;
+
+        const options = {
+          description: "FlashFits Final Payment",
+          currency: currency || "INR",
+          key: key_id,
+          amount,
+          name: "FlashFits",
+          order_id: razorpayOrder?.id,
+          prefill: {
+            name: name || "Customer",
+            email: email || "",
+            contact: contact || "",
+          },
+          theme: { color: "#61b3f6" },
+        };
+
+        RazorpayCheckout.open(options)
+          .then(async paymentData => {
+            await finalpaymetVerify(paymentData, internalOrderId);
+
+            const returnedItems = items.filter(
+              item => item.tryStatus === "returned"
+            );
+
+            router.replace({
+              pathname: "/(stack)/OrderDetail/ReturnItemsPage",
+              params: {
+                orderId: internalOrderId,
+                otp,
+                items: JSON.stringify(returnedItems),
+              },
+            });
+          })
+          .catch(err => {
+            console.log("Payment Failed:", err);
+            alert("Payment failed. Please try again.");
+          });
+      } catch (e) {
+        console.log("Payment flow error:", e);
+      }
+    };
+
+    const totalKeep = items.filter(i => i.tryStatus === "keep").length;
+    const totalReturn = items.filter(i => i.tryStatus === "returned").length;
+
     return (
       <>
-        {/* Confirm Selection Modal */}
         <Modalize
           ref={ref}
           adjustToContentHeight
@@ -51,8 +134,24 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
           <View style={styles.container}>
             <Text style={styles.title}>Confirm Selection</Text>
             <Text style={styles.subtitle}>
-              Do you confirm your outfits selection?
+              Handover return items & share OTP
             </Text>
+
+            {otp && <Text style={styles.otpText}>OTP: {otp}</Text>}
+
+            <View style={styles.countContainer}>
+              <Text style={styles.countText}>
+                Keep: <Text style={styles.bold}>{totalKeep}</Text>
+              </Text>
+              <Text style={styles.countText}>
+                Return: <Text style={styles.bold}>{totalReturn}</Text>
+              </Text>
+              {!isAllReturned && (
+                <Text style={styles.totalPay}>
+                  Payable: <Text style={styles.bold}>{totalPayable}</Text>
+                </Text>
+              )}
+            </View>
 
             <View style={styles.buttonRow}>
               <TouchableOpacity
@@ -64,16 +163,17 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
 
               <TouchableOpacity
                 style={[styles.actionButton, styles.confirmButton]}
-                onPress={confirmClothSelection}
+                onPress={isAllReturned ? handleReturnAll : handlePaySelected}
               >
-                <Text style={styles.confirmText}>Confirm</Text>
+                <Text style={styles.confirmText}>
+                  {isAllReturned ? "Return All" : "Pay Selected"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </Modalize>
 
-        {/* Handover Modal */}
-        <HandovrModal ref={handoverModalRef} onConfirm={onConfirm} />
+        <HandovrModal ref={handoverModalRef} onConfirm={() => {}} />
       </>
     );
   }
@@ -95,6 +195,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: "center",
     paddingVertical: 25,
+    marginBottom: 40,
   },
   title: {
     fontSize: 18,
@@ -104,20 +205,42 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 14,
-    textAlign: "center",
     color: "#6b7280",
-    marginBottom: 20,
-    lineHeight: 20,
+    textAlign: "center",
+  },
+  otpText: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginVertical: 10,
+  },
+  countContainer: {
+    width: "100%",
+    marginVertical: 20,
+    padding: 12,
+    backgroundColor: "#f9fafb",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  countText: {
+    fontSize: 15,
+    marginBottom: 4,
+  },
+  totalPay: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  bold: {
+    fontWeight: "700",
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "center",
     gap: 12,
   },
   actionButton: {
-    borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 30,
+    borderRadius: 12,
   },
   cancelButton: {
     backgroundColor: "#f3f4f6",
@@ -126,13 +249,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#111827",
   },
   cancelText: {
-    color: "#111827",
     fontSize: 16,
     fontWeight: "600",
   },
   confirmText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    color: "#fff",
   },
 });

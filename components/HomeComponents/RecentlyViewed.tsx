@@ -1,25 +1,19 @@
-import React, { useRef } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
+import React, { memo, useRef } from 'react';
 import {
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
   Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
   TouchableOpacity,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons'; // Already imported
 
 const { width } = Dimensions.get('window');
 
-const DressCard = ({ product, onPress }) => {
-
-  // console.log(product,'groupedProductsgroupedProductsgroupedProductsgroupedProducts');
-
-  // console.log(typeof(product?.images?.[0]?.url),typeof(product?.variants?.[0]?.images?.[0]?.url), typeof(product?.variants?.images?.[0]?.url));
-  
-  
+const DressCard = memo(({ product, onPress }: { product: any; onPress: () => void }) => {
   const imageUrl =
     product?.images?.[0]?.url ||
     product?.variants?.[0]?.images?.[0]?.url ||
@@ -37,161 +31,219 @@ const DressCard = ({ product, onPress }) => {
     product?.variants?.mrp;
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.shadowWrapper}>
-        <View style={styles.imageWrapper}>
-          <Image source={{ uri: String(imageUrl) }} style={styles.image} />
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={10} color="#000" style={{ marginRight: 2 }} />
-          <Text style={styles.ratingText}>{product.ratings || '0.0'}</Text>
+    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
+      <View style={styles.imageContainer}>
+        <Image
+          source={{ uri: String(imageUrl) }}
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+        />
+        <View style={styles.bestsellerBadge}>
+          <Text style={styles.bestsellerText}>Bestseller</Text>
         </View>
-        </View>
+        <TouchableOpacity style={styles.wishlistButton}>
+          <Ionicons name="heart-outline" size={18} color="#fff" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.titleRow}>
+      <View style={styles.detailsContainer}>
         <Text style={styles.title} numberOfLines={1}>
           {product.name}
         </Text>
-        <Text style={styles.deliveryText}>13 mins</Text>
-      </View>
 
-      <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{price}</Text>
-        <Text style={styles.oldPrice}>₹{mrp}</Text>
+        <View style={styles.ratingRow}>
+          <View style={styles.starRating}>
+            <Ionicons name="star" size={10} color="#028a34" />
+            <Text style={styles.ratingValue}>{product.ratings || '4.2'}</Text>
+          </View>
+          <Text style={styles.deliveryTime}>15-20 mins</Text>
+        </View>
+
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>₹{price}</Text>
+          <Text style={styles.oldPrice}>₹{mrp}</Text>
+          {/* <View style={styles.addButton}>
+            <Text style={styles.addText}>ADD</Text>
+            <Ionicons name="add" size={14} color="#02b075" />
+          </View> */}
+        </View>
       </View>
     </TouchableOpacity>
   );
-};
+});
 
-export default function ImageCardHome({ product = [], accecories = [], deataiPageproducts = [] }) {
-  const scrollRef = useRef(null);
-  const navigation = useNavigation();
+const RecentlyViewed = ({ product = [], accecories = [], deataiPageproducts = [] }: any) => {
+  const scrollRef = useRef<ScrollView>(null);
+  const router = useRouter();
 
   const dataToRender =
     deataiPageproducts.length > 0
       ? deataiPageproducts
       : product.length > 0
-      ? product
-      : accecories;
+        ? product
+        : accecories;
 
   return (
     <View style={styles.container}>
-<ScrollView
-  horizontal
-  showsHorizontalScrollIndicator={false}
-  ref={scrollRef}
-  contentContainerStyle={{ flexDirection: 'row' }}
->
-  {dataToRender.map((p, index) => (
-    <DressCard
-      key={p._id || p.id || index}
-      product={p}
-      onPress={() =>
-        navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-          id: p._id || p.id,
-          variantId:
-            Array.isArray(p.variants)
-              ? p.variants[0]?._id
-              : p.variants?._id || p.variantId,
-        })
-      }
-    />
-  ))}
-</ScrollView>
-
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        ref={scrollRef}
+        contentContainerStyle={{ flexDirection: 'row' }}
+      >
+        {dataToRender.map((p: any, index: number) => (
+          <DressCard
+            key={p._id || p.id || index}
+            product={p}
+            onPress={() =>
+              router.push({
+                pathname: '/ProductDetail/productdetailpage' as any,
+                params: {
+                  id: p._id || p.id,
+                  variantId:
+                    Array.isArray(p.variants)
+                      ? p.variants[0]?._id
+                      : p.variants?._id || p.variantId,
+                }
+              })
+            }
+          />
+        ))}
+      </ScrollView>
     </View>
   );
-}
+};
 
-// Styles remain unchanged...
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 15,
-    paddingLeft: 10,
+    paddingTop: 10,
+    paddingLeft: 12,
   },
   card: {
-    margin: 5,
-    width: 160,
+    width: 150,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    overflow: 'hidden',
-  },
-  shadowWrapper: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    borderRadius: 15,
+    borderRadius: 18,
+    marginRight: 14,
     marginBottom: 10,
-  },
-  imageWrapper: {
-    position: 'relative',
-    borderRadius: 15,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  imageContainer: {
+    position: 'relative',
+    height: 180,
+    width: '100%',
   },
   image: {
-    height: 200,
+    height: '100%',
     width: '100%',
-    resizeMode: 'cover',
-    borderRadius: 15,
   },
-  ratingContainer: {
+  bestsellerBadge: {
     position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'white',
-    paddingHorizontal: 6,
+    top: 8,
+    left: 0,
+    backgroundColor: '#0F0F0F',
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 12,
+    borderTopRightRadius: 4,
+    borderBottomRightRadius: 4,
+  },
+  bestsellerText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    fontFamily: 'Manrope-ExtraBold',
+  },
+  wishlistButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 6,
+    borderRadius: 20,
+  },
+  detailsContainer: {
+    padding: 10,
+  },
+  title: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#0F0F0F',
+    marginBottom: 4,
+    fontFamily: 'Manrope-Bold',
+  },
+  ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 2,
-    opacity: 0.8,
+    marginBottom: 8,
+    gap: 8,
   },
-  ratingText: {
-    fontSize: 7,
-    fontWeight: 'bold',
-    color: '#000',
-    fontFamily: 'Montserrat',
-  },
-title: {
-  fontSize: 13,
-  fontWeight: '500',
-  color: '#333',
-  fontFamily: 'Montserrat',
-  flex: 1,
-  marginRight: 6,
-},
-titleRow: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: 6,
-  marginVertical: 4,
-},
-deliveryText: {
-  fontSize: 11,
-  color: '#888',
-  fontFamily: 'Montserrat',
-  flexShrink: 0,
-},
-  priceRow: {
+  starRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingBottom: 10,
+    gap: 3,
+  },
+  ratingValue: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-Bold',
+  },
+  deliveryTime: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '500',
+    fontFamily: 'Manrope-Medium',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
   },
   price: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000',
-    fontFamily: 'Montserrat',
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-ExtraBold',
   },
   oldPrice: {
-    fontSize: 12,
-    color: '#777',
+    fontSize: 11,
+    color: '#8E8E93',
     textDecorationLine: 'line-through',
-    marginLeft: 6,
-    fontFamily: 'Montserrat',
+    marginLeft: 4,
+    fontFamily: 'Manrope-Medium',
+  },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#02b075',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    elevation: 2,
+    shadowColor: '#02b075',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  addText: {
+    color: '#02b075',
+    fontWeight: '800',
+    fontSize: 12,
+    marginRight: 2,
   },
 });
+
+export default memo(RecentlyViewed);

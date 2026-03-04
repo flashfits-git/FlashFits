@@ -1,219 +1,358 @@
+import Carousel from '@/components/HomeComponents/Carousel';
+import CategorySwitcher from '@/components/HomeComponents/CategorySwitcher';
+import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops';
+import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
+import Loader from '@/components/Loader/Loader';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation, useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
+  Animated,
+  Easing,
+  Platform,
+  RefreshControl,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
-  TextInput,
-  Animated,
-  Platform,
-  ActivityIndicator,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState, useRef, useEffect } from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from 'expo-router';
-import PopupCart from '../../components/HomeComponents/PopupCart';
-import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import Card from '../../components/HomeComponents/Card';
-import Carousel from '@/components/HomeComponents/Carousel';
-import Banner from '@/components/HomeComponents/Banner';
-import ParentCategoryIndexing from '@/components/HomeComponents/ParentCategoryIndexing';
-import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
 import Colors from '../../assets/theme/Colors';
-import {fetchnewArrivalsProductsData} from '../api/productApis/products'
-import Footer from '../../components/Footer'
-import Loader from '@/components/Loader/Loader';
-import {getPreviouslyViewed} from '../utilities/localStorageRecentlyViewd'
-import HomeCategorySwitcherShops from '@/components/HomeComponents/HomeCategorySwitcherShops'
-import TopCategory from '../../components/HomeComponents/TopCategory'
-import FootwearSection from '../../components/HomeComponents/FootwearSection'
-// import { useCart } from './Context';
+import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
+import Footer from '../../components/Footer';
+import AnimatedSearchBar from '../../components/HomeComponents/AnimatedSearchBar';
+import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
+import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
+import { fetchnewArrivalsProductsData, getMyWishlist } from '../api/productApis/products';
+import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 
-
+const HEADER_HEIGHT = 70;
+const SCROLL_THRESHOLD = 5;
+const ANIMATION_DURATION = 700;
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
   const navigation = useNavigation();
+
+  const { selectedAddress, setSelectedAddress } = useAddress(); // <-- now from context
+
+  const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
+  const [newArrivalsProducts, setNewArrivalsProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
-  // const [fontsLoaded, setFontsLoaded] = useState(false);
-  const [newArrivalsProducts, setNewArrivalsProducts] = useState([])
-  // const [merchantData, setMerchnatData] = useState()
-    const [loading, setLoading] = useState(true);
-    
-  useEffect(() => {
-    getNewArrivalsProducts()
-    // getMerchantsData()
-    setLoading(false)
-  }, [])
+  const [isActive, setIsActive] = useState(true)
+  const [refreshing, setRefreshing] = useState(false);
+  const [isServiceable, setIsServiceable] = useState<boolean | null>(null);
 
-  const getNewArrivalsProducts = async () => {
+  // ------------------- HEADER ANIMATION -------------------
+  const headerAnim = useRef(new Animated.Value(0)).current; // 0 = expanded, 1 = collapsed
+  const isHeaderCollapsed = useRef(false);
+
+  const collapseHeader = useCallback(() => {
+    if (isHeaderCollapsed.current) return;
+    isHeaderCollapsed.current = true;
+    Animated.timing(headerAnim, {
+      toValue: 1,
+      duration: ANIMATION_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [headerAnim]);
+
+  const expandHeader = useCallback(() => {
+    if (!isHeaderCollapsed.current) return;
+    isHeaderCollapsed.current = false;
+    Animated.timing(headerAnim, {
+      toValue: 0,
+      duration: ANIMATION_DURATION,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start();
+  }, [headerAnim]);
+
+  // Animated values derived from headerAnim
+  const headerHeight = headerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [HEADER_HEIGHT, 0],
+    extrapolate: 'clamp',
+  });
+
+  const headerOpacity = headerAnim.interpolate({
+    inputRange: [0, 0.5],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const headerTranslateY = headerAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, -HEADER_HEIGHT],
+    extrapolate: 'clamp',
+  });
+
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
     try {
-      const response = await fetchnewArrivalsProductsData()
-      setNewArrivalsProducts(response)
-    } catch (error) {
-      console.error('Error fetching products:', error);
+      await Promise.all([
+        loadInitialData(),
+        syncWishlistVariants(),
+      ]);
+    } catch (e) {
+      console.error('Refresh error:', e);
+    } finally {
+      setRefreshing(false);
     }
-  };
+  }, [loadInitialData, syncWishlistVariants]);
 
+  useEffect(() => {
+    return () => setIsActive(false);
+  }, []);
+
+  // ------------------- LOAD DATA -------------------
+  const loadInitialData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [products, viewed, storedAddress] = await Promise.all([
+        fetchnewArrivalsProductsData(),
+        getPreviouslyViewed(),
+        SecureStore.getItemAsync('selectedAddress'),
+      ]);
+      console.log(viewed, 'viewsss');
+
+      setNewArrivalsProducts(products || []);
+      setRecentlyViewed(viewed || []);
+
+      // Set address from SecureStore to Context 
+      if (storedAddress) {
+        const parsed = JSON.parse(storedAddress);
+        setSelectedAddress(parsed);
+      }
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    syncWishlistVariants();
+  }, [syncWishlistVariants]);
+
+  const syncWishlistVariants = useCallback(async () => {
+    try {
+      const response = await getMyWishlist();
+      const wishlist = response?.data || [];
+
+      const wishlistMap = wishlist.reduce((acc: any, item: any) => {
+        const variantId = item?.product?.variant?._id;
+        const wishlistItemId = item?._id;
+        if (variantId && wishlistItemId) {
+          acc[String(variantId)] = String(wishlistItemId);
+        }
+        return acc;
+      }, {});
+
+      await SecureStore.setItemAsync('Wishlist', JSON.stringify(wishlistMap));
+    } catch (e) {
+      console.error(e);
+    }
+  }, []);
+
+
+
+  // ------------------- TAB BAR + HEADER SCROLL -------------------
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
+      const delta = clampedValue - currentOffset.current;
 
-      if (clampedValue < currentOffset.current - 5) {
+      // Scrolling DOWN (finger moves up) → collapse header + hide tab bar
+      if (delta > SCROLL_THRESHOLD) {
+        collapseHeader();
+        setIsTabBarVisible(false);
+        navigation.setOptions({ tabBarStyle: { display: 'none' } });
+      }
+      // Scrolling UP (finger moves down) → expand header + show tab bar
+      else if (delta < -SCROLL_THRESHOLD) {
+        expandHeader();
         setIsTabBarVisible(true);
         navigation.setOptions({
           tabBarStyle: {
             position: 'absolute',
-            height: Platform.OS === 'ios' ? 70 : 70,
+            height: Platform.OS === 'ios' ? 80 : 90,
             backgroundColor: '#fff',
             borderTopLeftRadius: 30,
             borderTopRightRadius: 30,
             shadowColor: '#000',
-            shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 0.1,
-            shadowRadius: 10,
-            elevation: 5,
-            paddingTop: Platform.OS === 'ios' ? 18 : 10,
+            shadowOffset: { width: 0, height: 10 },
+            shadowOpacity: 0.15,
+            shadowRadius: 12,
+            paddingTop: Platform.OS === 'ios' ? 18 : 18,
+            paddingBottom: Platform.OS === 'ios' ? 10 : 10,
           },
         });
-      } else if (clampedValue > currentOffset.current + 5 && clampedValue > 3) {
-        setIsTabBarVisible(false);
-        navigation.setOptions({
-          tabBarStyle: { display: 'none' },
-        });
       }
+
       currentOffset.current = clampedValue;
     });
 
-    return () => {
-      scrollOffset.removeListener(listener);
-    };
-  }, []);
+    return () => scrollOffset.removeListener(listener);
+  }, [collapseHeader, expandHeader]);
 
-  useEffect(() => {
-  const loadRecentlyViewed = async () => {
-    try {
-      const data = await getPreviouslyViewed();
-      
-      setRecentlyViewed(data);
-      // console.log(data);
-      
-    } catch (error) {
-      console.error('Error loading previously viewed:', error);
-    }
-  };
-
-  loadRecentlyViewed();
-}, []);
+  // ------------------- HEADER -------------------
+  const Header = useMemo(
+    () => (
+      <>
+        <Carousel />
+        <HomeCategorySwitcherShops />
+        <RecentlyViewed product={recentlyViewed} />
+        <CategorySwitcher />
+        <ParentCategoryIndexing products={newArrivalsProducts} />
+      </>
+    ),
+    [newArrivalsProducts, recentlyViewed],
+  );
 
   if (loading) return <Loader />;
 
   return (
-    <View style={styles.container}>
-      <Banner />
-      <View style={styles.header}>
-        <View style={styles.locationWrapper}>
-          <View style={styles.locationIcon}>
-            <Ionicons name="location-sharp" size={26} color={Colors.dark1} />
-          </View>
-          <View style={styles.locationTextWrapper}>
-            <View style={styles.locationRow}>
-              <Text style={styles.cityText} numberOfLines={1} ellipsizeMode="tail">
-                New York, USA
-              </Text>
-              <Ionicons name="chevron-down-outline" size={16} color="black" />
-            </View>
-            <Text style={styles.subText} numberOfLines={1} ellipsizeMode="tail">
-              Explore trending styles around you!
-            </Text>
-          </View>
-        </View>
-        <View style={styles.notificationIcon}>
-          <SearchCartProfileButton/>
-        </View>
-      </View>
+    <>
+      <View style={styles.container}>
+        {/* COLLAPSIBLE LOCATION HEADER */}
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              height: headerHeight,
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslateY }],
+              overflow: 'hidden',
+            },
+          ]}
+        >
+          <View style={styles.locationWrapper}>
+            <Ionicons
+              name="location-outline"
+              size={30}
+              color="black"
+              style={styles.locationIcon}
+            />
 
-      <Animated.FlatList
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
-        ListHeaderComponent={
-          <>
-            <Carousel />
-            <HomeCategorySwitcherShops />
-            {newArrivalsProducts.length > 0 && (
-    <RecentlyViewed product={recentlyViewed}/>
-)}
-    <ParentCategoryIndexing products={newArrivalsProducts} />
-    <TopCategory/>
-    {/* <FootwearSection/> */}
-          </>
-        }
-      />
-      <PopupCart isTabBarVisible={isTabBarVisible} />
-      <Footer/>
-    </View>
+            <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen" as any)}
+              style={{ paddingVertical: 20 }}>
+              <View
+                style={styles.locationTextWrapper}
+              >
+                <View style={styles.locationRow}>
+                  <Text style={styles.cityText} numberOfLines={1}>
+                    {selectedAddress?.addressType === 'Non-serviceable'
+                      ? 'Oops! We don\'t deliver here'
+                      : selectedAddress
+                        ? [
+                          selectedAddress.addressLine1,
+                          selectedAddress.area,
+                          selectedAddress.city,
+                        ].filter(Boolean).join(', ')
+                        : 'Select Location'}
+                  </Text>
+                </View>
+
+                <View style={styles.subRow}>
+                  <Text style={styles.subText} numberOfLines={1}>
+                    {selectedAddress?.addressType === 'Non-serviceable'
+                      ? 'We\'ll be there soon'
+                      : selectedAddress?.addressType || 'Explore trending styles around you!'}
+                  </Text>
+                  <TouchableOpacity>
+                    <Ionicons
+                      name="chevron-down-outline"
+                      size={16}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.notificationIcon}>
+            <SearchCartProfileButton hideSearchIcon={true} />
+          </View>
+        </Animated.View>
+
+        {/* SEARCH BAR — always visible */}
+        <AnimatedSearchBar />
+
+        <Animated.FlatList
+          data={[]}
+          renderItem={null}
+          ListHeaderComponent={Header}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          keyExtractor={() => 'dummy'}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="black"
+            />
+          }
+        />
+
+        <Footer />
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-header: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: 4,
-  height: 70,
-  borderBottomLeftRadius: 10,
-  borderBottomRightRadius: 10,
-},
-  locationWrapper: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 6,
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    height: HEADER_HEIGHT,
+    backgroundColor: '#fff',
+    zIndex: 10,
   },
-  locationIcon: {
-    width: 32,
-    height: 32,
-    backgroundColor: 'white',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 5,
-  },
-  locationTextWrapper: {
-    paddingRight: 14,
-    width: 200,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  locationWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  locationIcon: { marginRight: 6, marginTop: 2 },
+  locationTextWrapper: { flex: 1, paddingRight: 14 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
   cityText: {
     fontSize: 14,
     color: Colors.dark1,
-    marginRight: 8,
-    maxWidth: 200,
-    fontWeight: '400',
-    fontFamily: 'Montserrat',
+    fontWeight: 'bold',
+    fontFamily: 'Manrope-Bold',
   },
+  subRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   subText: {
     fontSize: 10,
     color: Colors.dark2,
-    lineHeight: 20,
     fontWeight: '300',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope',
   },
-  notificationIcon: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 20,
-  },
+  notificationIcon: { marginRight: 20 },
 });

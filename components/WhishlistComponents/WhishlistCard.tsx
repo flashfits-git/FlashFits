@@ -1,22 +1,22 @@
+import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
+  FlatList,
   Image,
   StyleSheet,
+  Text,
   TouchableOpacity,
-  FlatList,
+  View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
 
 // Card UI Component
-const DressCard = ({ product, onPress }) => {
+const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) => {
   const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
   const imageUrl = variant?.images?.[0]?.url;
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View style={styles.shadowWrapper}>
+      <View>
         <View style={styles.imageWrapper}>
           <Image source={{ uri: imageUrl }} style={styles.image} />
           <View style={styles.ratingContainer}>
@@ -42,7 +42,7 @@ const DressCard = ({ product, onPress }) => {
 
 // Wrapper Component with navigation
 export default function WishlistCard({ product = [] }) {
-  const navigation = useNavigation();
+  const router = useRouter();
 
   return (
     <View style={styles.container}>
@@ -54,11 +54,14 @@ export default function WishlistCard({ product = [] }) {
           <DressCard
             product={item}
             onPress={() =>
-              navigation.navigate('(stack)/ProductDetail/productdetailpage', {
-                id: item._id || item.id,
-                variantId: Array.isArray(item.variants)
-                  ? item.variants[0]?._id
-                  : item.variants?._id,
+              router.push({
+                pathname: '/ProductDetail/productdetailpage' as any,
+                params: {
+                  id: item._id || item.id,
+                  variantId: Array.isArray(item.variants)
+                    ? item.variants[0]?._id
+                    : item.variants?._id,
+                }
               })
             }
           />
@@ -75,7 +78,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    marginTop:10
+    margin: 10
   },
   card: {
     width: '48%',
@@ -89,7 +92,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   image: {
-    height: 250,
+    height: 210,
     width: '100%',
     resizeMode: 'cover',
   },

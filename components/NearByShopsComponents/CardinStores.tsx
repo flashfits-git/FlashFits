@@ -42,9 +42,9 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId
   );
 };
 
-export default function CardinStores({ merchantId, products }) {
+export default function CardinStores({ products }) {
 
-  console.log(products,'products');
+  // console.log(products,'products');
   
   return (
     <View style={styles.container}>

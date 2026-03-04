@@ -1,76 +1,110 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useAddress } from '@/app/AddressContext';
+import { getAddresses } from '@/app/api/productApis/cartProduct';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
+import React, { forwardRef, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-const HeaderBag = () => {
+interface Address {
+  _id: string;
+  addressLine1?: string;
+  area?: string;
+  city?: string;
+  addressType?: string;
+  name?: string;
+  phone?: string;
+  [key: string]: any;
+}
+
+interface HeaderBagProps {
+  onAddressChange?: (address: Address) => void;
+  onOpenAddressModal?: () => void;   // <-- NEW
+}
+
+const HeaderBag = forwardRef(({ onOpenAddressModal }: HeaderBagProps, ref) => {
   const router = useRouter();
 
+  const {
+    selectedAddress
+  } = useAddress();
+  // Keep SecureStore in sync whenever selectedAddress changes
+  useEffect(() => {
+    if (selectedAddress) {
+      SecureStore.setItemAsync('selectedAddress', JSON.stringify(selectedAddress)).catch(
+        (err) => console.log('SecureStore save error:', err)
+      );
+    }
+  }, [selectedAddress]);
+
+  const formattedAddress = selectedAddress
+    ? [
+        selectedAddress.addressLine1,
+        selectedAddress.area,
+        selectedAddress.city,
+      ]
+        .filter(Boolean)
+        .join(', ')
+    : 'Select Location';
+
   return (
-    <View style={styles.headerWrapper}>
-      {/* <View style={styles.centerContainer}>
-        <Text style={styles.title}>Shopping Bag</Text>
-      </View> */}
-              <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#333" />
-          </TouchableOpacity>
-          <View style={styles.headerTitle}>
-            <View style={styles.homeRow}>
-              <Ionicons name="navigate" size={20} color="#333" />
-              <Text style={styles.homeText} numberOfLines={1}>Kachapilly Maradu P.O</Text>
-              <Ionicons name="chevron-down" size={16} color="#333" />
+    <>
+      <View style={styles.headerWrapper}>
+        {/* BACK BUTTON */}
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="chevron-back" size={24} color="#333" />
+        </TouchableOpacity>
 
-            </View>
-            <Text style={styles.addressText} numberOfLines={1}>
-              72/1533 Baby Smarka Road, Mamangalam, Mamang...
+        {/* ADDRESS SELECT FIELD */}
+        <TouchableOpacity style={styles.headerTitle} onPress={onOpenAddressModal}>
+          <View style={styles.homeRow}>
+            <Ionicons name="navigate" size={20} color="#333" />
+            <Text style={styles.homeText} numberOfLines={1}>
+              {selectedAddress?.addressType || 'Select Address'}
             </Text>
+            <Ionicons name="chevron-down" size={16} color="#333" />
           </View>
-        </View>
 
-      <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
-        <Ionicons name="home" size={24} color="#333" />
-      </TouchableOpacity>
-    </View>
+          <Text style={styles.addressText} numberOfLines={1}>
+            {formattedAddress}
+          </Text>
+        </TouchableOpacity>
+
+        {/* HOME BUTTON */}
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.homeButton}>
+          <Ionicons name="home" size={24} color="#333" />
+        </TouchableOpacity>
+      </View>
+    </>
   );
-};
+});
 
+export default HeaderBag;
+
+// Styles (unchanged)
 const styles = StyleSheet.create({
   headerWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     height: 60,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    elevation: 4,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    justifyContent: 'space-between',
   },
-  backButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-  centerContainer: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#5c565c',
-    fontFamily: 'Montserrat',
-  },
-  homeButton: {
-    padding: 8,
-    borderRadius: 20,
-  },
-    headerLeft: {
+  homeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   backButton: {
     paddingRight: 4,
@@ -79,24 +113,19 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     flex: 1,
   },
-  homeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   homeText: {
     fontWeight: 'bold',
     fontSize: 16,
-    color: '#000000',
+    color: '#000',
     marginLeft: 4,
     marginRight: 2,
-    width: 140,
-    // backgroundColor: 'red' // optional for debug
   },
   addressText: {
-    color: '#666666',
+    color: '#666',
     fontSize: 12,
     marginTop: 2,
   },
+  homeButton: {
+    padding: 8,
+  },
 });
-
-export default HeaderBag;

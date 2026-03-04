@@ -1,15 +1,15 @@
-import React, { useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
-import { Modalize } from 'react-native-modalize';
-import { useRouter } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useRef } from 'react';
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Modalize } from 'react-native-modalize';
 
 const { width, height } = Dimensions.get('window');
 
@@ -44,7 +44,7 @@ const addresses: Address[] = [
 const SelectAddressBottomSheet = () => {
   const modalizeRef = useRef<Modalize>(null);
   const router = useRouter();
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
 
   const onOpen = () => {
     modalizeRef.current?.open();
@@ -73,7 +73,7 @@ const SelectAddressBottomSheet = () => {
           renderItem: ({ item }) => (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => router.push('/Payment')}
+              onPress={() => router.push('/Payment' as any)}
             >
               <View style={styles.topRow}>
                 <View style={styles.distanceIconRow}>
@@ -103,7 +103,7 @@ const SelectAddressBottomSheet = () => {
               <TouchableOpacity
                 style={styles.addAddressButton}
                 onPress={() =>
-                  navigation.navigate('(stack)/ProductDetail/LocationselectionPage')
+                  navigation.navigate('SelectLocationScreen')
                 }
               >
                 <Ionicons name="add" size={18} color="#FF5A5F" style={{ opacity: 0.5 }} />
@@ -135,15 +135,15 @@ const styles = StyleSheet.create({
     zIndex: 999,
     elevation: 10,
     height: 90,
-    borderTopRightRadius:30,
-    borderTopLeftRadius:30,
+    borderTopRightRadius: 30,
+    borderTopLeftRadius: 30,
 
   },
   slideToPayContainer: {
     width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    
+
   },
   slideTrack: {
     height: 70,

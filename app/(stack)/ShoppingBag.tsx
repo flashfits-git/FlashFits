@@ -1,75 +1,120 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { LinearGradient } from 'expo-linear-gradient';
-// import RazorpayCheckout from 'react-native-razorpay';
-import { 
-  View, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
-  Animated,
-  PanResponder,
-  Dimensions,
-  StatusBar,
-  Alert
-} from 'react-native';
-import BagProduct from '../../components/CartBagComponents/BagProduct';
 import HeaderBag from '@/components/CartBagComponents/HeaderBag';
-import BillSection from '@/components/CartBagComponents/BillSection';
-import SelectAddressBottomSheet from '../../components/CartBagComponents/SelectAddressBottomSheet';
-import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import { GetCart, deleteCartItem } from '../api/productApis/cartProduct';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { clearCart, UpdateCartQuantity } from '../api/productApis/cartProduct';
 import Loader from '@/components/Loader/Loader';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Animated,
+  Dimensions,
+  Image,
+  PanResponder,
+  Platform,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import RazorpayCheckout from 'react-native-razorpay';
+import BagProduct from '../../components/CartBagComponents/BagProduct';
+// import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
+import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
+import AddressSelectionModalize from './AddressSelectionModalize';
+import eed from '../../assets/images/star.png'
+import { useAddress } from '@/app/AddressContext'; // Import context
+import * as SecureStore from 'expo-secure-store';
+import { clearCart, deleteCartItem, getCartbyPassAdress } from '../api/productApis/cartProduct';
 import { useCart } from '../ContextParent';
-import eed from '../../assets/images/shoppingbag/lih.png';
-import { createOrder } from '../api/orderApis';
-import { getSocket } from '../config/socket';
-import {joinOrderRoom} from '../sockets/order.socket';
+import { joinOrderRoom } from '../sockets/order.socket';
 const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
 const CartBag = () => {
-  // const [] = useState([]);
+  const addressRef = useRef(null);
+  const [shouldAskAddress, setShouldAskAddress] = useState(false);
+  const [addressModalOpenedOnce, setAddressModalOpenedOnce] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [address, setAddress] = useState(null);
   const [scrollY, setScrollY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
-  const { cartCount, setCartCount, cartItems, setCartItems} = useCart();
-    const [activeTab, setActiveTab] = useState<'TryandBuy' | 'Payment'>('TryandBuy');
-   const [showTryBuyInfo, setShowTryBuyInfo] = useState(false);
-const popupOpacity = useRef(new Animated.Value(0)).current;
-const scrollYAnim = useRef(new Animated.Value(0)).current;
+  const { cartCount, setCartCount, cartItems, setCartItems } = useCart();
+  const [activeTab, setActiveTab] = useState<'TryandBuy' | 'Payment'>('TryandBuy');
+  const [showTryBuyInfo, setShowTryBuyInfo] = useState(false);
+  const popupOpacity = useRef(new Animated.Value(0)).current;
+  const scrollYAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
-  
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const { selectedAddress,setSelectedAddress,addresses,setAddresses } = useAddress();
+
+  useEffect(() => {
+    const checkFirstTime = async () => {
+      const flag = await SecureStore.getItemAsync("addressSelectedOnce");
+      // user already selected → don't auto-open
+      if (flag === "true") return;
+
+      // user first time → open modal
+      setShouldAskAddress(true);
+    };
+    checkFirstTime();
+  }, []);
+
+  useEffect(() => {
+    if (shouldAskAddress && !addressModalOpenedOnce) {
+      setAddressModalOpenedOnce(true);
+      setTimeout(() => addressRef.current?.open(), 400);
+    }
+  }, [shouldAskAddress]);
+
+  // console.log(cartItems, 'cartItemscartItemscartItemscartItems');
+
+
+
+  const handleAddressChange = async (address) => {
+    setAddress(address);
+    // Prevent modalize auto-opening again
+    await SecureStore.setItemAsync("addressSelectedOnce", "true");
+  };
+
   const fetchCart = async (showLoader = true) => {
     try {
+      const saved = await SecureStore.getItemAsync('selectedAddress');
+      if (!saved) {
+        console.log('No address selected → reopening modal');
+        setTimeout(() => addressRef.current?.open(), 200);
+        return;
+      }
+
       if (showLoader) setLoading(true);
-      const cartData = await GetCart();
+
+      // Determine if current address is serviceable
+      const isServiceable = selectedAddress?.addressType !== 'Non-serviceable' && selectedAddress?.isServiceable !== false;
+
+
+      console.log(isServiceable, 'isServiceableisServiceableisServiceable');
+
+      // Call API with both addressId and serviceable flag
+      const cartData = await getCartbyPassAdress(selectedAddress._id, isServiceable);
+
+      console.log(cartData, 'cartDatacartData');
+
+
       const items = cartData.items || [];
-      console.log(cartData,'cartDatacartData');
-      
+      setDeliveryCharge(items[0]?.merchantDelivery?.deliveryCharge || 0);
       setCartItems(items);
-      setCartCount(items.length);    
-      // Animate content entrance
+      setCartCount(items.length);
+
+      // Animations...
       Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        })
+        Animated.timing(fadeAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 600, useNativeDriver: true })
       ]).start();
-      
+
     } catch (err) {
       console.error('Failed to load cart:', err);
       Alert.alert('Error', 'Failed to load your cart. Please try again.');
@@ -79,10 +124,38 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
     }
   };
 
-
   useEffect(() => {
-    fetchCart();
-  }, []);
+    const init = async () => {
+      const token = await SecureStore.getItemAsync('token');
+
+      // 🔐 Stop if user not logged in
+      if (!token) {
+        console.log('No token found → skipping cart API');
+        setLoading(false);
+        return;
+      }
+
+      // 📍 Stop if address not selected yet
+      // if (!selectedAddress?._id) {
+      //   console.log('No address selected → waiting');
+      //   return;
+      // }
+
+      // if (!saved) {
+      //   console.log('No address selected → reopening modal');
+      //   setTimeout(() => addressRef.current?.open(), 200);
+      //   return;
+      // }
+
+      console.log(selectedAddress._id, 'selectedAddress');
+
+      // ✅ Safe to call API now
+      fetchCart();
+    };
+
+    init();
+  }, [selectedAddress]);
+
 
   // Handle scroll-based animations
   useEffect(() => {
@@ -94,213 +167,256 @@ const scrollYAnim = useRef(new Animated.Value(0)).current;
   }, [scrollY]);
 
   useEffect(() => {
-  scrollYAnim.addListener(({ value }) => {
-    setScrollY(value);
-    Animated.timing(deliveryBarOpacity, {
-      toValue: value > 50 ? 1 : 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  });
+    scrollYAnim.addListener(({ value }) => {
+      setScrollY(value);
+      Animated.timing(deliveryBarOpacity, {
+        toValue: value > 50 ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
 
-  return () => scrollYAnim.removeAllListeners();
-}, []);
+    return () => scrollYAnim.removeAllListeners();
+  }, []);
 
-const handleDelete = async (itemId) => {
+  const handleDelete = async (itemId) => {
 
-  console.log(itemId,'itemIditemIditemId');
-  
-  Alert.alert(
-    'Remove Item',
-    'Are you sure you want to remove this item from your bag?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (cartCount === 1) {
-              await clearCart();
-              console.log('cartCleat');
-            } else {
-              await deleteCartItem(itemId);
+    console.log(itemId, 'itemIditemIditemId');
+
+    Alert.alert(
+      'Remove Item',
+      'Are you sure you want to remove this item from your bag?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (cartCount === 1) {
+                await clearCart();
+                console.log('cartCleat');
+              } else {
+                await deleteCartItem(itemId);
+              }
+              await fetchCart(false); // refresh cart after deletion or clear
+            } catch (error) {
+              console.error('Failed to delete cart item:', error);
+              Alert.alert('Error', 'Failed to remove item. Please try again.');
             }
-            await fetchCart(false); // refresh cart after deletion or clear
-          } catch (error) {
-            console.error('Failed to delete cart item:', error);
-            Alert.alert('Error', 'Failed to remove item. Please try again.');
-          }
+          },
         },
-      },
-    ]
-  );
-};
-  
+      ]
+    );
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await fetchCart(false);
   };
 
-  // console.log(cartItems,'ewfkhbkjewefwbkj');
-  
+  // console.log(productData,'productDataproductDataproductDataproductData');
 
-const productData = cartItems.map((item) => {
-  const product = item.productId || {};
-  const firstVariant = product.variants?.[0] || {};
 
-  return {
-    id: product._id,                      // product ID
-    cartId: item._id,                     // ✅ cart item ID
-    name: product.name || '',
-    price: item.price || 0,
-    mrp: item.mrp || 0,
-    size: item.size || null,
-    quantity: item.quantity || 1,
-    stockQuantity: item.stockQuantity || 0,
-    merchantName: item.merchantId?.shopName || '',
-    image: item.image?.url || null,
-    variantId: item.variantId || firstVariant._id  // Use item.variantId for safety
-  };
-});
+  const productData = cartItems.map((item) => {
+    const product = item.productId || {};
+    const firstVariant = product.variants?.[0] || {};
+
+    return {
+      id: product._id,                      // product ID
+      cartId: item._id,                     // ✅ cart item ID
+      name: product.name || '',
+      price: item.price || 0,
+      mrp: item.mrp || 0,
+      size: item.size || null,
+      quantity: item.quantity || 1,
+      stockQuantity: item.stockQuantity || 0,
+      merchantName: item.merchantId?.shopName || '',
+      image: item.image?.url || null,
+      variantId: item.variantId || firstVariant._id  // Use item.variantId for safety
+    };
+  });
 
   const totalItems = productData.reduce((sum, item) => sum + item.quantity, 0);
   const totalValue = productData.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    const handlePaymentComplete = async () => {
+  const handlePaymentComplete = async () => {
+
     try {
-      
-      const orderData = await createOrder();
-      console.log(orderData,"orderData");
-      // console.log(orderData.order._id, 'orderData');
-      await joinOrderRoom(orderData.order._id);
-      console.log("📡 Joined room for order:", orderData.order._id);
-      //back to home
-      router.replace({
-      pathname: '/(stack)/OrderDetail/OrderTrackingPage',
-      params: { orderId: JSON.stringify(orderData.order._id) }, // must stringify objects
-    });
+      // Step 1: Create Razorpay Order from backend
+      const storedAddress = await SecureStore.getItemAsync('selectedAddress');
+
+
+      const parsedAddress = storedAddress ? JSON.parse(storedAddress) : null;
+      console.log(parsedAddress, 'passre');
+
+      const orderResponse = await createOrder({
+        addressId: parsedAddress._id,
+      });
+      if (!orderResponse || !orderResponse.success) return;
+
+      const {
+        razorpayOrderId,
+        amount,
+        key_id,
+        orderId: internalOrderId,
+        name,
+        contact,
+        email,
+      } = orderResponse;
+
+      // Step 2: Open Razorpay Checkout
+      const options = {
+        description: 'FlashFits Order Payment',
+        image: 'https://yourlogo.com/logo.png', // optional
+        currency: 'INR',
+        key: key_id,
+        amount: amount, // already in paise
+        name: 'FlashFits',
+        order_id: razorpayOrderId,
+        prefill: {
+          email: email || '',
+          contact: contact || '',
+          name: name || 'Customer',
+        },
+        theme: { color: '#61b3f6' },
+      };
+
+      console.log(options, 'options');
+
+      RazorpayCheckout.open(options)
+        .then(async (data) => {
+          // Success callback from Razorpay
+          console.log('Razorpay Success:', data);
+          // Step 3: Verify on backend
+          try {
+            const res = await verifyPaymentAndConfirmOrder(data, internalOrderId);
+
+            if (res?.success) {
+              Alert.alert('Success', 'Payment successful! Order confirmed.');
+
+              await joinOrderRoom(internalOrderId);
+              await SecureStore.setItemAsync("addressSelectedOnce", "false");
+              router.replace({
+                pathname: '/(stack)/OrderDetail/OrderTrackingPage',
+                params: {
+                  orderId: internalOrderId.toString(),
+                },
+              });
+            } else {
+              Alert.alert('Payment Failed', 'Something went wrong while confirming your order.');
+            }
+
+          } catch (error) {
+            console.error("Payment verification error:", error);
+            Alert.alert('Error', 'Unable to verify payment. Please try again.');
+          }
+        })
+        .catch(async (error) => {
+          console.log('Razorpay Failed/Cancelled:', error);
+          if (error.code === 2) {
+            Alert.alert('Cancelled', 'Payment was cancelled');
+          } else {
+            Alert.alert('Payment Failed', error.description || 'Something went wrong');
+          }
+        });
     } catch (error) {
-      console.error('Error creating order:', error);
+      console.error('Payment flow error:', error);
+      Alert.alert('Error', 'Payment initiation failed');
     }
   };
 
-// const handleQuantityChange = async (cartId, newQty) => {
-//   if (!cartId || typeof newQty !== 'number') {
-//     console.error('Missing required data for updating quantity');
-//     return;
-//   }
-//   try {
-//     // Call backend API with just cartId and new quantity
-//     await UpdateCartQuantity({ cartId, quantity: newQty });
+  const SlideToPay = ({ label, onComplete, serviceable = false }) => {
+    const disabled = serviceable;
+    const slideAnimation = useRef(new Animated.Value(0)).current;
 
-//     // Update local cart state for the matching cartId
-//     setCartItems((prev) =>
-//       prev.map((item) =>
-//         item._id === cartId
-//           ? { ...item, quantity: newQty }
-//           : item
-//       )
-//     );
-//   } catch (err) {
-//     console.error('Error updating quantity:', err);
-//     Alert.alert('Error', 'Failed to update quantity. Please try again.');
-//   }
-// };
+    const panResponder = useRef(
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => !serviceable, // ← Disable touch if serviceable
+        onMoveShouldSetPanResponder: () => !serviceable,
+        onPanResponderMove: (_, gestureState) => {
+          if (!serviceable && gestureState.dx > 0 && gestureState.dx <= maxSlide) {
+            slideAnimation.setValue(gestureState.dx);
+          }
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (serviceable) return;
 
-const SlideToPay = ({ label, onComplete }) => {
-  const slideAnimation = useRef(new Animated.Value(0)).current;
+          if (gestureState.dx >= maxSlide * 0.7) {
+            Animated.timing(slideAnimation, {
+              toValue: maxSlide,
+              duration: 200,
+              useNativeDriver: true,
+            }).start(() => {
+              onComplete();
+              slideAnimation.setValue(0);
+            });
+          } else {
+            Animated.timing(slideAnimation, {
+              toValue: 0,
+              duration: 200,
+              useNativeDriver: true,
+            }).start();
+          }
+        },
+      })
+    ).current;
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (_, gestureState) => {
-        if (gestureState.dx > 0 && gestureState.dx <= maxSlide) {
-          slideAnimation.setValue(gestureState.dx);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dx >= maxSlide * 0.7) {
-          Animated.timing(slideAnimation, {
-            toValue: maxSlide,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            onComplete();
-            slideAnimation.setValue(0);
-          });
-        } else {
-          Animated.timing(slideAnimation, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        }
-      },
-    })
-  ).current;
+    // serviceable styles
+    const containerStyle = disabled
+      ? [styles.slideToPayContainer, { opacity: 0.6 }]
+      : styles.slideToPayContainer;
 
-  if (label === 'tryandbuy') {
+    const trackColors = ['#000000', '#1a1a1a'];
+
+    const textColor = disabled ? '#666' : '#fff';
+    const arrowColor = label === 'tryandbuy' ? '#666' : '#aaa';
+
     return (
-      <View style={styles.slideToPayContainer}>
+      <View style={containerStyle}>
         <LinearGradient
-          colors={['#111111ff', '#1c1c1cd9']}
+          colors={disabled ? ['#e0e0e0', '#d0d0d0'] : trackColors}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.slideTrack}
         >
-          {/* Try and Buy: Red Arrows */}
           <Animated.View
-            style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-            {...panResponder.panHandlers}
+            style={[
+              styles.slideThumb,
+              { transform: [{ translateX: slideAnimation }] },
+              disabled && { backgroundColor: '#bbb' }, // dull thumb
+            ]}
+            {...(disabled ? {} : panResponder.panHandlers)} // remove handlers when disabled
           >
             <View style={styles.slideArrows}>
-              <Ionicons name="chevron-forward" size={18} color="#000" />
-              <Ionicons name="chevron-forward" size={18} color="#000" />
+              <Ionicons name="chevron-forward" size={18} color={arrowColor} />
+              <Ionicons name="chevron-forward" size={18} color={arrowColor} />
             </View>
           </Animated.View>
-          <Text style={styles.slideText}>Try then Buy</Text>
+
+          <Text style={[styles.slideText, { color: textColor }]}>
+            {disabled ? 'Delivery Unavailable' : label === 'tryandbuy' ? 'Try & Buy' : 'Pay Now'}
+          </Text>
         </LinearGradient>
+
+        {disabled && (
+          <Text style={styles.disabledHintText}>
+            Change delivery location to proceed
+          </Text>
+        )}
       </View>
     );
-  }
+  };
+  // console.log(productData,'productDataproductDataproductData');
 
-  if (label === 'prepaid') {
-    return (
-      <View style={styles.slideToPayContainer}>
-        <LinearGradient
-          colors={['#61b3f6ff', '#61b3f6d1']}  
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.slideTrack}
-        >
-          {/* Prepaid: Blue Arrows */}
-          <Animated.View
-            style={[styles.slideThumb, { transform: [{ translateX: slideAnimation }] }]}
-            {...panResponder.panHandlers}
-          >
-            <View style={styles.slideArrows}>
-              <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
-              <Ionicons name="chevron-forward" size={18} color="#61b3f6ff" />
-            </View>
-          </Animated.View>
-          <Text style={styles.slideText}>Pay Now</Text>
-        </LinearGradient>
-      </View>
-    );
-  }
-
-  // fallback (should not occur if only used for these two labels)
-  return null;
-};
 
   if (loading) return <Loader />;
   if (cartItems.length === 0) {
     return (
       <View style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-        <HeaderBag />
-        
+        {/* <HeaderBag  ref={headerRef} /> */}
+
         <Animated.View style={[
           styles.emptyCartContainer,
           {
@@ -311,14 +427,14 @@ const SlideToPay = ({ label, onComplete }) => {
           <View style={styles.emptyIconContainer}>
             <Text style={styles.emptyIcon}>🛍️</Text>
           </View>
-          
+
           <Text style={styles.emptyTitle}>Your Bag is Empty</Text>
           <Text style={styles.emptySubtitle}>
             Looks like you haven't added anything to your bag yet
           </Text>
-          
-          <TouchableOpacity 
-            onPress={() => router.replace('/(tabs)')} 
+
+          <TouchableOpacity
+            onPress={() => router.replace('/(tabs)')}
             style={styles.shopNowButton}
             activeOpacity={0.8}
           >
@@ -331,9 +447,9 @@ const SlideToPay = ({ label, onComplete }) => {
               <Text style={styles.shopNowButtonText}>Start Shopping</Text>
             </LinearGradient>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            onPress={() => router.push('/(tabs)/favorites')}
+
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/Wishlist')}
             style={styles.wishlistButton}
             activeOpacity={0.7}
           >
@@ -343,15 +459,18 @@ const SlideToPay = ({ label, onComplete }) => {
       </View>
     );
   }
-  
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <HeaderBag />
 
-          {/* Order type selection */}  
+  return (
+    <>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+
+        <HeaderBag onOpenAddressModal={() => addressRef.current?.open()} ref={addressRef} />
+
+
+        {/* Order type selection */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginVertical: 5, marginHorizontal: 15 }}>
-          
+
           {/* Try and Buy Tab */}
           <TouchableOpacity
             onPress={() => setActiveTab('TryandBuy')}
@@ -374,44 +493,44 @@ const SlideToPay = ({ label, onComplete }) => {
                 style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
               />
               <Text style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}>
-                Try then Buy
+                Try & Buy
               </Text>
-
               {/* ❓ Help icon with toggle */}
-          <TouchableOpacity
-            onPress={() => {
-              setShowTryBuyInfo(true);
-              popupOpacity.setValue(0);
-              Animated.timing(popupOpacity, {
-                toValue: 1,
-                duration: 300,
-                useNativeDriver: true,
-              }).start(() => {
-                setTimeout(() => {
+              <TouchableOpacity
+                onPress={() => {
+                  setShowTryBuyInfo(true);
+                  popupOpacity.setValue(0);
                   Animated.timing(popupOpacity, {
-                    toValue: 0,
-                    duration: 500,
+                    toValue: 1,
+                    duration: 300,
                     useNativeDriver: true,
-                  }).start(() => setShowTryBuyInfo(false));
-                }, 4000);
-              });
-            }}
-            style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
-          >
-            <MaterialIcons
-              name="help"
-              size={15}
-              color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
-            />
-          </TouchableOpacity>
+                  }).start(() => {
+                    setTimeout(() => {
+                      Animated.timing(popupOpacity, {
+                        toValue: 0,
+                        duration: 500,
+                        useNativeDriver: true,
+                      }).start(() => setShowTryBuyInfo(false));
+                    }, 4000);
+                  });
+                }}
+                style={[styles.tabText, activeTab === 'TryandBuy' && styles.activeTabText]}
+              >
+                <MaterialIcons
+                  name="help"
+                  size={15}
+                  color={activeTab === 'TryandBuy' ? '#fff' : '#000'}
+                />
+              </TouchableOpacity>
 
             </View>
           </TouchableOpacity>
           {/* Payment Tab */}
           <TouchableOpacity
             onPress={() => setActiveTab('Payment')}
-            style={styles.tabButton}
+            style={[styles.tabButton, styles.disabledTab]}
             activeOpacity={0.9}
+            disabled
           >
             {activeTab === 'Payment' && (
               <LinearGradient
@@ -421,136 +540,145 @@ const SlideToPay = ({ label, onComplete }) => {
                 style={[StyleSheet.absoluteFill, { borderRadius: 60 }]}
               />
             )}
+
             <View style={styles.flexRow}>
-              <MaterialIcons name="payments" size={18} color="black" style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]} />
+              <MaterialIcons
+                name="payments"
+                size={18}
+                color="black"
+                style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}
+              />
               <Text style={[styles.tabText, activeTab === 'Payment' && styles.activeTabText]}>
-                Pay Order
+                Pay Now
               </Text>
             </View>
           </TouchableOpacity>
+
         </View>
-        
-          {/* Try and Buy Tab info pop up*/}
-        {showTryBuyInfo && (
-  <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
-<View style={styles.popupContent}>
-  <Text style={styles.popupText}>
-    🛍️ Try before you buy at your doorstep!{'\n'}
-    ✅ Keep what you love{'\n'}
-    🔄 Instant return for the rest!
-  </Text>
-</View>
-  </Animated.View>
-          )}
 
-     {/* Fixed Delivery Bar */}
-      <Animated.View 
-        style={[
-          styles.fixedDeliveryBar,
-          { opacity: deliveryBarOpacity }
-        ]}
-        pointerEvents={scrollY > 10 ? 'auto' : 'none'}
-      >
-        <LinearGradient
-          colors={['rgba(255, 255, 255, 0.68)', 'rgba(255, 255, 255, 0.98)']}
-          style={styles.fixedDeliveryContent}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        >
-          <View style={styles.deliveryLeftSection}>
-            <Text style={styles.deliveryText}>
-              Delivery in <Text style={styles.deliveryTime}>2 hrs</Text>
-            </Text>
-            <View style={styles.superFastBadge}>
-              <Image source={eed} style={styles.badgeIcon} />
-              <Text style={styles.badgeText}>Superfast</Text>
-            </View>
-          </View>
-          <View style={styles.itemCountContainer}>
-            <Text style={styles.itemCountText}>{totalItems} item{totalItems > 1 ? 's' : ''}</Text>
-            <Text style={styles.totalValueText}>₹{totalValue.toLocaleString()}</Text>
-          </View>
-        </LinearGradient>
-      </Animated.View>
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
-        scrollEventThrottle={16}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-      >
-
-        {/* Main Delivery Info */}
-<Animated.View 
-  style={[
-    styles.deliveryInfoWrapper,
-    {
-      opacity: fadeAnim,
-      transform: [{ translateY: slideAnim }]
-    }
-  ]}
->
-  <LinearGradient
-    colors={['#FFFFFF', '#F8F9FA']}
-    style={styles.deliveryInfo}
-    start={{ x: 0, y: 1 }}
-    end={{ x: 0, y: 0 }}
-  >
-    <View style={styles.deliveryHeader}>
-      <View style={styles.deliveryLeftSection}>
-        <View style={styles.deliveryTimeContainer}>
-          <Text style={styles.deliveryMainText}>Delivery in</Text>
-          <Text style={styles.deliveryTimeText}>2 hours</Text>
-        </View>
-        <View style={styles.superFastBadge}>
-          <Image source={eed} style={styles.badgeIcon} />
-          <Text style={styles.badgeText}>Superfast</Text>
-        </View>
-      </View>
-      
-      <View style={styles.deliveryRightSection}>
-        <Text style={styles.itemSummaryText}>{totalItems} items</Text>
-        <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
-      </View>
-    </View>
-  </LinearGradient>
-</Animated.View>
-
-        {/* Products Section */}
-        <Animated.View
-          style={{
-            opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }}
-        >
-          <BagProduct
-            product={productData}
-            onDelete={handleDelete}
-              onQuantityChange={(cartId, newQty) => {
-              setCartItems(prev =>
-                prev.map(item =>
-                  item._id === cartId
-                    ? { ...item, quantity: newQty }
-                    : item
-                )
-              );
-            }}
-          />
-        </Animated.View>
-
-        {/* Coupon Section */}
-        <Animated.View
+        {/* Fixed Delivery Bar */}
+        {/* <Animated.View
           style={[
-            styles.couponSection,
-            {
+            styles.fixedDeliveryBar,
+            { opacity: deliveryBarOpacity }
+          ]}
+          pointerEvents={scrollY > 10 ? 'auto' : 'none'}
+        >
+          <LinearGradient
+            colors={['rgba(255, 255, 255, 0.68)', 'rgba(255, 255, 255, 0.98)']}
+            style={styles.fixedDeliveryContent}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          >
+            <View style={styles.deliveryLeftSection}>
+              <Text style={styles.deliveryText}>
+                Delivery in <Text style={styles.deliveryTime}>2 hrs</Text>
+              </Text>
+              <View style={styles.superFastBadge}>
+                <Image source={eed} style={styles.badgeIcon} />
+                <Text style={styles.badgeText}>Superfast</Text>
+              </View>
+            </View>
+            <View style={styles.itemCountContainer}>
+              <Text style={styles.itemCountText}>{totalItems} item{totalItems > 1 ? 's' : ''}</Text>
+              <Text style={styles.totalValueText}>₹{totalValue.toLocaleString()}</Text>
+            </View>
+          </LinearGradient>
+        </Animated.View> */}
+
+        {/* Try and Buy Tab info pop up*/}
+        {showTryBuyInfo && (
+          <Animated.View style={[styles.popupContainer, { opacity: popupOpacity }]}>
+            <View style={styles.popupContent}>
+              <Text style={styles.popupText}>
+                🛍️ Try before you buy at your doorstep!{'\n'}
+                ✅ Keep what you love{'\n'}
+                🔄 Instant return for the rest!
+              </Text>
+            </View>
+          </Animated.View>
+        )}
+
+
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+        >
+
+          {/* Main Delivery Info */}
+          <Animated.View
+            style={[
+              styles.deliveryInfoWrapper,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            <LinearGradient
+              colors={['#FFFFFF', '#F8F9FA']}
+              style={styles.deliveryInfo}
+              start={{ x: 0, y: 1 }}
+              end={{ x: 0, y: 0 }}
+            >
+              <View style={styles.deliveryHeader}>
+                <View style={styles.deliveryLeftSection}>
+                  <View style={styles.deliveryTimeContainer}>
+                    <Text style={styles.deliveryMainText}>Delivery in</Text>
+                    <Text style={styles.deliveryTimeText}>2 hours</Text>
+                  </View>
+                  <View style={styles.superFastBadge}>
+                    <Image source={eed} style={styles.badgeIcon} />
+                    <Text style={styles.badgeText}>Superfast</Text>
+                  </View>
+                </View>
+
+                <View style={styles.deliveryRightSection}>
+                  <Text style={styles.itemSummaryText}>{totalItems} items</Text>
+                  <Text style={styles.totalAmountText}>₹{totalValue.toLocaleString()}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Products Section */}
+          <Animated.View
+            style={{
               opacity: fadeAnim,
               transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
-          <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
+            }}
+          >
+            <BagProduct
+              product={productData}
+              onDelete={handleDelete}
+              onQuantityChange={(cartId, newQty) => {
+                setCartItems(prev =>
+                  prev.map(item =>
+                    item._id === cartId
+                      ? { ...item, quantity: newQty }
+                      : item
+                  )
+                );
+              }}
+            />
+          </Animated.View>
+
+          {/* Coupon Section */}
+          <Animated.View
+            style={[
+              styles.couponSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
+              }
+            ]}
+          >
+            {/* <TouchableOpacity style={styles.couponButton} activeOpacity={0.8}>
             <View style={styles.couponLeft}>
               <Ionicons name="pricetag" size={5} color="black" style={styles.couponIcon} />
               <View>
@@ -559,11 +687,11 @@ const SlideToPay = ({ label, onComplete }) => {
               </View>
             </View>
             <Text style={styles.couponArrow}>›</Text>
-          </TouchableOpacity>
-        </Animated.View>
+          </TouchableOpacity> */}
+          </Animated.View>
 
-        {/* Matching Accessories */}
-        <Animated.View
+          {/* Matching Accessories */}
+          {/* <Animated.View
           style={[
             styles.accessoriesSection,
             {
@@ -576,104 +704,126 @@ const SlideToPay = ({ label, onComplete }) => {
             <Text style={styles.accessoriesTitle}>Matching Accessories</Text>
             <Text style={styles.accessoriesSubtitle}>Complete your look</Text>
           </View>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.accessoriesScroll}
           >
             <RecentlyViewed accecories={cartItems} />
           </ScrollView>
-        </Animated.View>        
-        
-        {/* Explore Store Button */}
-        <Animated.View
-          style={[
-            styles.exploreSection,
-            {
-              opacity: fadeAnim,
-              transform: [{ translateY: slideAnim }]
-            }
-          ]}
-        >
-          <TouchableOpacity
-            style={styles.exploreButton}
-            onPress={() => {
-              if (productData.length > 0) {
-                const merchantId = cartItems[0]?.merchantId?._id;
-                router.push({
-                  pathname: '/(stack)/ShopDetails/StoreDetailPage',
-                  params: { merchantId },
-                });
+        </Animated.View> */}
+
+          {/* Explore Store Button */}
+          <Animated.View
+            style={[
+              styles.exploreSection,
+              {
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }]
               }
-            }}
+            ]}
           >
-            <LinearGradient
-              colors={['#F8F9FA', '#FFFFFF']}
-              style={styles.exploreGradient}
+            <TouchableOpacity
+              style={styles.exploreButton}
+              onPress={() => {
+                if (productData.length > 0) {
+                  const merchantId = cartItems[0]?.merchantId?._id;
+                  router.push({
+                    pathname: '/(stack)/ShopDetails/StoreDetailPage',
+                    params: { merchantId },
+                  });
+                }
+              }}
             >
-              <Text style={styles.exploreButtonText}>EXPLORE STORE MORE</Text>
-              <Text style={styles.exploreSubtext}>Discover similar products</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
+              <LinearGradient
+                colors={['#F8F9FA', '#FFFFFF']}
+                style={styles.exploreGradient}
+              >
+                <Text style={styles.exploreButtonText}>
+                  {productData.length > 0 ? `EXPLORE ${productData[0].merchantName.toUpperCase()} MORE` : 'EXPLORE STORE MORE'}
+                </Text>
+                <Text style={styles.exploreSubtext}>Try Multiple Sizes and Styles on your Cart</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
 
-            {/* slide bar swiching */}
-      {activeTab === 'Payment' && (
-                  <>
-                    <View style={styles.paymentMethodContainer}>
-                      <View style={styles.paymentMethod}>
-                        <View style={styles.paymentMethodLeft}>
-                          <View style={styles.googlePayIcon}>
-                            {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
-                            <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
-          
-                          </View>
-                          <View>
-                            <Text style={styles.payUsingText}>Pay using</Text>
-                            <Text style={styles.googlePayText}>Google Pay</Text>
-                          </View>
-                        </View>
-                        <TouchableOpacity style={styles.changeButton}>
-                          <Text style={styles.changeButtonText}>Change</Text>
-                          <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                    <SlideToPay label="prepaid" onComplete={handlePaymentComplete} />
-                  </>
-      )}
-       {activeTab === 'TryandBuy' && (
-                  <>
-                            <View style={styles.paymentMethodContainer}>
-                      <View style={styles.paymentMethod}>
-                        <View style={styles.paymentMethodLeft}>
-                          <View style={styles.googlePayIcon}>
-                            <Image source={require('../../assets/images/paymentIcons/icons8-google-pay-700.png')} style={styles.googlePayImage} />
-                          </View>
-                          <View>
-                            <Text style={styles.payUsingText}>Pay using</Text>
-                            <Text style={styles.googlePayText}>Delivery Charge |  ₹45</Text>
-                          </View>
-                        </View>
-                        <TouchableOpacity style={styles.changeButton}>
-                          <Text style={styles.changeButtonText}>Change</Text>
-                          <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  <SlideToPay label="tryandbuy" onComplete={handlePaymentComplete} />
-                  </>
-       )}
+        {/* slide bar swiching */}
+        {activeTab === 'Payment' && (
+          <>
+            <View style={styles.paymentMethodContainer}>
+              <View style={styles.paymentMethod}>
+                <View style={styles.paymentMethodLeft}>
+                  <View style={styles.googlePayIcon}>
+                    {/* <Image source={require('../../assets/images/1.jpg')} style={styles.googlePayImage} /> */}
+                    <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
 
-      {/* <SelectAddressBottomSheet /> */}
-    </View>
+                  </View>
+                  <View>
+                    <Text style={styles.payUsingText}>Pay using</Text>
+                    <Text style={styles.googlePayText}>Google Pay</Text>
+                  </View>
+                </View>
+                <TouchableOpacity style={styles.changeButton}>
+                  <Text style={styles.changeButtonText}>Change</Text>
+                  <MaterialIcons name="keyboard-arrow-right" size={20} color="#FF6B00" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <SlideToPay
+              label="prepaid"
+              onComplete={handlePaymentComplete}
+              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+            />
+          </>
+        )}
+        {activeTab === 'TryandBuy' && (
+          <>
+            <View style={styles.paymentMethodContainer}>
+              <View style={styles.paymentMethod}>
+                <View style={styles.paymentMethodLeft}>
+                  <View style={styles.googlePayIcon}>
+                    <Image source={require('../../assets/images/paymentIcons/icons8-delivery-boy-66.png')} style={styles.googlePayImage} />
+                  </View>
+                  <View>
+                    {/* <Text style={styles.payUsingText}>Pay using</Text> */}
+                    <Text style={styles.googlePayText}>
+                      Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
+                    </Text>
+                    <Text style={styles.googlePayText1}>
+                      Return Charge will be deducted when you keep the Cart.
+                      {/* (₹{totalValue.toLocaleString()}) */}
+                    </Text>
+                    {/* <Text style={styles.googlePayText1}>
+                      We applies return charge deduction on keeping the cart.
+                    </Text> */}
+                  </View>
+                </View>
+              </View>
+            </View>
+            <SlideToPay
+              label="tryandbuy"
+              onComplete={handlePaymentComplete}
+              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+            />
+          </>
+        )}
+      </View>
+      <AddressSelectionModalize
+        ref={addressRef}
+        onSelectAddress={handleAddressChange}
+      />
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   // Base Container
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 50, // ✅ dynamic safe spacing
+  },
 
   // Empty Cart States
   emptyCartContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', paddingHorizontal: 32 },
@@ -683,7 +833,7 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontSize: 16, color: '#666', marginBottom: 32, fontFamily: 'Montserrat', textAlign: 'center', lineHeight: 22 },
 
   // Buttons
-  shopNowButton: { width: '100%', height: 56, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8,  },
+  shopNowButton: { width: '100%', height: 56, borderRadius: 28, marginBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, },
   shopNowGradient: { flex: 1, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
   shopNowButtonText: { color: '#fff', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5 },
   wishlistButton: { paddingVertical: 16, paddingHorizontal: 24 },
@@ -691,43 +841,43 @@ const styles = StyleSheet.create({
 
   // Popup
   popupContainer: { position: 'absolute', top: 60, left: 20, right: 20, zIndex: 999, alignItems: 'center' },
-  popupContent: { backgroundColor: '#fff', padding: 12, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6,  maxWidth: '90%' },
-  
-  popupText: { lineHeight: 20,color: '#333', fontSize: 13, fontFamily: 'Montserrat', textAlign: 'center' ,},
+  popupContent: { backgroundColor: '#fff', padding: 12, borderRadius: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6, maxWidth: '90%' },
+
+  popupText: { lineHeight: 20, color: '#333', fontSize: 13, fontFamily: 'Montserrat', textAlign: 'center', },
   // Scroll & Content
   scrollContent: { paddingHorizontal: 16 },
 
   // Fixed Delivery Bar
-  fixedDeliveryContentfixedDeliveryBar: { marginHorizontal: 16, marginTop: 2, borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1,shadowRadius: 8},
+  fixedDeliveryContentfixedDeliveryBar: { borderRadius: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
   fixedDeliveryContent: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingHorizontal: 13,
-  paddingVertical: 10,
-  borderRadius: 12,
-  backgroundColor: 'rgba(255,255,255,0.95)',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-},
-fixedDeliveryBar: {
-  position: 'absolute',
-  top: 120, // or StatusBar.currentHeight + Header height
-  left: 0,
-  right: 0,
-  zIndex: 800,
-  width: '100%',
-  paddingHorizontal: 10,
-},
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  fixedDeliveryBar: {
+    position: 'absolute',
+    // top: 180, // or StatusBar.currentHeight + Header height
+    left: 0,
+    right: 0,
+    zIndex: 800,
+    width: '100%',
+    paddingHorizontal: 10,
+  },
   // Delivery Info
   deliveryInfoWrapper: {
-  borderRadius: 16,
-  overflow: 'hidden',
-  marginVertical: 8, // Add some spacing from adjacent elements
-  backgroundColor: '#fff', // Prevent visual gaps
-},
+    borderRadius: 16,
+    overflow: 'hidden',
+    marginVertical: 8, // Add some spacing from adjacent elements
+    backgroundColor: '#fff', // Prevent visual gaps
+  },
   deliveryInfo: { borderRadius: 16, padding: 20, overflow: 'hidden' },
   deliveryHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   deliveryLeftSection: { flexDirection: 'row', alignItems: 'center', flex: 1 },
@@ -736,7 +886,11 @@ fixedDeliveryBar: {
   deliveryTimeText: { fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'Montserrat' },
   deliveryText: { fontSize: 14, color: '#666', fontFamily: 'Montserrat', marginRight: 8 },
   deliveryTime: { fontWeight: '700', color: '#1A1A1A' },
-
+  disabledTab: {
+    opacity: 0.4,
+    backgroundColor: '#d3d3d3',   // light grey
+    borderColor: '#b8b8b8',
+  },
   // Badge
   superFastBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E7F8F2', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
   badgeIcon: { width: 12, height: 12, marginRight: 4, resizeMode: 'contain' },
@@ -751,7 +905,7 @@ fixedDeliveryBar: {
   totalValueText: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'Montserrat' },
 
   // Coupon Section
-  couponSection: { marginVertical: 12 },
+  // couponSection: { marginVertical: 12 },
   couponButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#cbfed7ff', padding: 16, borderRadius: 12, borderColor: '#FFE0B2' },
   couponLeft: { flexDirection: 'row', alignItems: 'center' },
   couponIcon: { fontSize: 24, marginRight: 12 },
@@ -761,7 +915,7 @@ fixedDeliveryBar: {
 
   // Explore Section
   exploreSection: { marginVertical: 16 },
-  exploreButton: { borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
+  exploreButton: { borderWidth: 2, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
   exploreGradient: { paddingVertical: 20, paddingHorizontal: 24, alignItems: 'center', borderWidth: 1, borderColor: '#E5E5E5', borderRadius: 16 },
   exploreButtonText: { color: '#1A1A1A', fontSize: 16, fontWeight: '700', fontFamily: 'Montserrat', letterSpacing: 0.5, marginBottom: 4 },
   exploreSubtext: { color: '#666', fontSize: 12, fontFamily: 'Montserrat' },
@@ -774,19 +928,28 @@ fixedDeliveryBar: {
   accessoriesScroll: { paddingHorizontal: 16, paddingBottom: 20 },
 
   // Tab Styles
-  tabButton: { width: '50%', paddingVertical: 15, backgroundColor: '#ffffffff', justifyContent: 'center', alignItems: 'center', borderRadius: 60, margin: 3, borderWidth:.5, borderColor:'#c1c1c1ff'},
-  tabText: { marginRight: 6, fontSize: 16, color: '#000', fontFamily: 'Montserrat', fontWeight: 'bold', },
+  tabButton: { width: '50%', paddingVertical: 15, backgroundColor: '#a8a2a2ff', justifyContent: 'center', alignItems: 'center', borderRadius: 60, margin: 3, borderWidth: .5, borderColor: '#c1c1c1ff' },
+  tabText: { marginRight: 6, fontSize: 16, color: '#cbc0c0ff', fontFamily: 'Montserrat', fontWeight: 'bold', },
   activeTabText: { color: '#fff', fontWeight: 'bold' },
   flexRow: { flexDirection: 'row', alignItems: 'center' },
 
   // Payment Method
-  paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0' },
+  slideToPayContainer: { marginBottom: 20 },
+  disabledHintText: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#888',
+    marginTop: 8,
+    fontFamily: 'Montserrat',
+  },
+  paymentMethodContainer: { backgroundColor: '#fff', padding: 16, borderTopWidth: 1, borderTopColor: '#e0e0e0', },
   paymentMethod: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  paymentMethodLeft: { flexDirection: 'row', alignItems: 'center' },
+  paymentMethodLeft: { flexDirection: 'row', alignItems: 'center', marginLeft: 10 },
   googlePayIcon: { marginRight: 12 },
-  googlePayImage: { width: 40, height: 30 },
+  googlePayImage: { width: 20, height: 20 },
   payUsingText: { fontSize: 13, color: '#666' },
   googlePayText: { fontSize: 16, fontWeight: '600', color: '#000' },
+  googlePayText1: { fontSize: 10, fontWeight: '300', color: '#666565ff' },
   changeButton: { flexDirection: 'row', alignItems: 'center' },
   changeButtonText: { fontSize: 16, fontWeight: '600', color: '#000' },
 

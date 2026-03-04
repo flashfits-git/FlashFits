@@ -1,92 +1,147 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import HearderForProfileComponents from '../../components/ProfilePageComponents/HearderForProfileComponents'
-
-
+import { SafeAreaView } from 'react-native-safe-area-context';
+import HearderForProfileComponents from '../../components/ProfilePageComponents/HearderForProfileComponents';
+import { getAddresses } from '../api/productApis/cartProduct';
+import * as SecureStore from 'expo-secure-store';
 const AddressPage = () => {
   const router = useRouter();
+  const [addresses, setAddresses] = useState([]);
+  console.log(addresses,'addressesaddressesaddresses');
+  
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+
+  const fetchAddresses = async () => {
+    try {
+      // 🔐 0️⃣ CHECK TOKEN FIRST
+      const token = await SecureStore.getItemAsync('token');
+
+      if (!token) {
+        console.log('No token found → skipping address API');
+        setLoading(false);
+        return; // ❌ STOP HERE — NO API CALL
+      }
+
+
+      const res = await getAddresses();
+      setAddresses(res?.addresses || []);
+    } catch (error) {
+      console.log('Address fetch error:', error);
+    }
+  };
 
   return (
-    <>
-    <HearderForProfileComponents/>
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.addressCard}>
-        {/* Name and Default tag */}
-        <View style={styles.row}>
-          <Text style={styles.nameText}>antony efron</Text>
-          <Text style={styles.defaultText}>(Default)</Text>
-        </View>
+    <SafeAreaView style={styles.safeArea}>
+      <HearderForProfileComponents />
 
-        {/* Address */}
-        <Text style={styles.addressText}>
-          kachappilly house, kachappilly house, fr george vakayil road, maradu p.o, ernakulam, 682304, Cochin
-        </Text>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        {addresses.map((item, index) => (
+          <View style={styles.addressCard} key={item._id || index}>
+            {/* Name + Type */}
+            <View style={styles.row}>
+              <Text style={styles.nameText}>{item.name}</Text>
+              <Text style={styles.typeText}>
+                ({item.addressType})
+              </Text>
+              {item.isDefault && (
+                <Text style={styles.defaultText}>Default</Text>
+              )}
+            </View>
 
-        {/* Phone */}
-        <Text style={styles.phoneText}>
-          Phone : <Text style={styles.phoneNumber}>8138834116</Text>
-        </Text>
+            {/* Full Address */}
+            <Text style={styles.addressText}>
+              {item.addressLine1}, {item.addressLine2}
+              {item.area ? `, ${item.area}` : ''}
+              {item.landmark ? `, ${item.landmark}` : ''}
+              {'\n'}
+              {item.city}, {item.state} - {item.pincode}
+              {'\n'}
+              {item.country}
+            </Text>
 
-        {/* Info message */}
-        <View style={styles.infoRow}>
-          <Ionicons name="information-circle-outline" size={16} color="orange" />
-          <Text style={styles.infoText}> For better reach, include an alternate number</Text>
-        </View>
+            {/* Phone */}
+            <Text style={styles.phoneText}>
+              Phone : <Text style={styles.phoneNumber}>{item.phone}</Text>
+            </Text>
 
-        {/* Buttons */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.deleteButton}>
-            <MaterialIcons name="delete-outline" size={20} color="red" />
-            <Text style={styles.deleteText}>Delete</Text>
-          </TouchableOpacity>
+            {/* Actions */}
+            <View style={styles.actionsRow}>
+              <TouchableOpacity style={styles.deleteButton}>
+                <MaterialIcons name="delete-outline" size={20} color="red" />
+                <Text style={styles.deleteText}>Delete</Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity style={styles.editButton}>
-            <MaterialIcons name="edit" size={20} color="green" />
-            <Text style={styles.editText}>Edit</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <TouchableOpacity style={[styles.editButton, { opacity: 0.3 }]}>
+                <MaterialIcons name="edit" size={20} color="green" />
+                <Text style={styles.editText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
 
-      {/* Back to Home Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => router.push('/(tabs)')}>
-        <Text style={styles.backButtonText}>Back to home</Text>
-      </TouchableOpacity>
-    </ScrollView>
-    </>
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push('/(stack)/SelectLocationScreen')}
+        >
+          <Text style={styles.backButtonText}>Add New Address</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
   container: {
     padding: 16,
-    backgroundColor: '#fff',
-    flexGrow: 1,
-    justifyContent: 'space-between',
+    paddingBottom: 40, // 👈 ensures scroll reaches button
   },
   addressCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
-    elevation: 2,
-    borderColor: '#eee',
     borderWidth: 1,
+    borderColor: '#eee',
     marginBottom: 20,
+    elevation: 2,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
   },
   nameText: {
     fontSize: 16,
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
+  typeText: {
+    fontSize: 13,
+    color: '#555',
+  },
   defaultText: {
-    marginLeft: 8,
-    fontSize: 14,
+    fontSize: 12,
     color: 'green',
+    fontWeight: 'bold',
   },
   addressText: {
     marginTop: 8,
@@ -103,20 +158,9 @@ const styles = StyleSheet.create({
     color: 'black',
     fontWeight: 'bold',
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  infoText: {
-    fontSize: 13,
-    color: 'orange',
-    marginLeft: 4,
-  },
   actionsRow: {
     flexDirection: 'row',
     marginTop: 16,
-    justifyContent: 'flex-start',
     gap: 24,
   },
   deleteButton: {
@@ -138,18 +182,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   backButton: {
-    marginTop: 'auto',
+    marginTop: 20,
     borderWidth: 1,
     borderColor: 'black',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 20,
+    backgroundColor: '#000'
   },
   backButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: 'black',
+    color: '#fff'
   },
 });
 

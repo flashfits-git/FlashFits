@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
 import { Redirect } from 'expo-router';
-import * as SecureStore from 'expo-secure-store'; // or AsyncStorage
-// import { getCurrentUser } from '../lib/auth'; <-- If using Firebase or custom API
+import * as SecureStore from 'expo-secure-store';
 import Loader from '@/components/Loader/Loader';
-import { initSocket } from './config/socket';
+// import { initSocket } from './config/socket';
 
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
@@ -15,9 +13,8 @@ export default function Index() {
       // Replace this with your actual auth check logic
       const token = await SecureStore.getItemAsync('token');
       console.log(token,'token');
-      
       setIsAuthenticated(!!token); // or check session validity
-      initSocket(token)
+      // initSocket(token)
       setIsLoading(false);
     };
     checkAuth();
@@ -29,6 +26,4 @@ export default function Index() {
     );
   }
   return <Redirect href={isAuthenticated ? '/(tabs)' : '/(auth)'} />;
-  // return <Redirect href={'/(tabs)'} />;
-
 }

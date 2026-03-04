@@ -1,15 +1,19 @@
 import React, { forwardRef, useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { Modalize } from "react-native-modalize";
-import { CheckCircle } from "lucide-react-native";
+import { useRouter } from "expo-router";
+import { CheckCircle, XCircle } from "lucide-react-native";
 
 interface PaymentConfirmationModalProps {
-  onConfirm: (method: string) => void;
+  onConfirm: (method: string, status: "success" | "failed") => void;
 }
 
 const PaymentConfirmationModal = forwardRef<Modalize, PaymentConfirmationModalProps>(
   ({ onConfirm }, ref) => {
     const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
+
+    // Popup State
+    const [popupVisible, setPopupVisible] = useState(false);
 
     const paymentMethods = [
       { id: "upi", label: "UPI (Google Pay, PhonePe, Paytm)" },
@@ -19,63 +23,108 @@ const PaymentConfirmationModal = forwardRef<Modalize, PaymentConfirmationModalPr
 
     const handleConfirmPayment = () => {
       if (!selectedMethod) return;
-      onConfirm(selectedMethod);
+      setPopupVisible(true); // open popup
+    };
+
+    const router = useRouter();
+
+    const handlePaymentResult = (result: "success" | "failed") => {
+      setPopupVisible(false);
+
+      if (result === "success") {
+        router.replace("/(stack)/OrderDetail/OrderCompleteSucess");
+      } else {
+        router.replace("/(stack)/OrderDetail/FailureReturnPage");
+      }
+
+      onConfirm(selectedMethod!, result);
     };
 
     return (
-      <Modalize
-        ref={ref}
-        adjustToContentHeight
-        modalStyle={styles.modal}
-        handleStyle={styles.handle}
-      >
-        <View style={styles.container}>
-          <View style={styles.iconWrapper}>
-            <CheckCircle size={38} color="#10b981" />
-          </View>
+      <>
+        {/* Main Payment Modal */}
+        <Modalize
+          ref={ref}
+          adjustToContentHeight
+          modalStyle={styles.modal}
+          handleStyle={styles.handle}
+        >
+          <View style={styles.container}>
+            <View style={styles.iconWrapper}>
+              <CheckCircle size={38} color="#10b981" />
+            </View>
 
-          <Text style={styles.title}>Confirm Payment</Text>
-          <Text style={styles.subtitle}>
-            Please choose your payment method to complete your purchase.
-          </Text>
-
-          {/* Payment method selection */}
-          <View style={styles.methodList}>
-            {paymentMethods.map((method) => (
-              <TouchableOpacity
-                key={method.id}
-                style={[
-                  styles.methodRow,
-                  selectedMethod === method.id && styles.methodRowSelected,
-                ]}
-                onPress={() => setSelectedMethod(method.id)}
-              >
-                <Text
-                  style={[
-                    styles.methodText,
-                    selectedMethod === method.id && styles.methodTextSelected,
-                  ]}
-                >
-                  {method.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.confirmButton,
-              !selectedMethod && { opacity: 0.5 },
-            ]}
-            disabled={!selectedMethod}
-            onPress={handleConfirmPayment}
-          >
-            <Text style={styles.confirmText}>
-              {selectedMethod ? "Pay Now" : "Select a Method"}
+            <Text style={styles.title}>Confirm Payment</Text>
+            <Text style={styles.subtitle}>
+              Please choose your payment method to complete your purchase.
             </Text>
-          </TouchableOpacity>
-        </View>
-      </Modalize>
+
+            {/* Payment method selection */}
+            <View style={styles.methodList}>
+              {paymentMethods.map((method) => (
+                <TouchableOpacity
+                  key={method.id}
+                  style={[
+                    styles.methodRow,
+                    selectedMethod === method.id && styles.methodRowSelected,
+                  ]}
+                  onPress={() => setSelectedMethod(method.id)}
+                >
+                  <Text
+                    style={[
+                      styles.methodText,
+                      selectedMethod === method.id && styles.methodTextSelected,
+                    ]}
+                  >
+                    {method.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={[
+                styles.confirmButton,
+                !selectedMethod && { opacity: 0.5 },
+              ]}
+              disabled={!selectedMethod}
+              onPress={handleConfirmPayment}
+            >
+              <Text style={styles.confirmText}>
+                {selectedMethod ? "Pay Now" : "Select a Method"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Modalize>
+
+        {/* Success/Fail Selection Popup */}
+        <Modal transparent visible={popupVisible} animationType="fade">
+          <View style={styles.popupOverlay}>
+            <View style={styles.popupBox}>
+
+              <Text style={styles.popupTitle}>Select Result</Text>
+              <Text style={styles.popupMessage}>
+                Choose payment result for testing flow.
+              </Text>
+
+              <TouchableOpacity
+                style={[styles.resultButton, { backgroundColor: "#10b981" }]}
+                onPress={() => handlePaymentResult("success")}
+              >
+                <Text style={styles.resultText}>Success</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.resultButton, { backgroundColor: "#ef4444" }]}
+                onPress={() => handlePaymentResult("failed")}
+              >
+                <Text style={styles.resultText}>Failure</Text>
+              </TouchableOpacity>
+
+            </View>
+          </View>
+        </Modal>
+      </>
     );
   }
 );
@@ -152,5 +201,46 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  // Popup Styles
+  popupOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  popupBox: {
+    backgroundColor: "#fff",
+    width: "75%",
+    paddingVertical: 25,
+    paddingHorizontal: 20,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  popupTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111827",
+  },
+  popupMessage: {
+    fontSize: 14,
+    color: "#6b7280",
+    textAlign: "center",
+    marginTop: 5,
+    marginBottom: 15,
+  },
+
+  resultButton: {
+    width: "100%",
+    paddingVertical: 12,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  resultText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+    textAlign: "center",
   },
 });

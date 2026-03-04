@@ -1,30 +1,10 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // Already imported
+import React from 'react';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-const DressCard = ({ product, onPress }) => {
+const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) => {
   const imageUrl = product?.images?.[0]?.url;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
   return (
     <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
       <View style={styles.shadowWrapper}>
@@ -62,17 +42,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    // elevation: 3,
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-  },  shadowWrapper: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+  },
+
+  shadowWrapper: {
+    // shadowColor: '#000',
+    // shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6,
+    // elevation: 6,
     borderRadius: 15,
     marginBottom: 10,
   },
@@ -145,12 +127,12 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function Card({ product }) {
+export default function Card({ product }: { product: any }) {
   const router = useRouter();
 
   const handlePress = () => {
     router.push({
-      pathname: '(stack)/ProductDetail/productdetailpage',
+      pathname: '/ProductDetail/productdetailpage' as any,
       params: {
         id: product?._id,
         variantId: product?.variantId,
