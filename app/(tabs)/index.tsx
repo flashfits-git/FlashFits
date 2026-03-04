@@ -126,7 +126,7 @@ export default function Home() {
         getPreviouslyViewed(),
         SecureStore.getItemAsync('selectedAddress'),
       ]);
-      console.log(viewed, 'viewsss');
+      // console.log(viewed, 'viewsss');
 
       setNewArrivalsProducts(products || []);
       setRecentlyViewed(viewed || []);
