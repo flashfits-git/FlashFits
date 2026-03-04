@@ -77,20 +77,20 @@ const ShopGridHome: React.FC<ShopGridHomeProps> = ({ merchants }) => {
     );
 };
 
-const CARD_SIZE = 110;
+const CARD_SIZE = 90;
 
 const styles = StyleSheet.create({
     container: {
         marginTop: 8,
     },
     horizontalListContent: {
-        paddingLeft: 16,
+        // paddingLeft: 16,
         paddingRight: 8,
         paddingBottom: 16,
     },
     card: {
         width: CARD_SIZE,
-        marginRight: 16,
+        marginRight: 10,
         alignItems: 'center',
     },
     imageContainer: {

@@ -7,9 +7,11 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { AddressProvider } from './AddressContext';
 import { CartProvider } from './ContextParent';
 import { GenderProvider } from './GenderContext';
+import { WishlistProvider } from './WishlistContext';
 import './global.css';
 
 // Keep the splash screen visible while we fetch resources
@@ -50,15 +52,19 @@ export default function RootLayout() {
       <CartProvider>
         <AddressProvider>
           <GenderProvider>
-            <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-              <StatusBar style="dark" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: '#FFFFFF' }
-                }}
-              />
-            </View>
+            <WishlistProvider>
+              <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+                <StatusBar style="dark" />
+                <ErrorBoundary>
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: '#FFFFFF' }
+                    }}
+                  />
+                </ErrorBoundary>
+              </View>
+            </WishlistProvider>
           </GenderProvider>
         </AddressProvider>
       </CartProvider>

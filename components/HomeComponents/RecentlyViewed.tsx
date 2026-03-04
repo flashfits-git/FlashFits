@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { memo, useRef } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
@@ -10,10 +11,18 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useWishlist } from '../../app/WishlistContext';
 
 const { width } = Dimensions.get('window');
 
 const DressCard = memo(({ product, onPress }: { product: any; onPress: () => void }) => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const [wishlistLoading, setWishlistLoading] = React.useState(false);
+
+  const variantId = Array.isArray(product.variants)
+    ? product.variants[0]?._id
+    : product.variants?._id || product.variantId;
+
   const imageUrl =
     product?.images?.[0]?.url ||
     product?.variants?.[0]?.images?.[0]?.url ||
@@ -30,6 +39,20 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
     product?.variants?.[0]?.mrp ||
     product?.variants?.mrp;
 
+  const handleWishlistToggle = async () => {
+    if (wishlistLoading || !variantId) return;
+    setWishlistLoading(true);
+    try {
+      await toggleWishlist(product._id || product.id, String(variantId));
+    } catch (err) {
+      console.log('Wishlist toggle error:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
+
+  const isLiked = variantId ? isInWishlist(variantId) : false;
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.9}>
       <View style={styles.imageContainer}>
@@ -42,8 +65,20 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
         <View style={styles.bestsellerBadge}>
           <Text style={styles.bestsellerText}>Bestseller</Text>
         </View>
-        <TouchableOpacity style={styles.wishlistButton}>
-          <Ionicons name="heart-outline" size={18} color="#fff" />
+        <TouchableOpacity
+          style={styles.wishlistButton}
+          onPress={handleWishlistToggle}
+          disabled={wishlistLoading}
+        >
+          {wishlistLoading ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isLiked ? '#FF4444' : '#fff'}
+            />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -63,15 +98,12 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
         <View style={styles.priceContainer}>
           <Text style={styles.price}>₹{price}</Text>
           <Text style={styles.oldPrice}>₹{mrp}</Text>
-          {/* <View style={styles.addButton}>
-            <Text style={styles.addText}>ADD</Text>
-            <Ionicons name="add" size={14} color="#02b075" />
-          </View> */}
         </View>
       </View>
     </TouchableOpacity>
   );
 });
+
 
 const RecentlyViewed = ({ product = [], accecories = [], deataiPageproducts = [] }: any) => {
   const scrollRef = useRef<ScrollView>(null);

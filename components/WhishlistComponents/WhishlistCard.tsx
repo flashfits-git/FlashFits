@@ -1,6 +1,8 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
@@ -8,40 +10,90 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useWishlist } from '../../app/WishlistContext';
 
-// Card UI Component
+// Card UI Component — matches SelectionPage Card design
 const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const [wishlistLoading, setWishlistLoading] = React.useState(false);
+
   const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
+  const variantId = variant?._id || product.variantId;
   const imageUrl = variant?.images?.[0]?.url;
+  const price = variant?.price || 0;
+  const mrp = variant?.mrp || 0;
+  const discount = variant?.discount || (mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0);
+
+  const isLiked = variantId ? isInWishlist(variantId) : true; // Default true since it's the wishlist page
+
+  const handleWishlistToggle = async () => {
+    if (wishlistLoading || !variantId) return;
+    setWishlistLoading(true);
+    try {
+      await toggleWishlist(product._id || product.id, String(variantId));
+    } catch (err) {
+      console.log('Wishlist toggle error:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress}>
-      <View>
+    <TouchableOpacity style={styles.cardContainer} onPress={onPress}>
+      <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+          {imageUrl ? (
+            <Image source={{ uri: imageUrl }} style={styles.image} />
+          ) : (
+            <View style={[styles.image, styles.noImage]}>
+              <Text style={styles.noImageText}>No Image</Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            style={styles.wishlistButton}
+            onPress={handleWishlistToggle}
+            disabled={wishlistLoading}
+          >
+            {wishlistLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={18}
+                color={isLiked ? '#FF4444' : '#fff'}
+              />
+            )}
+          </TouchableOpacity>
+
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
+            <Text style={styles.ratingText}>⭐ {product.ratings || '4.5'}</Text>
           </View>
         </View>
       </View>
 
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>
-          {product.name}
+          {product?.name || 'Unnamed Product'}
         </Text>
-        <Text style={styles.deliveryText}>13 mins</Text>
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{variant?.price || '0'}</Text>
-        <Text style={styles.oldPrice}>₹{variant?.mrp || '0'}</Text>
+        <Text style={styles.price}>₹{price}</Text>
+        {mrp > price ? (
+          <Text style={styles.oldPrice}>₹{mrp}</Text>
+        ) : null}
+        {discount > 0 && (
+          <Text style={styles.discount}>{discount}% off</Text>
+        )}
       </View>
     </TouchableOpacity>
   );
 };
 
+
 // Wrapper Component with navigation
-export default function WishlistCard({ product = [] }) {
+export default function WishlistCard({ product = [] }: { product?: any[] }) {
   const router = useRouter();
 
   return (
@@ -50,6 +102,7 @@ export default function WishlistCard({ product = [] }) {
         data={product}
         keyExtractor={(item, index) => item._id || item.id || index.toString()}
         numColumns={2}
+        columnWrapperStyle={styles.row}
         renderItem={({ item }) => (
           <DressCard
             product={item}
@@ -61,40 +114,66 @@ export default function WishlistCard({ product = [] }) {
                   variantId: Array.isArray(item.variants)
                     ? item.variants[0]?._id
                     : item.variants?._id,
-                }
+                },
               })
             }
           />
         )}
-        contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 10 }}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
     </View>
   );
 }
 
-// Styles
+// Styles — matching SelectionPage Card
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    margin: 10
+    paddingHorizontal: 12,
+    paddingTop: 8,
   },
-  card: {
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  listContent: {
+    paddingBottom: 20,
+  },
+  cardContainer: {
     width: '48%',
-    marginBottom: 12,
-    marginHorizontal: '1%',
     backgroundColor: '#fff',
     borderRadius: 10,
     overflow: 'hidden',
   },
+  shadowWrapper: {
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    borderRadius: 15,
+    marginBottom: 10,
+  },
   imageWrapper: {
     position: 'relative',
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   image: {
-    height: 210,
     width: '100%',
+    height: 200,
     resizeMode: 'cover',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+  },
+  noImage: {
+    backgroundColor: '#F2F2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noImageText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    fontFamily: 'Manrope',
   },
   ratingContainer: {
     position: 'absolute',
@@ -107,47 +186,63 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     elevation: 2,
+    opacity: 0.8,
   },
   ratingText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#000',
+    fontFamily: 'Manrope-Bold',
+  },
+  wishlistButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 6,
+    borderRadius: 20,
+    zIndex: 10,
   },
   titleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    marginTop: 6,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingTop: 8,
   },
   title: {
     fontSize: 13,
     fontWeight: '500',
     color: '#333',
-    fontFamily: 'Montserrat',
     flex: 1,
-    marginRight: 6,
-  },
-  deliveryText: {
-    fontSize: 11,
-    color: '#888',
-    marginTop: 2,
+    fontFamily: 'Manrope-Medium',
   },
   priceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    paddingHorizontal: 10,
+    paddingBottom: 10,
+    paddingTop: 4,
   },
   price: {
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope-Bold',
   },
   oldPrice: {
     fontSize: 12,
-    color: '#777',
+    color: '#999',
     textDecorationLine: 'line-through',
+    marginLeft: 8,
+    fontFamily: 'Manrope',
+  },
+  discount: {
+    fontSize: 11,
+    color: '#ff6666',
     marginLeft: 6,
-    fontFamily: 'Montserrat',
+    fontWeight: '600',
+    fontFamily: 'Manrope-SemiBold',
   },
 });
+

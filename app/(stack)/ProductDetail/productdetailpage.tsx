@@ -1,27 +1,31 @@
-import React, { useRef, useState, useEffect } from 'react';
-import {
-  View, Text, Image, StyleSheet, TouchableOpacity, Animated,
-  Dimensions, FlatList, ScrollView, ActivityIndicator
-} from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Colors from '@/assets/theme/Colors';
-import { Alert } from 'react-native';
+import Loader from '@/components/Loader/Loader';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions, FlatList,
+  Image, StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
 import { Modalize } from 'react-native-modalize';
-import { productDetailPage, addToWishlist, removeFromWishlist } from '../../api/productApis/products';
-import * as SecureStore from 'expo-secure-store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import vrvv from '../../../assets/images/4.jpg';
 import YouMayLike from '../../../components/DetailPageComponents/YouMayLike';
-import Loader from '@/components/Loader/Loader';
-import { addToPreviouslyViewed } from '../../utilities/localStorageRecentlyViewd'
 import PopupCart from '../../../components/HomeComponents/PopupCart';
-import { useRoute } from '@react-navigation/native';
+import { getMerchantById } from '../../api/merchatApis/getMerchantHome';
 import { AddProducttoCart, clearCart, GetCart } from '../../api/productApis/cartProduct';
-import { getMerchantById } from '../../api/merchatApis/getMerchantHome'
-import ErrorMessage from '../../utilities/errorHandlingPopUp'
+import { productDetailPage } from '../../api/productApis/products';
 import { useCart } from '../../ContextParent';
-import { useNavigation } from '@react-navigation/native';
+import ErrorMessage from '../../utilities/errorHandlingPopUp';
+import { addToPreviouslyViewed } from '../../utilities/localStorageRecentlyViewd';
+import { useWishlist } from '../../WishlistContext';
 
 
 const AnimatedIonicons = Animated.createAnimatedComponent(Ionicons);
@@ -38,18 +42,15 @@ const ProductDetailPage = () => {
   const { cartItems, setCartItems, cartCount, setCartCount } = useCart();
   const insets = useSafeAreaInsets();
 
-  const [products, setProduct] = useState({});
-  // const [youMayLikeProducts, setYouMayLikeProducts] = useState([]);
-  const [merchantData, setMerchantData] = useState({});
+  const [products, setProduct] = useState<any>({});
+  const [merchantData, setMerchantData] = useState<any>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [wishlistItemId, setWishlistItemId] = useState(null);
-
-  const [selectedSize, setSelectedSize] = useState(null);
-  const [selectedColor, setSelectedColor] = useState(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [isSlideDisabled, setIsSlideDisabled] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -57,29 +58,21 @@ const ProductDetailPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [buttonLoading, setButtonLoading] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
-  const errorTimeoutRef = useRef(null);
-  const navigation = useNavigation();
+  const errorTimeoutRef = useRef<any>(null);
+  const navigation = useNavigation<any>();
 
   const router = useRouter();
-  const route = useRoute();
+  const route = useRoute<any>();
 
   const { id, variantId } = route.params || {};
 
-  // console.log(products,'ed389e93e93e8');
-  // const merchantId = products?.merchantId?._id;
-  // const subSubCategoryId = products?.subSubCategoryId?._id;
-
-  // console.log(products, 'iuef98yef98efwef8u9');
-
-
-  const modalizeRef = useRef(null);
+  const modalizeRef = useRef<Modalize>(null);
   const scrollY = useRef(new Animated.Value(0)).current;
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const toastTranslateY = useRef(new Animated.Value(30)).current;
 
-  const showError = (message) => {
+  const showError = (message: string) => {
     setErrorMessage(message);
-    // Auto-hide after 3 seconds
     if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
     errorTimeoutRef.current = setTimeout(() => {
       setErrorMessage('');
@@ -92,32 +85,20 @@ const ProductDetailPage = () => {
         setLoading(true);
         setError(null);
 
-        // 1. Fetch Product Details
         const data = await productDetailPage(id);
         setProduct(data);
 
-        // Extract IDs
         const merchantId = data?.merchantId?._id;
-        const subSubCategoryId = data?.subSubCategoryId?._id;
 
-        // 2. Fetch "You May Like" Products
-        // if (merchantId && subSubCategoryId) {
-        // const similarProducts = await getYouMayLikeProducts(merchantId, subSubCategoryId);
-        // setYouMayLikeProducts(similarProducts);
-        // console.log(youMayLikeProducts.length,'youMayLikeProductsyouMayLikeProducts');
-
-
-        // 3. Handle default variant selection
         if (data?.variants?.length > 0) {
-          const firstVariant = data.variants.find(x => x._id === variantId);
+          const firstVariant = data.variants.find((x: any) => x._id === variantId) || data.variants[0];
           if (firstVariant) {
             setSelectedColor(firstVariant.color.name);
-            const availableSize = firstVariant.sizes.find(s => s.stock > 0);
+            const availableSize = firstVariant.sizes.find((s: any) => s.stock > 0);
             if (availableSize) setSelectedSize(availableSize.size);
           }
         }
 
-        // 4. Fetch Merchant Details
         if (merchantId) {
           const merchantInfo = await getMerchantById(merchantId);
           setMerchantData(merchantInfo);
@@ -134,17 +115,16 @@ const ProductDetailPage = () => {
     if (id) fetchData();
   }, [id, variantId]);
 
-
-  useEffect(() => {
-    setIsSlideDisabled(!selectedSize || selectedStock === 0);
-  }, [selectedSize, selectedColor]);
-
   const selectedVariant = products?.variants?.find(
-    (variant) => variant.color.name === selectedColor
+    (variant: any) => variant.color.name === selectedColor
   ) || products?.variants?.[0];
 
+  const selectedStock = selectedVariant?.sizes?.find(
+    (s: any) => s.size === selectedSize
+  )?.stock || 0;
+
   useEffect(() => {
-    if (products && selectedVariant) {
+    if (products?._id && selectedVariant) {
       addToPreviouslyViewed({
         id: products._id,
         rating: products.ratings,
@@ -154,52 +134,22 @@ const ProductDetailPage = () => {
     }
   }, [products, selectedVariant]);
 
-useEffect(() => {
-  const checkWishlistStatus = async () => {
-    if (!selectedVariant?._id) return;
-
-    try {
-      const stored = await SecureStore.getItemAsync('Wishlist');
-      const wishlistMap = stored ? JSON.parse(stored) : {};
-
-      const variantId = String(selectedVariant._id);
-      const wishlistId = wishlistMap[variantId] || null;
-
-      setIsWishlisted(!!wishlistId);
-      setWishlistItemId(wishlistId);
-    } catch (err) {
-      console.log('Wishlist SecureStore read error:', err);
-    }
-  };
-
-  checkWishlistStatus();
-}, [selectedVariant?._id]);
-
+  useEffect(() => {
+    setIsSlideDisabled(!selectedSize || selectedStock === 0);
+  }, [selectedSize, selectedVariant, selectedStock]);
 
   useEffect(() => {
     const listener = scrollY.addListener(({ value }) => {
-      const color = value < 150 ? '#fff' : '#000'; // Simplified threshold
+      const color = value < 150 ? '#fff' : '#000';
       setInterpolatedColor(color);
     });
 
     return () => scrollY.removeListener(listener);
-  }, []);
-
-  useEffect(() => {
-    if (products && products._id) {
-      setIsWishlisted(products.isWishlisted || false);
-      setWishlistItemId(products.wishlistItemId || null);
-    }
-  }, [products]);
-  
-
-  const selectedStock = selectedVariant?.sizes?.find(
-    (s) => s.size === selectedSize
-  )?.stock || 0;
+  }, [scrollY]);
 
   const productImages = React.useMemo(() => {
     if (selectedVariant?.images?.length > 0) {
-      return selectedVariant.images.map(img => ({ uri: img.url }));
+      return selectedVariant.images.map((img: any) => ({ uri: img.url }));
     }
     return fallbackImages;
   }, [selectedVariant]);
@@ -224,6 +174,7 @@ useEffect(() => {
     outputRange: ['#fff', '#000'],
     extrapolate: 'clamp',
   });
+
   const showAddToCartToast = () => {
     setShowToast(true);
     Animated.parallel([
@@ -239,74 +190,24 @@ useEffect(() => {
     });
   };
 
+  const handleAddToWishlist = async () => {
+    if (wishlistLoading) return;
+    if (!selectedVariant?._id || !products?._id) return;
 
-  //  console.log(selectedVariant?.images?.[0]?.url, 'url' );
-
-const handleAddToWishlist = async () => {
-  if (wishlistLoading) return;
-  if (!selectedVariant?._id) return;
-
-  setWishlistLoading(true);
-
-  try {
-    const stored = await SecureStore.getItemAsync('Wishlist');
-    const wishlistMap = stored ? JSON.parse(stored) : {};
-
-    const variantId = String(selectedVariant._id);
-
-    if (!isWishlisted) {
-      // ➕ ADD TO WISHLIST
-      const res = await addToWishlist(products._id, variantId);
-      const newWishlistId = res?.data?._id;
-
-      if (newWishlistId) {
-        const updatedMap = {
-          ...wishlistMap,
-          [variantId]: newWishlistId,
-        };
-
-        await SecureStore.setItemAsync(
-          'Wishlist',
-          JSON.stringify(updatedMap)
-        );
-
-        setIsWishlisted(true);
-        setWishlistItemId(newWishlistId);
-      }
-
-    } else {
-      // ➖ REMOVE FROM WISHLIST
-      const wishlistId = wishlistMap[variantId];
-
-      if (wishlistId) {
-        // 1️⃣ Update local storage first
-        const updatedMap = { ...wishlistMap };
-        delete updatedMap[variantId];
-
-        await SecureStore.setItemAsync(
-          'Wishlist',
-          JSON.stringify(updatedMap)
-        );
-
-        // 2️⃣ Call API
-        await removeFromWishlist(wishlistId);
-      }
-
-      setIsWishlisted(false);
-      setWishlistItemId(null);
+    setWishlistLoading(true);
+    try {
+      await toggleWishlist(products._id, String(selectedVariant._id));
+    } catch (err) {
+      console.log('Wishlist error:', err);
+    } finally {
+      setWishlistLoading(false);
     }
-  } catch (err) {
-    console.log('Wishlist error:', err);
-  } finally {
-    setWishlistLoading(false);
-  }
-};
-
+  };
 
   const handleAddToCart = async () => {
     if (buttonLoading) return;
     setButtonLoading(true);
-    const currentStock = selectedVariant?.sizes?.find(s => s.size === selectedSize)?.stock || 0
+    const currentStock = selectedVariant?.sizes?.find((s: any) => s.size === selectedSize)?.stock || 0;
 
     const productData = {
       productId: products._id,
@@ -319,14 +220,14 @@ const handleAddToWishlist = async () => {
         public_id: selectedVariant?.images?.[0]?.public_id,
         url: selectedVariant?.images?.[0]?.url,
       },
-      stockQuantity: currentStock, // ✅ Include actual stock available
+      stockQuantity: currentStock,
     };
 
     try {
       const latestCart = await GetCart();
       const cartItemsSafe = latestCart.items || [];
       const existingItem = cartItemsSafe.find(
-        item =>
+        (item: any) =>
           item.productId === productData.productId &&
           item.variantId === productData.variantId &&
           item.size === productData.size
@@ -341,8 +242,7 @@ const handleAddToWishlist = async () => {
         return;
       }
 
-      const cartMerchant =
-        cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
+      const cartMerchant = cartItemsSafe[0]?.merchantId?._id || cartItemsSafe[0]?.merchantId;
       if (
         cartItemsSafe.length > 0 &&
         cartMerchant &&
@@ -378,24 +278,22 @@ const handleAddToWishlist = async () => {
       }
 
       await AddProducttoCart(productData);
-      setCartItems(prev => [...prev, productData]);
-      setCartCount(count => count + 1);
+      setCartItems([...cartItems, productData]);
+      setCartCount(cartCount + 1);
       showAddToCartToast();
       setQuantity(1);
-    } catch (error) {
-      const backendMsg =
-        error?.response?.data?.message || 'Failed to add to cart. Please try again.';
+    } catch (error: any) {
+      const backendMsg = error?.response?.data?.message || 'Failed to add to cart. Please try again.';
       showError(backendMsg);
     } finally {
       setTimeout(() => {
         modalizeRef.current?.close();
       }, 0);
+      setButtonLoading(false);
     }
   };
 
-
   if (loading) return <Loader />;
-
 
   if (error || !products || Object.keys(products).length === 0) {
     return (
@@ -417,12 +315,10 @@ const handleAddToWishlist = async () => {
             { backgroundColor: headerBackgroundColor, paddingTop: insets.top }
           ]}
         >
-          {/* Left: Back Button */}
           <TouchableOpacity style={styles.iconButton} onPress={() => router.back()}>
             <Ionicons name="chevron-back" size={24} color={interpolatedColor} />
           </TouchableOpacity>
 
-          {/* Center: Merchant Name */}
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => {
@@ -437,8 +333,6 @@ const handleAddToWishlist = async () => {
             </Animated.Text>
           </TouchableOpacity>
 
-
-          {/* Right: Bag Icon */}
           <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/(stack)/ShoppingBag')}>
             <View style={styles.iconWithBadge}>
               <Ionicons name="bag-handle-outline" size={24} color={interpolatedColor} />
@@ -450,7 +344,6 @@ const handleAddToWishlist = async () => {
             </View>
           </TouchableOpacity>
         </Animated.View>
-
 
         {errorMessage !== '' && (
           <ErrorMessage message={errorMessage} />
@@ -490,9 +383,9 @@ const handleAddToWishlist = async () => {
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <Ionicons
-                  name={isWishlisted ? 'heart' : 'heart-outline'}
+                  name={isInWishlist(selectedVariant?._id) ? 'heart' : 'heart-outline'}
                   size={20}
-                  color={isWishlisted ? 'red' : '#fff'}
+                  color={isInWishlist(selectedVariant?._id) ? 'red' : '#fff'}
                 />
               )}
             </TouchableOpacity>
@@ -516,7 +409,6 @@ const handleAddToWishlist = async () => {
                   {selectedVariant?.mrp && selectedVariant.mrp > selectedVariant.price && (
                     <Text style={styles.strike}>₹{selectedVariant.mrp}</Text>
                   )}
-                  {/* <Text style={styles.optionLabel}>{selectedColor}</Text> */}
                 </Text>
 
                 <View style={styles.ratingContainer}>
@@ -526,12 +418,12 @@ const handleAddToWishlist = async () => {
                 {products?.variants?.length > 1 && (
                   <View>
                     <View style={styles.colorRow}>
-                      {products.variants.map((variant, idx) => {
+                      {products.variants.map((variant: any, idx: number) => {
                         const colorName = variant.color.name;
                         const colorHex =
                           variant.color.hex ||
-                          Colors[colorName] || // Use mapping from your theme file
-                          '#cacacaff';         // Default fallback
+                          (Colors as any)[colorName] ||
+                          '#cacacaff';
                         const isSelected = selectedColor === colorName;
 
                         return (
@@ -568,10 +460,10 @@ const handleAddToWishlist = async () => {
                 <TouchableOpacity
                   style={[
                     styles.circleButton,
-                    quantity === 1 && { opacity: 0.4 }, // Visual feedback
+                    quantity === 1 && { opacity: 0.4 },
                   ]}
                   onPress={() => setQuantity(prev => Math.max(1, prev - 1))}
-                  disabled={quantity === 1} // ✅ Disable when quantity is 1
+                  disabled={quantity === 1}
                 >
                   <Text style={styles.buttonText}>−</Text>
                 </TouchableOpacity>
@@ -579,10 +471,10 @@ const handleAddToWishlist = async () => {
                 <TouchableOpacity
                   style={[
                     styles.circleButton,
-                    quantity >= selectedStock && { opacity: 0.4 }, // Visual feedback
+                    quantity >= selectedStock && { opacity: 0.4 },
                   ]}
                   onPress={() => setQuantity(prev => Math.min(selectedStock, prev + 1))}
-                  disabled={quantity >= selectedStock} // ✅ Disable when at stock limit
+                  disabled={quantity >= selectedStock}
                 >
                   <Text style={styles.buttonText}>+</Text>
                 </TouchableOpacity>
@@ -593,7 +485,7 @@ const handleAddToWishlist = async () => {
               <View style={styles.featuresContainer}>
                 <Text style={styles.optionLabel}>Features:</Text>
                 {Object.entries(products.features).map(([key, value]) => (
-                  <Text key={key} style={styles.featureText}>• {key}: {value}</Text>
+                  <Text key={key} style={styles.featureText}>• {key}: {String(value)}</Text>
                 ))}
               </View>
             )}
@@ -630,7 +522,7 @@ const handleAddToWishlist = async () => {
         <View style={styles.modalContent}>
           <Text style={styles.sectionTitle}>Select Size</Text>
           <View style={styles.sizeRow}>
-            {selectedVariant?.sizes?.map((s) => (
+            {selectedVariant?.sizes?.map((s: any) => (
               <TouchableOpacity
                 key={s._id}
                 style={[styles.sizeOption, {
@@ -642,7 +534,7 @@ const handleAddToWishlist = async () => {
                 onPress={() => {
                   if (s.stock > 0) {
                     setSelectedSize(s.size);
-                    setQuantity(1); // ✅ Reset quantity when size changes
+                    setQuantity(1);
                   }
                 }}
               >
@@ -681,7 +573,6 @@ const handleAddToWishlist = async () => {
             )}
           </TouchableOpacity>
         </View>
-
       </Modalize>
 
       {showToast && (
@@ -844,7 +735,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
 
-  errorText: {
+  errorTextContent: {
     color: '#b00020',
     fontSize: 14,
     textAlign: 'center',

@@ -24,6 +24,7 @@ import {
   View,
 } from 'react-native';
 import Colors from '../../assets/theme/Colors';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import SearchCartProfileButton from '../../components/FlexibleComponents/SearchCartProfileButton';
 import Footer from '../../components/Footer';
 import AnimatedSearchBar from '../../components/HomeComponents/AnimatedSearchBar';
@@ -52,6 +53,7 @@ export default function Home() {
   const [isActive, setIsActive] = useState(true)
   const [refreshing, setRefreshing] = useState(false);
   const [isServiceable, setIsServiceable] = useState<boolean | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   // ------------------- HEADER ANIMATION -------------------
   const headerAnim = useRef(new Animated.Value(0)).current; // 0 = expanded, 1 = collapsed
@@ -140,6 +142,7 @@ export default function Home() {
       setLoading(false);
     } catch (error) {
       console.error('Error loading initial data:', error);
+      setHasError(true);
       setLoading(false);
     }
   }, []);
@@ -231,8 +234,38 @@ export default function Home() {
 
   if (loading) return <Loader />;
 
+  if (hasError) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center', padding: 32 }]}>
+        <View style={{ alignItems: 'center' }}>
+          <View style={{
+            width: 80, height: 80, borderRadius: 40,
+            backgroundColor: '#F2F2F2', justifyContent: 'center', alignItems: 'center', marginBottom: 24,
+          }}>
+            <Ionicons name="cloud-offline-outline" size={36} color="#8E8E93" />
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: '700', color: '#0F0F0F', fontFamily: 'Manrope-Bold', marginBottom: 8 }}>
+            Unable to load
+          </Text>
+          <Text style={{ fontSize: 14, color: '#8E8E93', fontFamily: 'Manrope', textAlign: 'center', marginBottom: 24, lineHeight: 20 }}>
+            Please check your connection and try again.
+          </Text>
+          <TouchableOpacity
+            style={{ backgroundColor: '#0F0F0F', paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 }}
+            onPress={() => {
+              setHasError(false);
+              loadInitialData();
+            }}
+          >
+            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700', fontFamily: 'Manrope-Bold' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <>
+    <ErrorBoundary>
       <View style={styles.container}>
         {/* COLLAPSIBLE LOCATION HEADER */}
         <Animated.View
@@ -322,7 +355,7 @@ export default function Home() {
 
         <Footer />
       </View>
-    </>
+    </ErrorBoundary>
   );
 }
 

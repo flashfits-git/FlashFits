@@ -1,15 +1,53 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useWishlist } from '../../app/WishlistContext';
+
 
 const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) => {
+  const { toggleWishlist, isInWishlist } = useWishlist();
+  const [wishlistLoading, setWishlistLoading] = React.useState(false);
+
+  const variantId = product?.variantId || (Array.isArray(product?.variants) ? product.variants[0]?._id : product?.variants?._id);
   const imageUrl = product?.images?.[0]?.url;
+
+  const isLiked = variantId ? isInWishlist(variantId) : false;
+
+  const handleWishlistToggle = async () => {
+    if (wishlistLoading || !variantId) return;
+    setWishlistLoading(true);
+    try {
+      await toggleWishlist(product._id || product.id, String(variantId));
+    } catch (err) {
+      console.log('Wishlist toggle error:', err);
+    } finally {
+      setWishlistLoading(false);
+    }
+  };
 
   return (
     <TouchableOpacity style={[styles.cardContainer, styles.card]} onPress={onPress}>
       <View style={styles.shadowWrapper}>
         <View style={styles.imageWrapper}>
           <Image source={{ uri: imageUrl }} style={styles.image} />
+
+          <TouchableOpacity
+            style={styles.wishlistButton}
+            onPress={handleWishlistToggle}
+            disabled={wishlistLoading}
+          >
+            {wishlistLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons
+                name={isLiked ? 'heart' : 'heart-outline'}
+                size={18}
+                color={isLiked ? '#FF4444' : '#fff'}
+              />
+            )}
+          </TouchableOpacity>
+
           <View style={styles.ratingContainer}>
             <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
           </View>
@@ -32,6 +70,7 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
     </TouchableOpacity>
   );
 };
+
 
 const styles = StyleSheet.create({
   cardContainer: {
@@ -88,6 +127,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#000',
     fontFamily: 'Montserrat',
+  },
+  wishlistButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 6,
+    borderRadius: 20,
+    zIndex: 10,
   },
   titleRow: {
     flexDirection: 'row',
