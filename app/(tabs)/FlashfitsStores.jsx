@@ -151,13 +151,13 @@ export default function FlashfitsStores() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>Stores Near You</Text>
+        <Text style={styles.sectionTitle}>Brands Near You</Text>
         {/* <NearbyStores merchantData={merchants} productsByMerchant={productsByMerchant} /> */}
         <NearbyStores
           merchantData={filteredMerchants}
           productsByMerchant={productsByMerchant}
         />
-        <Text style={styles.sectionTitle}>Popular Stores</Text>
+        <Text style={styles.sectionTitle}>Popular Brands</Text>
 
         <PopularStores
           merchantData={filteredMerchants}
@@ -189,6 +189,10 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     marginBottom: 12,
     fontFamily: 'Montserrat',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1c1c1c',
+    letterSpacing: -0.2,
   },
   iconContainer: {
     marginLeft: 'auto',

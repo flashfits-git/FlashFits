@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
+import { phoneLogin } from "@/app/api/auth";
+import { AntDesign, MaterialCommunityIcons, } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
+  Animated,
+  Dimensions,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Animated,
   Vibration,
-  Dimensions,
+  View,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialCommunityIcons ,  } from "@expo/vector-icons";
-import { phoneLogin } from "@/app/api/auth";
-import { saveToken, saveUserId } from "@/app/utilities/secureStore";
+import { useAuth } from "../AuthContext";
 
 const { width } = Dimensions.get("window");
 
@@ -25,8 +25,9 @@ const OTPInput = () => {
   const [timer, setTimer] = useState(30);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const inputs = useRef([]);
+  const inputs = useRef<(TextInput | null)[]>([]);
   const navigation = useNavigation();
+  const { signIn } = useAuth();
 
   const { phone } = useLocalSearchParams();
 
@@ -107,7 +108,7 @@ const OTPInput = () => {
     ]).start();
   };
 
-  const animateBox = (index) => {
+  const animateBox = (index: number) => {
     // Simple scale-up and back-down animation
     Animated.sequence([
       Animated.timing(boxAnimations[index], {
@@ -124,7 +125,7 @@ const OTPInput = () => {
     ]).start();
   };
 
-  const handleChange = (text, index) => {
+  const handleChange = (text: string, index: number) => {
     if (error) setError(false);
 
     if (text.length > 1) {
@@ -153,13 +154,13 @@ const OTPInput = () => {
     }
   };
 
-  const handleKeyPress = (e, index) => {
+  const handleKeyPress = (e: any, index: number) => {
     if (e.nativeEvent.key === "Backspace" && otp[index] === "" && index > 0) {
       inputs.current[index - 1]?.focus();
     }
   };
 
-  const verifyOtp = async (otpCode) => {
+  const verifyOtp = async (otpCode?: string) => {
     try {
       setIsLoading(true);
 
@@ -196,12 +197,9 @@ const OTPInput = () => {
         useNativeDriver: true,
       }).start();
 
-      await saveToken("token", response.token);
-      await saveUserId("userId", response.userId);
+      await signIn(response.token, response.userId);
 
-      setTimeout(() => {
-        router.replace("/(tabs)");
-      }, 500);
+      // Routing is now handled by the signIn method in AuthContext
     } catch (error) {
       console.error("OTP verification failed:", error);
       setError(true);
@@ -328,7 +326,7 @@ const OTPInput = () => {
                   value={digit}
                   onChangeText={(text) => handleChange(text, index)}
                   onKeyPress={(e) => handleKeyPress(e, index)}
-                  ref={(ref) => (inputs.current[index] = ref)}
+                  ref={(ref) => { inputs.current[index] = ref; }}
                   editable={!isLoading}
                   selectTextOnFocus
                   selectionColor="#1A1A1A"

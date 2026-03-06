@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useCart } from '../../app/ContextParent';
 
-const KEYWORDS = ['Jeans', 'Shirts', 'Sneakers', 'Accessories', 'Dresses', 'Jackets'];
+const KEYWORDS = ['Jeans', 'Shirts', 'Sneakers', 'T-Shirts', 'Accessories', 'Jackets'];
 
 export default function AnimatedSearchBar() {
     const router = useRouter();
@@ -43,10 +43,11 @@ export default function AnimatedSearchBar() {
             >
                 <Ionicons name="search-outline" size={20} color="#8E8E93" style={styles.icon} />
                 <View style={styles.textContainer}>
-                    <Text style={styles.staticText}>Try your </Text>
+                    <Text style={styles.staticText}>Try </Text>
                     <Animated.Text style={[styles.animatedText, { opacity: fadeAnim }]}>
                         "{KEYWORDS[index]}"
                     </Animated.Text>
+                    <Text style={styles.staticText}>, at your Home ! </Text>
                 </View>
             </TouchableOpacity>
 

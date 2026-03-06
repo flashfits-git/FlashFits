@@ -1,7 +1,7 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 import Constants from "expo-constants";
-import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { DeviceEventEmitter } from 'react-native';
 
 const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL ||
     (Constants as any).manifest2?.extra?.expoConfig?.extra?.BACKEND_URL ||
@@ -29,13 +29,10 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response && error.response.status === 401) {
-            // Clear token and related data
-            await SecureStore.deleteItemAsync('token');
-            await SecureStore.deleteItemAsync('selectedAddress');
-            await SecureStore.setItemAsync("addressSelectedOnce", "false");
-
-            // Redirect to auth
-            router.replace('/(auth)' as any);
+            // Because we can't use React Context hooks here (outside of a component),
+            // we dispatch a custom event that _layout.tsx will listen to and trigger signOut()
+            // This ensures state is consistently cleared using the context.
+            DeviceEventEmitter.emit('auth_unauthorized');
         }
         return Promise.reject(error);
     }
