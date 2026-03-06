@@ -51,7 +51,6 @@ const CartBag = () => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
-  const [deliveryCharge, setDeliveryCharge] = useState(0);
   const { selectedAddress, setSelectedAddress, addresses, setAddresses } = useAddress();
 
   useEffect(() => {

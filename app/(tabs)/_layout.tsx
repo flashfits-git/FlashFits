@@ -223,21 +223,10 @@ export default function TabLayout() {
               return;
             }
 
-            // 🔴 OPEN MODAL (ONLY ONCE)
-            const modalShown = await SecureStore.getItemAsync(
-              ADDRESS_MODAL_SHOWN_KEY
-            );
-
-            if (!modalShown) {
-              setTimeout(() => {
-                addressModalRef.current?.open();
-              }, 300);
-
-              await SecureStore.setItemAsync(
-                ADDRESS_MODAL_SHOWN_KEY,
-                'true'
-              );
-            }
+            // 🔴 OPEN MODAL (MANDATORY)
+            setTimeout(() => {
+              addressModalRef.current?.open();
+            }, 300);
 
             setLoading(false);
             return;

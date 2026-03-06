@@ -75,7 +75,7 @@ export default function RootLayout() {
 // Secure Navigator Layer
 // --------------------------------------------
 function RootNavigator() {
-  const { isAuthenticated, isLoading, signOut } = useAuth();
+  const { isAuthenticated, isLoading, hasSeenOnboarding, signOut } = useAuth();
 
   useEffect(() => {
     // Listen for global auth expiration events (e.g. from axiosConfig interceptors)
@@ -103,7 +103,6 @@ function RootNavigator() {
 
   return (
     <Stack
-      key={isAuthenticated ? 'authenticated' : 'unauthenticated'}
       screenOptions={{
         headerShown: false,
         contentStyle: { backgroundColor: '#FFFFFF' },
@@ -116,6 +115,9 @@ function RootNavigator() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(profile)" options={{ headerShown: false }} />
           <Stack.Screen name="(stack)" options={{ headerShown: false }} />
+          {!hasSeenOnboarding && (
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          )}
         </>
       ) : (
         /* If not authenticated, load the auth stack */
