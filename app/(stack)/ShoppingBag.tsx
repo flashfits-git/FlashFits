@@ -36,9 +36,11 @@ const CartBag = () => {
   const addressRef = useRef(null);
   const [shouldAskAddress, setShouldAskAddress] = useState(false);
   const [addressModalOpenedOnce, setAddressModalOpenedOnce] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [address, setAddress] = useState(null);
-  const [scrollY, setScrollY] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [returnCharge, setReturnCharge] = useState(0);
+  const [totalDeliveryFee, setTotalDeliveryFee] = useState(0);
+  const [bagTotal, setBagTotal] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const { cartCount, setCartCount, cartItems, setCartItems } = useCart();
@@ -50,7 +52,7 @@ const CartBag = () => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const deliveryBarOpacity = useRef(new Animated.Value(0)).current;
   const [deliveryCharge, setDeliveryCharge] = useState(0);
-  const { selectedAddress,setSelectedAddress,addresses,setAddresses } = useAddress();
+  const { selectedAddress, setSelectedAddress, addresses, setAddresses } = useAddress();
 
   useEffect(() => {
     const checkFirstTime = async () => {
@@ -257,13 +259,20 @@ const CartBag = () => {
 
       const {
         razorpayOrderId,
-        amount,
+        amount, // This is now totalDeliveryFee * 100 on the backend
         key_id,
         orderId: internalOrderId,
         name,
         contact,
         email,
+        totalDeliveryFee: apiTotalFee,
+        deliveryCharge: apiDeliveryCharge,
+        returnCharge: apiReturnCharge
       } = orderResponse;
+
+      setTotalDeliveryFee(apiTotalFee || 0);
+      setDeliveryCharge(apiDeliveryCharge || 0);
+      setReturnCharge(apiReturnCharge || 0);
 
       // Step 2: Open Razorpay Checkout
       const options = {
@@ -788,27 +797,25 @@ const CartBag = () => {
                   <View>
                     {/* <Text style={styles.payUsingText}>Pay using</Text> */}
                     <Text style={styles.googlePayText}>
-                      Delivery Charge | ₹{Number(deliveryCharge).toFixed(2)}
+                      Upfront Delivery & Return Fee | ₹{Number(totalDeliveryFee || deliveryCharge).toFixed(2)}
                     </Text>
                     <Text style={styles.googlePayText1}>
-                      Return Charge will be deducted when you keep the Cart.
-                      {/* (₹{totalValue.toLocaleString()}) */}
+                      Includes ₹{Number(deliveryCharge).toFixed(2)} delivery + ₹{Number(returnCharge).toFixed(2)} return charge.
+                      {'\n'}Return charge will be deducted if you keep all items.
                     </Text>
-                    {/* <Text style={styles.googlePayText1}>
-                      We applies return charge deduction on keeping the cart.
-                    </Text> */}
                   </View>
                 </View>
+                <SlideToPay
+                  label="tryandbuy"
+                  onComplete={handlePaymentComplete}
+                  serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+                />
               </View>
             </View>
-            <SlideToPay
-              label="tryandbuy"
-              onComplete={handlePaymentComplete}
-              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
-            />
           </>
         )}
-      </View>
+
+      </View >
       <AddressSelectionModalize
         ref={addressRef}
         onSelectAddress={handleAddressChange}
@@ -905,7 +912,7 @@ const styles = StyleSheet.create({
   totalValueText: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'Montserrat' },
 
   // Coupon Section
-  // couponSection: { marginVertical: 12 },
+  // couponSection: {marginVertical: 12 },
   couponButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#cbfed7ff', padding: 16, borderRadius: 12, borderColor: '#FFE0B2' },
   couponLeft: { flexDirection: 'row', alignItems: 'center' },
   couponIcon: { fontSize: 24, marginRight: 12 },

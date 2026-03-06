@@ -5,8 +5,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 interface AuthContextType {
     isAuthenticated: boolean;
     isLoading: boolean;
-    signIn: (token: string, userId: string) => Promise<void>;
+    signIn: (token: string, userId: string, isNewUser?: boolean) => Promise<void>;
     signOut: () => Promise<void>;
+    completeOnboarding: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,15 +37,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loadToken();
     }, []);
 
-    const signIn = async (token: string, userId: string) => {
+    const signIn = async (token: string, userId: string, isNewUser?: boolean) => {
         try {
             await SecureStore.setItemAsync('token', token);
             await SecureStore.setItemAsync('userId', userId);
-            setIsAuthenticated(true);
-            router.replace('/(tabs)' as any);
+            if (isNewUser) {
+                // Don't set isAuthenticated yet — stay in (auth) group for onboarding
+                router.replace('/(auth)/onboarding' as any);
+            } else {
+                setIsAuthenticated(true);
+                router.replace('/(tabs)' as any);
+            }
         } catch (error) {
             console.error('Failed to save auth data', error);
         }
+    };
+
+    const completeOnboarding = () => {
+        // Now finalize auth — this remounts the Stack to show tabs
+        setIsAuthenticated(true);
+        router.replace('/(tabs)' as any);
     };
 
     const signOut = async () => {
@@ -64,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ isAuthenticated, isLoading, signIn, signOut }}>
+        <AuthContext.Provider value={{ isAuthenticated, isLoading, signIn, signOut, completeOnboarding }}>
             {children}
         </AuthContext.Provider>
     );
@@ -77,3 +89,4 @@ export const useAuth = () => {
     }
     return context;
 };
+

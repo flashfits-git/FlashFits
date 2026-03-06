@@ -111,65 +111,65 @@ const OrdersScreen = () => {
   };
 
   // Determine order-level return/payment status
-const getOrderReturnStatus = (order) => {
-  // 1. If delivery is not completed → show "In Progress"
-  if (order?.customerDeliveryStatus !== "completed") {
-    return "In Progress";
-  }
+  const getOrderReturnStatus = (order) => {
+    // 1. If delivery is not completed → show "In Progress"
+    if (order?.customerDeliveryStatus !== "completed") {
+      return "In Progress";
+    }
 
-  // 2. Now apply return logic only AFTER delivery
-  const items = order?.items || [];
-  if (items.length === 0) return "Paid";
+    // 2. Now apply return logic only AFTER delivery
+    const items = order?.items || [];
+    if (items.length === 0) return "Paid";
 
-  const total = items.length;
-  const returned = items.filter(i => i.tryStatus === "returned").length;
-  const accepted = items.filter(i => i.tryStatus === "accepted").length;
+    const total = items.length;
+    const returned = items.filter(i => i.tryStatus === "returned").length;
+    const accepted = items.filter(i => i.tryStatus === "accepted").length;
 
-  // All returned
-  if (returned === total) {
-    return "All Returned";
-  }
+    // All returned
+    if (returned === total) {
+      return "All Returned";
+    }
 
-  // All accepted
-  if (accepted === total) {
-    return "Paid";
-  }
+    // All accepted
+    if (accepted === total) {
+      return "Paid";
+    }
 
-  // Mixed
-  return "Partial Return";
-};
+    // Mixed
+    return "Partial Return";
+  };
 
-const getPaymentStatusBadge = (order) => {
-  const status = getOrderReturnStatus(order);
+  const getPaymentStatusBadge = (order) => {
+    const status = getOrderReturnStatus(order);
 
-  let color = "#4CAF50"; 
-  let bg = "#E8F5E9";
-  let icon = "checkmark-circle";
-  let label = status;
+    let color = "#4CAF50";
+    let bg = "#E8F5E9";
+    let icon = "checkmark-circle";
+    let label = status;
 
-  if (status === "All Returned") {
-    color = "#49f436ff";
-    bg = "#E8F5E9";
-    icon = "checkmark-circle";
-  }
-  else if (status === "Partial Return") {
-    color = "#FF9800";
-    bg = "#FFF3E0";
-    icon = "checkmark-circle";
-  }
-  else if (status === "In Progress") {
-    color = "#2196F3";
-    bg = "#E3F2FD";
-    icon = "time-outline";
-  }
+    if (status === "All Returned") {
+      color = "#49f436ff";
+      bg = "#E8F5E9";
+      icon = "checkmark-circle";
+    }
+    else if (status === "Partial Return") {
+      color = "#FF9800";
+      bg = "#FFF3E0";
+      icon = "checkmark-circle";
+    }
+    else if (status === "In Progress") {
+      color = "#2196F3";
+      bg = "#E3F2FD";
+      icon = "time-outline";
+    }
 
-  return (
-    <View style={[styles.paymentBadge, { backgroundColor: bg }]}>
-      <Ionicons name={icon} size={12} color={color} />
-      <Text style={[styles.paymentText, { color }]}>{label}</Text>
-    </View>
-  );
-};
+    return (
+      <View style={[styles.paymentBadge, { backgroundColor: bg }]}>
+        <Ionicons name={icon} size={12} color={color} />
+        <Text style={[styles.paymentText, { color }]}>{label}</Text>
+      </View>
+    );
+  };
 
 
   const renderEmptyState = () => (
@@ -314,6 +314,14 @@ const getPaymentStatusBadge = (order) => {
                       <Ionicons name="bicycle" size={14} color="#666" />
                       <Text style={styles.deliveryText}>
                         Delivery: ₹{order.deliveryCharge}
+                      </Text>
+                    </View>
+                  )}
+                  {order.returnCharge > 0 && (
+                    <View style={[styles.deliveryInfo, { marginTop: 4, paddingTop: 4, borderTopWidth: 0 }]}>
+                      <Ionicons name="refresh" size={14} color="#666" />
+                      <Text style={styles.deliveryText}>
+                        Return (Upfront): ₹{order.returnCharge}
                       </Text>
                     </View>
                   )}

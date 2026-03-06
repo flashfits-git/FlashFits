@@ -197,7 +197,7 @@ const OTPInput = () => {
         useNativeDriver: true,
       }).start();
 
-      await signIn(response.token, response.userId);
+      await signIn(response.token, response.userId, response.isNewUser);
 
       // Routing is now handled by the signIn method in AuthContext
     } catch (error) {

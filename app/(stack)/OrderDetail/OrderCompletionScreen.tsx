@@ -1,21 +1,21 @@
 import React from 'react';
-import { View, Text, Image, ScrollView, TouchableOpacity , StyleSheet, Platform, StatusBar} from 'react-native';
+import { View, Text, Image, ScrollView, TouchableOpacity, StyleSheet, Platform, StatusBar } from 'react-native';
 import { CheckCircle, Package, MapPin, Clock } from "lucide-react-native";
 import { useRouter } from 'expo-router';
 
 
-const OrderCompletionScreen = ({orderData}) => {
+const OrderCompletionScreen = ({ orderData }: { orderData: any }) => {
 
   const router = useRouter();
 
   console.log(orderData, 'orderDataorderDatao777777777777rderDataorderDataorderData');
-  
-  
+
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { 
-      day: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -23,7 +23,7 @@ const OrderCompletionScreen = ({orderData}) => {
   };
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'returned': return '#ef4444';
       case 'kept': return '#10b981';
       default: return '#6b7280';
@@ -42,8 +42,8 @@ const OrderCompletionScreen = ({orderData}) => {
         </View>
         <Text style={styles.title}>Order Completed</Text>
         <Text style={styles.subtitle}>
-          {orderData.orderStatus === 'returned' 
-            ? 'All items have been returned' 
+          {orderData.orderStatus === 'returned'
+            ? 'All items have been returned'
             : 'Thank you for your order'}
         </Text>
       </View>
@@ -92,13 +92,13 @@ const OrderCompletionScreen = ({orderData}) => {
           <Package color="#6366f1" size={20} />
           <Text style={styles.cardTitle}>Items ({orderData.items.length})</Text>
         </View>
-        
+
         {orderData.items.map((item, index) => (
           <View key={item._id}>
             {index > 0 && <View style={styles.divider} />}
             <View style={styles.itemRow}>
-              <Image 
-                source={{ uri: item.image }} 
+              <Image
+                source={{ uri: item.image }}
                 style={styles.itemImage}
               />
               <View style={styles.itemDetails}>
@@ -144,13 +144,26 @@ const OrderCompletionScreen = ({orderData}) => {
           <Text style={styles.label}>Base Amount</Text>
           <Text style={styles.value}>₹{orderData.finalBilling.baseAmount}</Text>
         </View>
-        <View style={styles.cardRow}>
-          <Text style={styles.label}>Delivery Charge</Text>
-          <Text style={styles.value}>₹{orderData.finalBilling.deliveryCharge}</Text>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Bag Total</Text>
+          <Text style={styles.summaryValue}>₹{orderData?.totalAmount || 0}</Text>
         </View>
-        <View style={styles.cardRow}>
-          <Text style={styles.label}>GST</Text>
-          <Text style={styles.value}>₹{orderData.finalBilling.gst}</Text>
+
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Delivery Charge</Text>
+          <Text style={styles.summaryValue}>₹{orderData?.deliveryCharge || 0}</Text>
+        </View>
+
+        {orderData?.returnCharge > 0 && (
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Return Charge (Upfront)</Text>
+            <Text style={styles.summaryValue}>₹{orderData?.returnCharge}</Text>
+          </View>
+        )}
+
+        <View style={[styles.summaryRow, styles.totalRow]}>
+          <Text style={styles.totalLabel}>Total Paid</Text>
+          <Text style={styles.totalAmount}>₹{orderData?.finalAmount || 0}</Text>
         </View>
         <View style={styles.cardRow}>
           <Text style={styles.label}>Discount</Text>
