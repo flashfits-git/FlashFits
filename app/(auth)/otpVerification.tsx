@@ -12,7 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { AntDesign, MaterialCommunityIcons ,  } from "@expo/vector-icons";
+import { AntDesign, MaterialCommunityIcons, } from "@expo/vector-icons";
 import { phoneLogin } from "@/app/api/auth";
 import { saveToken, saveUserId } from "@/app/utilities/secureStore";
 
