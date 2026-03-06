@@ -2,7 +2,6 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
 import React, { useState } from 'react';
 import {
     Alert,
@@ -15,10 +14,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAddress } from '../AddressContext';
+import { useAuth } from '../AuthContext';
 
 const ProfilePage = () => {
     const router = useRouter();
-    const { setSelectedAddress, setAddresses } = useAddress();
+    const { setSelectedAddress } = useAddress();
+    const { signOut } = useAuth();
     const [scaleValues] = useState(menuItems.map(() => new Animated.Value(1)));
 
     const handleNavigation = async (title: string) => {
@@ -32,12 +33,11 @@ const ProfilePage = () => {
                         text: 'Logout',
                         style: 'destructive',
                         onPress: async () => {
-                            await SecureStore.deleteItemAsync('token');
-                            await SecureStore.deleteItemAsync('selectedAddress');
-                            await SecureStore.setItemAsync("addressSelectedOnce", "false");
-                            setSelectedAddress(null)
-                            setAddresses([])
-                            router.replace('/(auth)');
+                            // Ensure any local context state unhandled by AuthContext is cleared
+                            setSelectedAddress(null);
+
+                            // Call global signout
+                            await signOut();
                         },
                     },
                 ]

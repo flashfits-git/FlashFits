@@ -1,48 +1,66 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Platform
-} from 'react-native';
-import { Modalize } from 'react-native-modalize';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useRoute } from '@react-navigation/native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import SmoothSlider from '../../components/HomeComponents/SmoothSlider';
-import { getFilteredProducts } from '../api/productApis/products';
-import { useCart } from '../../app/ContextParent';
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
+import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRoute } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  FlatList,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Modalize } from 'react-native-modalize';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCart } from '../../app/ContextParent';
+import SmoothSlider from '../../components/HomeComponents/SmoothSlider';
 import { fetchCategories } from '../api/categories';
 import { getMerchants } from '../api/merchatApis/getMerchantHome';
-import { FontAwesome } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { getFilteredProducts } from '../api/productApis/products';
 
+type Category = {
+  _id: string;
+  name: string;
+  parentId: string | null;
+  level: number;
+  image?: { url: string };
+  ancestors?: {
+    parentName?: string;
+    grandparentName?: string;
+  };
+};
+
+type SelectionPageParams = {
+  query?: string;
+  subCatName?: string;
+  filterss?: string; // JSON string of filters
+  categoryPath?: string;
+  gender?: string;
+};
 
 export default function SelectionPage() {
   const router = useRouter();
-  const route = useRoute();
-  const { query, subCatName, filterss, categoryPath } = route.params || {};
-  console.log(filterss,'filterssfilterssfilterssfilterss');
-  
+  const route = useRoute<any>();
+  const { query, subCatName, filterss, categoryPath, gender } = (route.params as any) || {};
+  console.log(filterss, 'filterssfilterssfilterssfilterss');
+
   const { cartItems, cartCount } = useCart();
 
   const [loading, setLoading] = useState(false);
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [selectedGender, setSelectedGender] = useState('');
-  const [categoriesData, setCategoriesData] = useState([]);
-  const [selectedMainId, setSelectedMainId] = useState(null);
-  const [selectedSubId, setSelectedSubId] = useState(null);
-  const [merchants, setMerchants] = useState([]);
+  const [categoriesData, setCategoriesData] = useState<Category[]>([]);
+  const [selectedMainId, setSelectedMainId] = useState<string | null>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
+  const [merchants, setMerchants] = useState<any[]>([]);
   const [priceRange, setPriceRange] = useState([0, 10000]);
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState([]);
-  const [selectedColors, setSelectedColors] = useState([]);
-  const [selectedStores, setSelectedStores] = useState([]);
-  const [sortBy, setSortBy] = useState([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedStores, setSelectedStores] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<string[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   // console.log(selectedCategoryIds,'selectedCategoryIds');
 
@@ -60,7 +78,15 @@ export default function SelectionPage() {
 
   // Parse and set initial filters from params
   useEffect(() => {
-    if (!filterss || !categoriesData.length) return; // Wait for categoriesData to be loaded
+    if (!categoriesData.length) return; // Wait for categoriesData to be loaded
+
+    // 1. Prioritize explicitly passed gender
+    if (gender) {
+      setSelectedGender(gender);
+    }
+
+    if (!filterss) return;
+
     try {
       const parsedFilters = JSON.parse(filterss);
       setPriceRange(parsedFilters.priceRange || [0, 10000]);
@@ -77,31 +103,31 @@ export default function SelectionPage() {
       const subId = catIds[1];
       const subSubId = catIds[2];
 
-
-
-      // Set main category and gender
+      // Set main category
       if (mainId) {
-        const mainCat = categoriesData.find(c => c._id === mainId);
-        if (mainCat) {
-          // console.log(mainCat.name,'mainCat.name');
-
-          setSelectedMainId(mainId);
-          setSelectedGender(mainCat.name);
+        setSelectedMainId(mainId);
+        // If gender wasn't passed, derive it from the main category (level 0)
+        if (!gender) {
+          const mainCat = categoriesData.find(c => c._id === mainId);
+          if (mainCat) {
+            setSelectedGender(mainCat.name);
+          }
         }
       }
 
-      // Set subcategory
+      // Set subcategory and potentially derive gender if still missing
       if (subId) {
         const subCat = categoriesData.find(c => c._id === subId);
-        console.log(subCat.name, subCat._id, 'mainCat.name');
         if (subCat) {
           setSelectedSubId(subId);
-          // Ensure main category is set if not provided
-          if (!mainId && subCat.parentId) {
-            const parentMainCat = categoriesData.find(c => c._id === subCat.parentId);
-            if (parentMainCat) {
-              setSelectedMainId(parentMainCat._id);
-              setSelectedGender(parentMainCat.name);
+          if (!gender && !selectedGender) {
+            const derivedGender = subCat.level === 1
+              ? subCat.ancestors?.parentName
+              : subCat.level === 2
+                ? subCat.ancestors?.grandparentName
+                : null;
+            if (derivedGender) {
+              setSelectedGender(derivedGender);
             }
           }
         }
@@ -110,13 +136,13 @@ export default function SelectionPage() {
     } catch (error) {
       console.error('Error parsing filters from params:', error);
     }
-  }, [filterss, categoriesData]);
+  }, [filterss, gender, categoriesData]);
 
   // Fetch filtered products
   const fetchFiltered = useCallback(async () => {
     try {
       // console.log(query,'queryqueryquery');
-      
+
       setIsLoadingProducts(true);
 
       const apiFilters = {
@@ -210,8 +236,12 @@ export default function SelectionPage() {
   const subCategories = categoriesData.filter(c => c.level === 1 && c.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(c => c.level === 2 && c.parentId === selectedSubId);
 
-  const handleMainCategoryChange = useCallback((id) => {
+  const handleMainCategoryChange = useCallback((id: string) => {
     setSelectedMainId(id);
+    const mainCat = categoriesData.find(c => c._id === id);
+    if (mainCat) {
+      setSelectedGender(mainCat.name);
+    }
     const firstSub = categoriesData.find(c => c.parentId === id && c.level === 1);
     if (firstSub) {
       setSelectedSubId(firstSub._id);

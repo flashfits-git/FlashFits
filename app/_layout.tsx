@@ -5,10 +5,11 @@ import { Stack } from "expo-router";
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
-import { View } from 'react-native';
+import { DeviceEventEmitter, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import ErrorBoundary from '../components/ErrorBoundary';
 import { AddressProvider } from './AddressContext';
+import { AuthProvider, useAuth } from './AuthContext';
 import { CartProvider } from './ContextParent';
 import { GenderProvider } from './GenderContext';
 import { WishlistProvider } from './WishlistContext';
@@ -39,7 +40,8 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded || error) {
-      SplashScreen.hideAsync();
+      // We don't hide splash screen here anymore since auth needs to resolve
+      // SplashScreen.hideAsync();
     }
   }, [loaded, error]);
 
@@ -49,25 +51,76 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <CartProvider>
-        <AddressProvider>
-          <GenderProvider>
-            <WishlistProvider>
-              <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-                <StatusBar style="dark" />
-                <ErrorBoundary>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: '#FFFFFF' }
-                    }}
-                  />
-                </ErrorBoundary>
-              </View>
-            </WishlistProvider>
-          </GenderProvider>
-        </AddressProvider>
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <AddressProvider>
+            <GenderProvider>
+              <WishlistProvider>
+                <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+                  <StatusBar style="dark" />
+                  <ErrorBoundary>
+                    <RootNavigator />
+                  </ErrorBoundary>
+                </View>
+              </WishlistProvider>
+            </GenderProvider>
+          </AddressProvider>
+        </CartProvider>
+      </AuthProvider>
     </GestureHandlerRootView>
+  );
+}
+
+// --------------------------------------------
+// Secure Navigator Layer
+// --------------------------------------------
+function RootNavigator() {
+  const { isAuthenticated, isLoading, signOut } = useAuth();
+
+  useEffect(() => {
+    // Listen for global auth expiration events (e.g. from axiosConfig interceptors)
+    const handleUnauthorized = () => {
+      console.log('Unauthorized event received, signing out...');
+      signOut();
+    };
+
+    const subscription = DeviceEventEmitter.addListener('auth_unauthorized', handleUnauthorized);
+
+    return () => {
+      subscription.remove();
+    };
+  }, [signOut]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync();
+    }
+  }, [isLoading]);
+
+  if (isLoading) {
+    return null; // Keep splash screen visible while loading auth state
+  }
+
+  return (
+    <Stack
+      key={isAuthenticated ? 'authenticated' : 'unauthenticated'}
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#FFFFFF' },
+        gestureEnabled: isAuthenticated, // Disable gestures on auth screens
+      }}
+    >
+      {/* If authenticated, load the main app stacks */}
+      {isAuthenticated ? (
+        <>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(profile)" options={{ headerShown: false }} />
+          <Stack.Screen name="(stack)" options={{ headerShown: false }} />
+        </>
+      ) : (
+        /* If not authenticated, load the auth stack */
+        <Stack.Screen name="(auth)" options={{ headerShown: false, animation: 'fade' }} />
+      )}
+    </Stack>
   );
 }

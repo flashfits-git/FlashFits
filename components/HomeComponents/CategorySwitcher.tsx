@@ -22,6 +22,10 @@ type Category = {
   parentId: string | null;
   level: number;
   image?: { url: string };
+  ancestors?: {
+    parentName?: string;
+    grandparentName?: string;
+  };
 };
 
 const CATEGORY_IMAGES: Record<string, any> = {
@@ -50,6 +54,8 @@ const CategorySwitcher = () => {
       try {
         const res = await fetchCategories();
         setCategories(res || []);
+        // console.log(res);
+
       } catch (err) {
         console.error('Category fetch failed', err);
       } finally {
@@ -79,13 +85,23 @@ const CategorySwitcher = () => {
   }, [categories, selectedGender]);
 
   const handleViewAll = useCallback(
-    (subCatName: string, subCategoryId: string, parentId?: string) => {
+    (item: Category) => {
+      const subCatName = item.name;
+      const subCategoryId = item._id;
+      const parentId = item.parentId || undefined;
       let selectedParentId = parentId;
 
       if (selectedGender === 'All') {
         const firstParent = categories.find(c => c.level === 0);
         selectedParentId = firstParent?._id || undefined;
       }
+
+      // Determine gender from ancestors
+      const gender = item.level === 1
+        ? item.ancestors?.parentName
+        : item.level === 2
+          ? item.ancestors?.grandparentName
+          : undefined;
 
       router.push({
         pathname: '/(stack)/SelectionPage',
@@ -97,8 +113,10 @@ const CategorySwitcher = () => {
               : [subCategoryId],
           }),
           subCatName,
+          gender: gender || selectedGender // fallback to context gender if ancestor not present
         },
       } as any);
+      console.log(subCatName, subCategoryId, parentId, 'subCatName', gender);
     },
     [router, categories, selectedGender]
   );
@@ -129,7 +147,7 @@ const CategorySwitcher = () => {
           return (
             <TouchableOpacity
               style={styles.card}
-              onPress={() => handleViewAll(item.name, item._id, parent?._id)}
+              onPress={() => handleViewAll(item)}
               activeOpacity={0.7}
             >
               <View style={styles.squareContainer}>

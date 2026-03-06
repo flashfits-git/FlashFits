@@ -9,7 +9,7 @@ const NearbyHeaderBar = () => {
     <View style={styles.container}>
       <View style={styles.topRow}>
 
-        <Text style={styles.title}>FlashFits Stores</Text>
+        <Text style={styles.title}>FlashFits Brands</Text>
 
       <SearchCartProfileButton />
       </View>
