@@ -187,7 +187,7 @@ const OTPInput = () => {
       }
 
       const response = await phoneLogin({ phoneNumber: phone });
-      // console.log(response);
+      console.log(response, "response");
 
       // Success animation
       Animated.spring(successScale, {

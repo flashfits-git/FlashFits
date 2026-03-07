@@ -21,14 +21,14 @@ import {
 import RazorpayCheckout from 'react-native-razorpay';
 import BagProduct from '../../components/CartBagComponents/BagProduct';
 // import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
-import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
-import AddressSelectionModalize from './AddressSelectionModalize';
-import eed from '../../assets/images/star.png'
 import { useAddress } from '@/app/AddressContext'; // Import context
 import * as SecureStore from 'expo-secure-store';
+import eed from '../../assets/images/star.png';
+import { createOrder, verifyPaymentAndConfirmOrder } from '../api/orderApis';
 import { clearCart, deleteCartItem, getCartbyPassAdress } from '../api/productApis/cartProduct';
 import { useCart } from '../ContextParent';
 import { joinOrderRoom } from '../sockets/order.socket';
+import AddressSelectionModalize from './AddressSelectionModalize';
 const { width } = Dimensions.get('window');
 const maxSlide = width * 0.7;
 
@@ -42,6 +42,7 @@ const CartBag = () => {
   const [totalDeliveryFee, setTotalDeliveryFee] = useState(0);
   const [bagTotal, setBagTotal] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
   const router = useRouter();
   const { cartCount, setCartCount, cartItems, setCartItems } = useCart();
   const [activeTab, setActiveTab] = useState<'TryandBuy' | 'Payment'>('TryandBuy');
@@ -77,7 +78,7 @@ const CartBag = () => {
 
 
   const handleAddressChange = async (address) => {
-    setAddress(address);
+    setSelectedAddress(address);
     // Prevent modalize auto-opening again
     await SecureStore.setItemAsync("addressSelectedOnce", "true");
   };
@@ -91,7 +92,7 @@ const CartBag = () => {
         return;
       }
 
-      if (showLoader) setLoading(true);
+      if (showLoader) setIsLoading(true);
 
       // Determine if current address is serviceable
       const isServiceable = selectedAddress?.addressType !== 'Non-serviceable' && selectedAddress?.isServiceable !== false;
@@ -120,7 +121,7 @@ const CartBag = () => {
       console.error('Failed to load cart:', err);
       Alert.alert('Error', 'Failed to load your cart. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
       setRefreshing(false);
     }
   };
@@ -132,7 +133,7 @@ const CartBag = () => {
       // 🔐 Stop if user not logged in
       if (!token) {
         console.log('No token found → skipping cart API');
-        setLoading(false);
+        setIsLoading(false);
         return;
       }
 
@@ -418,7 +419,7 @@ const CartBag = () => {
   // console.log(productData,'productDataproductDataproductData');
 
 
-  if (loading) return <Loader />;
+  if (isLoading) return <Loader />;
   if (cartItems.length === 0) {
     return (
       <View style={styles.container}>
@@ -804,13 +805,13 @@ const CartBag = () => {
                     </Text>
                   </View>
                 </View>
-                <SlideToPay
-                  label="tryandbuy"
-                  onComplete={handlePaymentComplete}
-                  serviceable={selectedAddress?.addressType === 'Non-serviceable'}
-                />
               </View>
             </View>
+            <SlideToPay
+              label="tryandbuy"
+              onComplete={handlePaymentComplete}
+              serviceable={selectedAddress?.addressType === 'Non-serviceable'}
+            />
           </>
         )}
 

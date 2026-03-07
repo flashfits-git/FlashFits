@@ -1,20 +1,20 @@
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    View,
-    Text,
     FlatList,
     Image,
-    TouchableOpacity,
-    StyleSheet,
     StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+import Colors from "../../../assets/theme/Colors";
 import { listenOrderUpdates } from "../../sockets/order.socket";
 import OrderCompletionScreen from "./OrderCompletionScreen";
-
 
 type OrderData = {
     _id?: string;
@@ -33,10 +33,23 @@ type OrderData = {
     [k: string]: any;
 };
 
+type Item = {
+    _id: string;
+    name: string;
+    image?: string;
+    size?: string;
+    price: number;
+    quantity: number;
+};
+
 export default function ReturnItemsPage() {
     const { items, otp, orderId, orderData } = useLocalSearchParams();
-    const parsedOrderData = orderData ? JSON.parse(orderData as string) : null;
-    const returnItems = items ? JSON.parse(items as string) : [];
+    const parsedOrderData = orderData
+        ? (typeof orderData === 'string' ? JSON.parse(orderData) : orderData)
+        : null;
+    const returnItems = items
+        ? (typeof items === 'string' ? JSON.parse(items) : items)
+        : [];
     const [showCompletion, setShowCompletion] = useState(false);
     const [completedOrder, setCompletedOrder] = useState<OrderData | null>(null);
 
@@ -45,13 +58,9 @@ export default function ReturnItemsPage() {
 
         const initListener = async () => {
             socketRef = await listenOrderUpdates((data) => {
-                console.log("📦 SOCKET343 UPDATE:", data);// ✅ ROOT _id
-                const orderStatus = data?.orderStatus;        // ✅ ROOT orderStatus
+                const orderStatus = data?.orderStatus;
 
-                if (
-                    orderStatus === "otp-verified-return"
-                ) {
-                    console.log("✅ otp-verified-return detected — redirecting");
+                if (orderStatus === "otp-verified-return") {
                     setCompletedOrder(parsedOrderData);
                     setShowCompletion(true);
                 }
@@ -63,7 +72,6 @@ export default function ReturnItemsPage() {
         return () => {
             if (socketRef) {
                 socketRef.off("orderUpdate");
-                
             }
         };
     }, [orderId]);
@@ -72,12 +80,11 @@ export default function ReturnItemsPage() {
         return <OrderCompletionScreen orderData={completedOrder} />;
     }
 
-
     const handleHandover = () => {
         router.replace("/(tabs)");
     };
 
-    const renderItem = ({ item }) => (
+    const renderItem = ({ item }: { item: Item }) => (
         <View style={styles.card}>
             <View style={styles.imageContainer}>
                 <Image source={{ uri: item.image }} style={styles.image} />
@@ -99,14 +106,14 @@ export default function ReturnItemsPage() {
             </View>
 
             <View style={styles.checkIcon}>
-                <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
+                <Ionicons name="checkmark-circle" size={24} color={Colors.accent} />
             </View>
         </View>
     );
 
     return (
         <SafeAreaView style={styles.container} edges={["top"]}>
-            <StatusBar barStyle="light-content" backgroundColor="#000" />
+            <StatusBar barStyle="light-content" backgroundColor={Colors.black} />
 
             {/* Header */}
             <View style={styles.header}>
@@ -114,7 +121,7 @@ export default function ReturnItemsPage() {
                     style={styles.backButton}
                     onPress={() => router.back()}
                 >
-                    <Ionicons name="arrow-back" size={24} color="#fff" />
+                    <Ionicons name="chevron-back" size={28} color={Colors.white} />
                 </TouchableOpacity>
                 <View style={styles.headerContent}>
                     <Text style={styles.heading}>Return Order</Text>
@@ -125,39 +132,49 @@ export default function ReturnItemsPage() {
             <View style={styles.content}>
                 {/* OTP Card */}
                 <View style={styles.otpCard}>
-                    <View style={styles.otpHeader}>
-                        <Ionicons name="shield-checkmark" size={24} color="#fff" />
-                        <Text style={styles.otpLabel}>Verification Code</Text>
-                    </View>
-                    <View style={styles.otpDisplay}>
-                        <Text style={styles.otp}>{otp || "1234"}</Text>
-                    </View>
-                    <Text style={styles.otpSubtext}>
-                        Share this code with the delivery partner
-                    </Text>
+                    <LinearGradient
+                        colors={[Colors.dark2, Colors.dark1]}
+                        style={styles.otpGradient}
+                    >
+                        <View style={styles.otpHeader}>
+                            <View style={styles.iconCircle}>
+                                <Ionicons name="shield-checkmark" size={20} color={Colors.accent} />
+                            </View>
+                            <Text style={styles.otpLabel}>Verification Code</Text>
+                        </View>
+                        <View style={styles.otpDisplay}>
+                            <Text style={styles.otp}>{otp || "1234"}</Text>
+                        </View>
+                        <View style={styles.otpSubtextRow}>
+                            <Ionicons name="information-circle-outline" size={14} color={Colors.secondary} />
+                            <Text style={styles.otpSubtext}>
+                                Share this code with the delivery partner
+                            </Text>
+                        </View>
+                    </LinearGradient>
                 </View>
 
                 {/* Instructions */}
                 <View style={styles.instructionsCard}>
                     <View style={styles.instructionHeader}>
-                        <Ionicons name="information-circle" size={20} color="#FFB300" />
+                        <Ionicons name="flash" size={18} color={Colors.accent} />
                         <Text style={styles.instructionTitle}>Handover Instructions</Text>
                     </View>
-                    <Text style={styles.instructionText}>
-                        • Ensure all items are properly packaged{"\n"}
-                        • Share the OTP before handing over{"\n"}
-                        • Keep items ready for pickup
-                    </Text>
+                    <View style={styles.instructionContent}>
+                        <Text style={styles.instructionText}>• Ensure all items are properly packaged</Text>
+                        <Text style={styles.instructionText}>• Share the OTP before handing over</Text>
+                        <Text style={styles.instructionText}>• Keep items ready for pickup</Text>
+                    </View>
                 </View>
 
                 {/* Items Section */}
                 <View style={styles.itemsSection}>
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Items to Return</Text>
-                        <View style={styles.itemCount}>
-                            <Text style={styles.itemCountText}>
-                                {returnItems.length} {returnItems.length === 1 ? "Item" : "Items"}
-                            </Text>
+                        <View style={styles.sectionTitleRow}>
+                            <Text style={styles.sectionTitle}>Items to Return</Text>
+                            <View style={styles.itemCount}>
+                                <Text style={styles.itemCountText}>{returnItems.length}</Text>
+                            </View>
                         </View>
                     </View>
 
@@ -173,33 +190,35 @@ export default function ReturnItemsPage() {
 
             {/* Bottom Actions */}
             <View style={styles.bottomBar}>
-                <TouchableOpacity style={styles.iconBtn}>
-                    <View style={styles.iconBtnInner}>
-                        <Ionicons name="call" size={20} color="#fff" />
-                    </View>
-                    <Text style={styles.iconText}>Call Delivery</Text>
-                </TouchableOpacity>
+                <View style={styles.secondaryActions}>
+                    <TouchableOpacity style={styles.iconAction}>
+                        <View style={styles.iconCircleSmall}>
+                            <Ionicons name="call" size={18} color={Colors.white} />
+                        </View>
+                        <Text style={styles.iconBtnText}>Call</Text>
+                    </TouchableOpacity>
 
-                <TouchableOpacity style={styles.iconBtn}>
-                    <View style={styles.iconBtnInner}>
-                        <Ionicons name="headset" size={20} color="#fff" />
-                    </View>
-                    <Text style={styles.iconText}>Support</Text>
-                </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconAction}>
+                        <View style={styles.iconCircleSmall}>
+                            <Ionicons name="chatbubbles" size={18} color={Colors.white} />
+                        </View>
+                        <Text style={styles.iconBtnText}>Support</Text>
+                    </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
                     style={styles.handoverBtn}
                     onPress={handleHandover}
-                    activeOpacity={0.9}
+                    activeOpacity={0.8}
                 >
                     <LinearGradient
-                        colors={["#1a1a1a", "#000"]}
+                        colors={[Colors.accent, '#00d18b']}
                         style={styles.handoverGradient}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                     >
-                        <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
                         <Text style={styles.handoverText}>Complete Handover</Text>
+                        <Ionicons name="arrow-forward" size={18} color={Colors.black} />
                     </LinearGradient>
                 </TouchableOpacity>
             </View>
@@ -210,159 +229,186 @@ export default function ReturnItemsPage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#fff",
+        backgroundColor: Colors.white,
     },
     header: {
-        backgroundColor: "#000000be",
-        paddingHorizontal: 16,
-        paddingVertical: 16,
+        backgroundColor: Colors.black,
+        paddingHorizontal: 20,
+        paddingVertical: 24,
         flexDirection: "row",
         alignItems: "center",
-        borderBottomWidth: 1,
-        borderBottomColor: "#1a1a1a",
     },
     backButton: {
-        padding: 8,
-        marginRight: 12,
+        marginRight: 16,
+        marginLeft: -8,
     },
     headerContent: {
         flex: 1,
     },
     heading: {
-        fontSize: 20,
-        fontWeight: "700",
-        color: "#fff",
+        fontSize: 24,
+        fontFamily: "Manrope-Bold",
+        color: Colors.white,
     },
     orderId: {
-        fontSize: 12,
-        color: "#888",
+        fontSize: 13,
+        fontFamily: "Manrope-Medium",
+        color: Colors.secondary,
         marginTop: 2,
     },
     content: {
         flex: 1,
-        padding: 16,
+        padding: 20,
     },
     otpCard: {
-        backgroundColor: "#1a1a1a",
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
+        borderRadius: 20,
+        overflow: 'hidden',
+        marginBottom: 20,
+        elevation: 8,
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+    },
+    otpGradient: {
+        padding: 24,
     },
     otpHeader: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 16,
+        marginBottom: 20,
+    },
+    iconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: 'rgba(0, 245, 160, 0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
     },
     otpLabel: {
         fontSize: 14,
-        color: "#fff",
-        fontWeight: "600",
-        marginLeft: 8,
+        color: Colors.white,
+        fontFamily: "Manrope-SemiBold",
     },
     otpDisplay: {
-        backgroundColor: "#000000be",
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderRadius: 16,
+        paddingVertical: 20,
         alignItems: "center",
         borderWidth: 1,
-        borderColor: "#333",
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        marginBottom: 16,
     },
     otp: {
-        fontSize: 32,
-        fontWeight: "800",
-        letterSpacing: 8,
-        color: "#fff",
+        fontSize: 42,
+        fontFamily: "Manrope-ExtraBold",
+        letterSpacing: 10,
+        color: Colors.accent,
+    },
+    otpSubtextRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     otpSubtext: {
         fontSize: 12,
-        color: "#888",
-        textAlign: "center",
-        marginTop: 12,
+        fontFamily: "Manrope-Medium",
+        color: Colors.secondary,
+        marginLeft: 6,
     },
     instructionsCard: {
-        backgroundColor: "#1a1a1a",
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
+        backgroundColor: Colors.surface,
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 24,
     },
     instructionHeader: {
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 8,
+        marginBottom: 12,
     },
     instructionTitle: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#fff",
-        marginLeft: 8,
+        fontSize: 15,
+        fontFamily: "Manrope-Bold",
+        color: Colors.black,
+        marginLeft: 10,
+    },
+    instructionContent: {
+        gap: 6,
     },
     instructionText: {
-        fontSize: 12,
-        color: "#aaa",
-        lineHeight: 18,
+        fontSize: 13,
+        fontFamily: "Manrope-Medium",
+        color: Colors.secondary,
+        lineHeight: 20,
     },
     itemsSection: {
         flex: 1,
     },
     sectionHeader: {
+        marginBottom: 16,
+    },
+    sectionTitleRow: {
         flexDirection: "row",
-        justifyContent: "space-between",
         alignItems: "center",
-        marginBottom: 12,
     },
     sectionTitle: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: "#fff",
+        fontSize: 18,
+        fontFamily: "Manrope-Bold",
+        color: Colors.black,
     },
     itemCount: {
-        backgroundColor: "#1a1a1a",
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 20,
+        backgroundColor: Colors.black,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 10,
     },
     itemCountText: {
         fontSize: 12,
-        color: "#888",
-        fontWeight: "600",
+        color: Colors.white,
+        fontFamily: "Manrope-Bold",
     },
     listContent: {
-        paddingBottom: 140,
+        paddingBottom: 120,
     },
     card: {
         flexDirection: "row",
-        padding: 14,
-        borderRadius: 14,
-        backgroundColor: "#1a1a1a",
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: Colors.white,
+        marginBottom: 14,
         alignItems: "center",
+        borderWidth: 1,
+        borderColor: Colors.surface,
+        elevation: 2,
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
     },
     imageContainer: {
-        borderRadius: 10,
+        borderRadius: 12,
         overflow: "hidden",
-        backgroundColor: "#000000be",
-        padding: 4,
+        backgroundColor: Colors.surface,
     },
     image: {
-        width: 70,
-        height: 90,
-        borderRadius: 8,
+        width: 64,
+        height: 80,
     },
     itemDetails: {
         flex: 1,
-        marginLeft: 14,
+        marginLeft: 16,
     },
     name: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#fff",
-        marginBottom: 8,
+        fontSize: 15,
+        fontFamily: "Manrope-Bold",
+        color: Colors.black,
+        marginBottom: 6,
     },
     metaRow: {
         flexDirection: "row",
@@ -370,72 +416,79 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     badge: {
-        backgroundColor: "#2a2a2a",
-        paddingHorizontal: 10,
+        backgroundColor: Colors.surface,
+        paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 6,
     },
     badgeText: {
         fontSize: 11,
-        color: "#aaa",
-        fontWeight: "600",
+        fontFamily: "Manrope-SemiBold",
+        color: Colors.secondary,
     },
     price: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: "#4CAF50",
+        fontSize: 16,
+        fontFamily: "Manrope-Bold",
+        color: Colors.black,
     },
     checkIcon: {
-        marginLeft: 8,
+        marginLeft: 12,
     },
     bottomBar: {
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 16,
-        paddingBottom: 24,
+        padding: 20,
+        paddingBottom: 34,
         flexDirection: "row",
-        gap: 10,
-        backgroundColor: "#000",
+        alignItems: 'center',
+        backgroundColor: Colors.white,
         borderTopWidth: 1,
-        borderColor: "#1a1a1a",
+        borderColor: Colors.surface,
+        gap: 20,
     },
-    iconBtn: {
-        alignItems: "center",
-        justifyContent: "center",
+    secondaryActions: {
+        flexDirection: 'row',
+        gap: 16,
     },
-    iconBtnInner: {
-        backgroundColor: "#1a1a1a",
-        width: 48,
-        height: 48,
+    iconAction: {
+        alignItems: 'center',
+    },
+    iconCircleSmall: {
+        backgroundColor: Colors.black,
+        width: 44,
+        height: 44,
         borderRadius: 12,
         alignItems: "center",
         justifyContent: "center",
-        borderWidth: 1,
-        borderColor: "#2a2a2a",
     },
-    iconText: {
-        color: "#888",
+    iconBtnText: {
+        color: Colors.secondary,
         fontSize: 10,
+        fontFamily: "Manrope-SemiBold",
         marginTop: 6,
-        fontWeight: "600",
     },
     handoverBtn: {
         flex: 1,
-        borderRadius: 12,
+        borderRadius: 16,
         overflow: "hidden",
+        elevation: 4,
+        shadowColor: Colors.accent,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
     },
     handoverGradient: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        paddingVertical: 16,
-        gap: 8,
+        paddingVertical: 18,
+        gap: 10,
     },
     handoverText: {
-        color: "#fff",
-        fontSize: 15,
-        fontWeight: "700",
+        color: Colors.black,
+        fontSize: 16,
+        fontFamily: "Manrope-ExtraBold",
     },
 });

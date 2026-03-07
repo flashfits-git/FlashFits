@@ -1,6 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { ActivityIndicator } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as SecureStore from "expo-secure-store";
@@ -12,8 +10,9 @@ import {
   Package,
   Phone,
 } from "lucide-react-native";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Image,
+  ActivityIndicator, Image,
   Linking,
   Platform,
   RefreshControl,
@@ -23,12 +22,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import { Modalize } from "react-native-modalize";
-import { calculateFinalBilling } from "../../utilities/ItemSelectionCalculation";
 import RazorpayCheckout from "react-native-razorpay";
+import { calculateFinalBilling } from "../../utilities/ItemSelectionCalculation";
 
+import {
+  joinOrderRoom,
+  listenOrderUpdates,
+  removeOrderListeners,
+} from "@/app/sockets/order.socket";
 import {
   finalpaymentInitiate,
   finalpaymetVerify,
@@ -38,11 +42,6 @@ import { getSocket } from "../../config/socket";
 import ConfirmSelectionModal from "./ConfirmSelectionModal";
 import OSMDeliveryMap from "./OSMDeliveryMap";
 import OrderCompletionScreen from "./OrderCompletionScreen";
-import {
-  joinOrderRoom,
-  listenOrderUpdates,
-  removeOrderListeners,
-} from "@/app/sockets/order.socket";
 
 /* ============================
    Types
@@ -301,6 +300,8 @@ const OrderTrackingPage: React.FC = () => {
   const [mapRiderLocation, setMapRiderLocation] = useState<LatLng>(null);
   const [showCompletion, setShowCompletion] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<OrderData | null>(null);
+  console.log(completedOrder,'completedOrdercompletedOrdercompletedOrder');
+  
 
   const coordsArrayToLatLng = (coords?: any[]): LatLng => {
     if (!coords || !Array.isArray(coords) || coords.length < 2) return null;
@@ -408,7 +409,11 @@ const OrderTrackingPage: React.FC = () => {
       await joinOrderRoom(orderId);
 
       listenOrderUpdates((updateData: SocketUpdateData) => {
-        console.log("SOCKET UPDATE:", updateData);
+        console.log("SOCKET UPDATE RECEIVED:", updateData);
+
+        if (updateData?.orderStatus === "try phase") {
+          console.log("🚨 ORDER STATUS TRANSITION TO: try phase");
+        }
 
         setOtp(updateData?.otp ?? "");
 
@@ -488,6 +493,8 @@ const OrderTrackingPage: React.FC = () => {
   const fetchOrderDetails = useCallback(async () => {
     try {
       const response = await getOrderById(orderId);
+      console.log(response,'err343');
+      
       const data: OrderData | undefined = response?.order ?? response;
 
       if (!data) return;
@@ -499,9 +506,8 @@ const OrderTrackingPage: React.FC = () => {
         return;
       }
 
-
       if (data.orderStatus === "completed try phase") {
-        console.log('66767677');
+        console.log(data, 'dat67567567a');
 
         router.replace({
           pathname: "/(stack)/OrderDetail/ReturnItemsPage", // 👈 adjust exact route path
@@ -509,6 +515,7 @@ const OrderTrackingPage: React.FC = () => {
             orderId: data._id,
             otp: data.otp,
             items: JSON.stringify(data.items),
+            orderData: JSON.stringify(data),
           },
         });
         return;
@@ -696,8 +703,8 @@ const OrderTrackingPage: React.FC = () => {
       console.log("Final Payment Failed →", error);
     }
   };
-  console.log(items,'itemsitemsitemsitemsitemsitems');
-  
+  console.log(items, 'itemsitemsitemsitemsitemsitems');
+
 
   const callDeliveryPartner = (phone?: string) => {
     if (!phone) return;
@@ -733,9 +740,6 @@ const OrderTrackingPage: React.FC = () => {
             showsVerticalScrollIndicator={false}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#3b82f6"]} tintColor="#3b82f6" />}
           >
-            {/* {
-              showMap ??
-            } */}
             <View style={styles.mapSection}>
               {!mapUserLocation || !mapRiderLocation ? (
                 <View style={styles.mapLoader}>
@@ -791,9 +795,13 @@ const OrderTrackingPage: React.FC = () => {
                         <View style={[styles.stepCircle, step.completed ? styles.stepCompleted : styles.stepIncomplete]}>
                           {step.completed ? <CheckCircle size={18} color="#95f966ff" /> : <Clock size={18} color="#fff" />}
                         </View>
-                        <Text style={[styles.stepLabel, step.completed ? styles.stepLabelActive : styles.stepLabelInactive]}>{step.label}</Text>
+                        <Text style={[styles.stepLabel, step.completed ? styles.stepLabelActive : styles.stepLabelInactive]}>
+                          {step.label}
+                        </Text>
                       </View>
-                      {index < orderStatus.steps.length - 1 && <View style={[styles.stepLine, step.completed ? styles.lineActive : styles.lineInactive]} />}
+                      {index < orderStatus.steps.length - 1 && (
+                        <View style={[styles.stepLine, step.completed ? styles.lineActive : styles.lineInactive]} />
+                      )}
                     </React.Fragment>
                   ))}
                 </View>
@@ -803,16 +811,14 @@ const OrderTrackingPage: React.FC = () => {
                 <TrialPhaseTimer trialPhaseStart={trialPhase.trialPhaseStart} trialPhaseDuration={trialPhase.trialPhaseDuration} />
               )}
 
-              {["try phase"].includes(orderStatus.current) && (
+              {["try phase", "completed try phase", "otp-verified-return"].includes(orderStatus.current) && (
                 <>
                   <ItemSelection items={items} onUpdateItem={handleUpdateItem} disabled={false} />
 
-                  {["try phase", "completed try phase"].includes(orderStatus.current) && (
-                    <View style={styles.otpBadge}>
-                      <Ionicons name="key-outline" size={14} color="#1A73E8" />
-                      <Text style={styles.otpBadgeText}>Return OTP: {otp}</Text>
-                    </View>
-                  )}
+                  <View style={styles.otpBadge}>
+                    <Ionicons name="key-outline" size={14} color="#1A73E8" />
+                    <Text style={styles.otpBadgeText}>Return OTP: {otp}</Text>
+                  </View>
 
                   <View style={styles.billingContainer}>
                     <Text style={styles.billingTitle}>Billing Summary</Text>
@@ -824,20 +830,15 @@ const OrderTrackingPage: React.FC = () => {
 
                     {billingSummary.returnChargeDeduction > 0 && (
                       <View style={styles.deductionRow}>
-                        <Text style={styles.deductionLabel}>
-                          Return Charge Deduction
-                        </Text>
-                        <Text style={styles.deductionValue}>
-                          - ₹{billingSummary.returnChargeDeduction}
-                        </Text>
+                        <Text style={styles.deductionLabel}>Return Charge Deduction</Text>
+                        <Text style={styles.deductionValue}>- ₹{billingSummary.returnChargeDeduction}</Text>
                       </View>
                     )}
 
                     {billingSummary.itemsReturned > 0 && billingSummary.returnCharge > 0 && (
                       <View style={styles.billRow}>
                         <Text style={styles.billLabelSmall}>
-                          Return Charge Applied when all items kept ({billingSummary.itemsReturned} item
-                          {billingSummary.itemsReturned > 1 ? "s" : ""} returned)
+                          Return Charge Applied ({billingSummary.itemsReturned} items returned)
                         </Text>
                         <Text style={styles.billValueSmall}>₹{billingSummary.returnCharge}</Text>
                       </View>

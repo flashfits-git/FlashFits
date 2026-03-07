@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { setAuthToken } from './axiosConfig';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -29,8 +30,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setHasSeenOnboarding(seenOnboarding);
 
                 if (token) {
+                    setAuthToken(token); // Update in-memory token for immediate API requests
                     setIsAuthenticated(true);
                 } else {
+                    setAuthToken(null);
                     setIsAuthenticated(false);
                 }
             } catch (error) {
@@ -55,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             // Mark authenticated state immediately so root layout knows we are logged in
+            setAuthToken(token); // Update in-memory token immediately to avoid race conditions
             setIsAuthenticated(true);
 
             setTimeout(() => {
@@ -88,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             await SecureStore.deleteItemAsync('selectedAddress');
             await SecureStore.setItemAsync('addressSelectedOnce', 'false');
 
+            setAuthToken(null); // Clear in-memory token
             setIsAuthenticated(false);
 
             // Navigate to auth explicitly

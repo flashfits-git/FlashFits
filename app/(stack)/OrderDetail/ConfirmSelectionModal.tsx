@@ -1,11 +1,11 @@
+import { router } from "expo-router";
 import React, { forwardRef, useRef } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Modalize } from "react-native-modalize";
 import RazorpayCheckout from "react-native-razorpay";
-import { router } from "expo-router";
 
-import HandovrModal from "./HandoverModal";
 import { finalpaymentInitiate, finalpaymetVerify } from "../../api/orderApis";
+import HandovrModal from "./HandoverModal";
 
 interface ConfirmSelectionModalProps {
   onCancel: () => void;
@@ -13,10 +13,11 @@ interface ConfirmSelectionModalProps {
   otp?: string;
   totalPayable?: number;
   items: any[];
+  orderData?: any;
 }
 
 const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
-  ({ onCancel, orderId, otp, items = [], totalPayable , orderData}, ref) => {
+  ({ onCancel, orderId, otp, items = [], totalPayable, orderData }, ref) => {
     const handoverModalRef = useRef<Modalize>(null);
 
     const handleCancel = () => onCancel?.();
@@ -40,7 +41,12 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
         ref?.current?.close();
 
         const payload = buildPayload();
+        console.log(payload,'hjfvbvnb');
+
         const res = await finalpaymentInitiate(payload);
+        console.log(res,'673763873');
+        
+        
 
         if (!res) return;
 
@@ -50,7 +56,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
             orderId,
             otp,
             items: JSON.stringify(items),
-            orderData
+            orderData: JSON.stringify(orderData),
           },
         });
       } catch (e) {
@@ -108,6 +114,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
                 orderId: internalOrderId,
                 otp,
                 items: JSON.stringify(returnedItems),
+                orderData: JSON.stringify(orderData),
               },
             });
           })
@@ -173,7 +180,7 @@ const ConfirmSelectionModal = forwardRef<Modalize, ConfirmSelectionModalProps>(
           </View>
         </Modalize>
 
-        <HandovrModal ref={handoverModalRef} onConfirm={() => {}} />
+        <HandovrModal ref={handoverModalRef} onConfirm={() => { }} />
       </>
     );
   }
