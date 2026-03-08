@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { useAuth } from "../AuthContext";
 
-const { width } = Dimensions.get("window");
+// const { width } = Dimensions.get("window");
 
 const OTPInput = () => {
   const router = useRouter();
@@ -25,7 +25,7 @@ const OTPInput = () => {
   const [timer, setTimer] = useState(30);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const inputs = useRef<(TextInput | null)[]>([]);
+  const inputs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation();
   const { signIn } = useAuth();
 

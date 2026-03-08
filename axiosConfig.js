@@ -49,4 +49,12 @@ api.interceptors.response.use(
   }
 );
 
+api.interceptors.response.use((response) => {
+  // Only unwrap if it looks like an ApiResponse
+  if (response.data?.success !== undefined && response.data?.data !== undefined) {
+    response.data = response.data.data;
+  }
+  return response;
+});
+
 export default api;

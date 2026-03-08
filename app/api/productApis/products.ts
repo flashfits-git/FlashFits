@@ -75,7 +75,9 @@ export const removeFromWishlist = async (wishlistItemId: string) => {
 export const getMyWishlist = async () => {
     try {
         const res = await api.get('user/wishlist/my');
-        return res.data;
+        console.log(res, '232');
+
+        return res.data.data;
     } catch (err: any) {
         throw err.response?.data || err;
     }

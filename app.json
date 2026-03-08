@@ -48,7 +48,7 @@
       "backgroundColor": "#ffffff"
     },
     "extra": {
-      "BACKEND_URL": "https://c9e0-2405-201-f005-8069-9461-a6a3-6492-43d2.ngrok-free.app",
+      "BACKEND_URL": "https://229c-2405-201-f001-8ff-ade0-5f0f-9e6-b5ad.ngrok-free.app",
       "RAZORPAY_KEY_ID": "rzp_test_Rnt8GeFf4ZgmTV",
       "eas": {
         "projectId": "5ffa6730-d676-4b63-a03d-df1db41ca12b"

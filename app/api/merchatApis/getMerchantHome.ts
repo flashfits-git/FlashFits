@@ -5,7 +5,7 @@ export const getMerchants = async () => {
     try {
         const token = await SecureStore.getItemAsync('token');
         const response = await api.get('admin/getMerchants');
-        console.log(response,'7888686');
+        // console.log(response,'7888686');
         
         return response.data;
     } catch (error) {
