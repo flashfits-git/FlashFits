@@ -24,7 +24,9 @@ type Category = {
   image?: { url: string };
   ancestors?: {
     parentName?: string;
+    parentGender?: string;
     grandparentName?: string;
+    grandparentGender?: string;
   };
 };
 
@@ -53,6 +55,8 @@ const CategorySwitcher = () => {
     const loadCategories = async () => {
       try {
         const res = await fetchCategories();
+        console.log(res,'332332323cwec');
+
         setCategories(res || []);
         // console.log(res);
 
@@ -66,22 +70,16 @@ const CategorySwitcher = () => {
   }, []);
 
   const subCategories = useMemo(() => {
-    if (selectedGender === 'All') {
-      return categories.filter(c => c.level === 1);
-    }
+    if (selectedGender === 'All') return [];
 
-    const level0Parents = categories.filter(c => c.level === 0);
-    const matchingParent = level0Parents.find(parent => {
-      const nameLower = parent.name.toLowerCase();
-      const genderLower = selectedGender.toLowerCase();
-      return nameLower.includes(genderLower) || nameLower.includes('unisex');
+    const level2 = categories.filter(c => c.level === 2);
+    const genderLower = selectedGender.toLowerCase();
+
+    return level2.filter(c => {
+      const gpGender = (c.ancestors?.grandparentGender || '').toLowerCase();
+      if (genderLower === 'kids') return gpGender === 'kids';
+      return gpGender === genderLower || gpGender === 'unisex';
     });
-
-    if (!matchingParent) return [];
-
-    return categories.filter(
-      c => c.level === 1 && c.parentId === matchingParent._id
-    );
   }, [categories, selectedGender]);
 
   const handleViewAll = useCallback(

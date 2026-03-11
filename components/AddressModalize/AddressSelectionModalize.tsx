@@ -1,25 +1,25 @@
+import { useAddress } from '@/app/AddressContext';
+import { getAddresses } from '@/app/api/productApis/cartProduct';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, {
     forwardRef,
     useImperativeHandle,
     useRef,
-    useState,
-    useEffect
+    useState
 } from 'react';
 import {
-    View,
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
     Text,
     TouchableOpacity,
-    ActivityIndicator,
-    StyleSheet,
-    ScrollView
+    View
 } from 'react-native';
-import { Dimensions } from 'react-native';
 import { Modalize } from 'react-native-modalize';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import * as SecureStore from 'expo-secure-store';
-import { useAddress } from '@/app/AddressContext';
-import { getAddresses } from '@/app/api/productApis/cartProduct';
+import Colors from '../../assets/theme/Colors';
 
 interface AddressModalProps {
     onSelectAddress?: (address: any) => void;
@@ -120,9 +120,9 @@ const AddressModalize = forwardRef<any, AddressModalProps>(
         return (
             <Modalize
                 ref={modalRef}
-                modalHeight={SCREEN_HEIGHT * 0.31}
+                modalHeight={SCREEN_HEIGHT * 0.5}
                 onOpened={loadAddresses}
-                onClosed={ensureAddressExists} 
+                onClosed={ensureAddressExists}
                 closeOnOverlayTap={false}
                 panGestureEnabled={true}
                 modalStyle={styles.modal}
@@ -130,10 +130,23 @@ const AddressModalize = forwardRef<any, AddressModalProps>(
                 <View style={styles.container}>
                     {/* FIXED HEADER */}
                     <View style={styles.headerRow}>
-                        <Text style={styles.headerTitle}> {hasAddress ? 'Select Delivery Address' : 'No Address Found'}</Text>
-                        <TouchableOpacity>
-                            {hasAddress ? <Text style={styles.viewAll}>VIEW ALL</Text>
-                                : <Text style={styles.viewAll}>Add Address</Text>}
+                        <View>
+                            <Text style={styles.headerTitle}>
+                                {hasAddress ? 'Select Delivery Address' : 'No Address Found'}
+                            </Text>
+                            {hasAddress && (
+                                <Text style={styles.headerSubtitle}>
+                                    {addresses.length} saved addresses
+                                </Text>
+                            )}
+                        </View>
+                        <TouchableOpacity
+                            onPress={() => {
+                                modalRef.current?.close();
+                                router.push('/(stack)/SavedAddressesScreen' as any);
+                            }}
+                        >
+                            <Text style={styles.viewAll}>{hasAddress ? 'VIEW ALL' : 'Add'}</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -147,7 +160,8 @@ const AddressModalize = forwardRef<any, AddressModalProps>(
                     >
                         {loading ? (
                             <View style={styles.loader}>
-                                <ActivityIndicator size="large" color="#000" />
+                                <ActivityIndicator size="large" color={Colors.primary} />
+                                <Text style={styles.loaderText}>Fetching your addresses...</Text>
                             </View>
                         ) : addresses && addresses.length > 0 ? (
                             addresses.slice(0, 2).map((item: any) => (
@@ -155,22 +169,26 @@ const AddressModalize = forwardRef<any, AddressModalProps>(
                                     key={item._id}
                                     onPress={() => selectAddress(item)}
                                     activeOpacity={0.7}
+                                    style={styles.addressItem}
                                 >
                                     <View style={styles.addressRow}>
-                                        <Ionicons
-                                            name="navigate"
-                                            size={24}
-                                            color="#9ca3af"
-                                            style={styles.iconStyle}
-                                        />
+                                        <View style={styles.iconBox}>
+                                            <Ionicons
+                                                name={item.addressType === 'Home' ? 'home' :
+                                                    item.addressType === 'Work' ? 'briefcase' : 'location'}
+                                                size={20}
+                                                color={Colors.primary}
+                                            />
+                                        </View>
                                         <View style={styles.addressText}>
                                             <Text style={styles.addressTitle}>
                                                 {item.addressType || 'Home'}
                                             </Text>
                                             <Text numberOfLines={2} style={styles.addressSubtitle}>
-                                                {item.addressLine1},{item.addressLine2},{item.city},{item.state},{item.country},{item.zipCode}
+                                                {[item.addressLine1, item.area, item.city].filter(Boolean).join(', ')}
                                             </Text>
                                         </View>
+                                        <Ionicons name="chevron-forward" size={18} color="#D1D5DB" />
                                     </View>
                                     <View style={styles.addressDivider} />
                                 </TouchableOpacity>
@@ -222,14 +240,15 @@ export default AddressModalize;
 
 const styles = StyleSheet.create({
     modal: {
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        backgroundColor: '#fff',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        backgroundColor: Colors.white,
+        elevation: 10,
     },
 
     container: {
         flex: 1,
-        paddingTop: 20,
+        paddingTop: 24,
     },
 
     headerRow: {
@@ -242,20 +261,29 @@ const styles = StyleSheet.create({
 
     headerTitle: {
         fontSize: 18,
-        fontWeight: '700',
-        color: '#1f2937',
+        fontWeight: '800',
+        color: Colors.primary,
+        fontFamily: 'Manrope-ExtraBold',
+    },
+
+    headerSubtitle: {
+        fontSize: 12,
+        color: Colors.secondary,
+        fontFamily: 'Manrope-Medium',
+        marginTop: 2,
     },
 
     viewAll: {
-        fontSize: 12,
-        fontWeight: '700',
-        color: '#000',
-        letterSpacing: 0.5
+        fontSize: 14,
+        fontWeight: '800',
+        color: Colors.primary,
+        letterSpacing: 0.5,
+        fontFamily: 'Manrope-ExtraBold',
     },
 
     divider: {
         height: 1,
-        backgroundColor: '#e5e7eb',
+        backgroundColor: '#F3F4F6',
     },
 
     listScroll: {
@@ -264,7 +292,7 @@ const styles = StyleSheet.create({
 
     scrollContent: {
         paddingHorizontal: 20,
-        paddingBottom: 20,
+        paddingBottom: 16,
         flexGrow: 1,
     },
 
@@ -272,19 +300,34 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
+        paddingVertical: 50,
+    },
+
+    loaderText: {
+        marginTop: 12,
+        fontSize: 14,
+        color: Colors.secondary,
+        fontFamily: 'Manrope-Medium',
+    },
+
+    addressItem: {
+        marginTop: 4,
     },
 
     addressRow: {
-        marginTop: 5,
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingVertical: 10,
+        alignItems: 'center',
+        paddingVertical: 12,
     },
 
-    iconStyle: {
-        marginRight: 16,
-        marginTop: 2,
+    iconBox: {
+        width: 32,
+        height: 32,
+        borderRadius: 8,
+        backgroundColor: Colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
     },
 
     addressText: {
@@ -293,65 +336,63 @@ const styles = StyleSheet.create({
 
     addressTitle: {
         fontSize: 15,
-        fontWeight: '600',
-        color: '#1f2937',
-        marginBottom: 4,
+        fontWeight: '700',
+        color: Colors.primary,
+        marginBottom: 2,
+        fontFamily: 'Manrope-Bold',
     },
+
     addressSubtitle: {
-        fontSize: 14,
-        color: '#6b7280',
-        lineHeight: 20,
+        fontSize: 13,
+        color: Colors.secondary,
+        lineHeight: 18,
+        fontFamily: 'Manrope-Medium',
     },
 
     addAddressButton: {
-        marginTop: 20,
-        backgroundColor: '#000',
-        paddingVertical: 24,
-        paddingHorizontal: 58,
-        borderRadius: 12,
+        marginTop: 16,
+        backgroundColor: Colors.primary,
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: 'center',
+        justifyContent: 'center',
+        elevation: 4,
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
     },
 
     addAddressText: {
-        color: '#fff',
+        color: Colors.white,
         fontSize: 14,
-        fontWeight: '700',
+        fontWeight: '800',
         letterSpacing: 1,
+        fontFamily: 'Manrope-ExtraBold',
     },
 
     addressDivider: {
         height: 1,
-        backgroundColor: '#f3f4f6',
+        backgroundColor: '#F9FAFB',
     },
 
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 60,
-    },
-
-    emptyTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#4b5563',
-        marginTop: 16,
-        marginBottom: 8,
-    },
-
-    emptySubtitle: {
-        fontSize: 14,
-        color: '#9ca3af',
-        textAlign: 'center',
+        paddingVertical: 20,
     },
 
     footer: {
-        backgroundColor: '#fff',
+        backgroundColor: Colors.white,
+        borderTopWidth: 1,
+        borderTopColor: '#F3F4F6',
     },
 
     manualRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 20,
+        paddingVertical: 14,
         paddingHorizontal: 20,
     },
 
@@ -360,8 +401,9 @@ const styles = StyleSheet.create({
     },
 
     manualText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#000',
+        fontSize: 15,
+        fontWeight: '700',
+        color: Colors.primary,
+        fontFamily: 'Manrope-Bold',
     },
 });

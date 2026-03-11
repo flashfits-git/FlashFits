@@ -1,6 +1,5 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // ✅ Fix navigation
-import { Star } from 'lucide-react-native'; // optional
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 
 const PopularStores = ({ merchantData, productsByMerchant }) => {
@@ -22,7 +21,7 @@ const PopularStores = ({ merchantData, productsByMerchant }) => {
   );
 
   // console.log(filteredMerchants,'filteredMerchantsfilteredMerchantsfilteredMerchants');
-  
+
 
 
   return (

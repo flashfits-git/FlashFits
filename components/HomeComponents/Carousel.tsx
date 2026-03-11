@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Dimensions, FlatList, StyleSheet, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
@@ -11,20 +11,32 @@ const images = [
   require('../../assets/images/carousal/poster4.jpg'),
 ];
 
-const Carousel = () => {
+type CarouselProps = {
+  banners?: string[];
+};
+
+const Carousel = ({ banners }: CarouselProps) => {
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [index, setIndex] = useState(0);
 
+  const displayImages = useMemo(() => {
+    if (banners && banners.length > 0) {
+      return banners.map(url => ({ uri: url }));
+    }
+    return images;
+  }, [banners]);
+
   useEffect(() => {
+    if (!displayImages || displayImages.length === 0) return;
     const interval = setInterval(() => {
-      let nextIndex = (index + 1) % images.length;
+      let nextIndex = (index + 1) % displayImages.length;
       flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
       setIndex(nextIndex);
     }, 4000);
 
     return () => clearInterval(interval);
-  }, [index]);
+  }, [index, displayImages]);
 
   const handleScrollEnd = (e: any) => {
     const offsetX = e.nativeEvent.contentOffset.x;
@@ -36,7 +48,7 @@ const Carousel = () => {
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={images}
+        data={displayImages}
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
@@ -57,6 +69,17 @@ const Carousel = () => {
           { useNativeDriver: false }
         )}
       />
+      {/* Dot indicators */}
+      {displayImages.length > 1 && (
+        <View style={styles.dotsContainer}>
+          {displayImages.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i === index && styles.activeDot]}
+            />
+          ))}
+        </View>
+      )}
     </View>
   );
 };
@@ -71,6 +94,27 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  dotsContainer: {
+    position: 'absolute',
+    bottom: 6,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    marginHorizontal: 3,
+  },
+  activeDot: {
+    backgroundColor: '#fff',
+    width: 16,
+    borderRadius: 3,
   },
 });
 

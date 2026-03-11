@@ -60,10 +60,12 @@ const DressCard = memo(({ item, onPress }: { item: SelectedProduct; onPress: () 
 const ImageCardHome = ({ products }: { products: Product[] }) => {
     const router = useRouter();
 
-    const availableVariants = products
+    const availableVariants = (products || [])
         .map(product => {
+            if (!product?.variants || !Array.isArray(product.variants)) return null;
+
             const inStockVariant = product.variants.find(variant =>
-                variant.sizes.some(size => size.stock > 0)
+                variant?.sizes && Array.isArray(variant.sizes) && variant.sizes.some(size => size?.stock > 0)
             );
             if (inStockVariant) {
                 return {

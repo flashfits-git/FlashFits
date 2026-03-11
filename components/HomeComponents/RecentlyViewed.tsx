@@ -3,13 +3,12 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import React, { memo, useRef } from 'react';
 import {
-  ActivityIndicator,
   Dimensions,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useWishlist } from '../../app/WishlistContext';
 
@@ -70,15 +69,11 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
           onPress={handleWishlistToggle}
           disabled={wishlistLoading}
         >
-          {wishlistLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Ionicons
-              name={isLiked ? 'heart' : 'heart-outline'}
-              size={18}
-              color={isLiked ? '#FF4444' : '#fff'}
-            />
-          )}
+          <Ionicons
+            name={isLiked ? 'heart' : 'heart-outline'}
+            size={18}
+            color={isLiked ? '#FF4444' : '#fff'}
+          />
         </TouchableOpacity>
       </View>
 
@@ -92,7 +87,12 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
             <Ionicons name="star" size={10} color="#028a34" />
             <Text style={styles.ratingValue}>{product.ratings || '4.2'}</Text>
           </View>
-          <Text style={styles.deliveryTime}>15-20 mins</Text>
+          {product.isTriable && (
+            <View style={styles.tryContainer}>
+              <Text style={styles.tryText}>Try & Buy</Text>
+            </View>
+          )}
+          {/* <Text style={styles.deliveryTime}>15-20 mins</Text> */}
         </View>
 
         <View style={styles.priceContainer}>
@@ -115,6 +115,9 @@ const RecentlyViewed = ({ product = [], accecories = [], deataiPageproducts = []
       : product.length > 0
         ? product
         : accecories;
+
+  console.log(dataToRender, 'dataToRender');
+
 
   return (
     <View style={styles.container}>
@@ -158,11 +161,6 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     marginRight: 14,
     marginBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#f0f0f0',
@@ -192,6 +190,20 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     fontFamily: 'Manrope-ExtraBold',
+  },
+  tryContainer: {
+    backgroundColor: '#e6f7ef',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#028a34',
+  },
+  tryText: {
+    fontSize: 9,
+    color: '#028a34',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
   },
   wishlistButton: {
     position: 'absolute',

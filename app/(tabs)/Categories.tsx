@@ -1,20 +1,20 @@
+import Loader from '@/components/Loader/Loader';
+import { useNavigation, useRouter } from 'expo-router';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  ScrollView,
   Animated,
-  Platform,
   Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
-import { useNavigation, useRouter } from 'expo-router';
-import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { fetchCategories } from '../api/categories';
-import Loader from '@/components/Loader/Loader';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const productsAreaWidth = SCREEN_WIDTH * 0.75; // since flex:4 vs flex:1
@@ -24,9 +24,9 @@ const Categories = () => {
   const navigation = useNavigation();
   const router = useRouter();
 
-  const [categoriesData, setCategoriesData] = useState([]);
-  const [selectedMainId, setSelectedMainId] = useState(null);
-  const [selectedSubId, setSelectedSubId] = useState(null);
+  const [categoriesData, setCategoriesData] = useState<any[]>([]);
+  const [selectedMainId, setSelectedMainId] = useState<string | null>(null);
+  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
@@ -76,13 +76,13 @@ const Categories = () => {
   const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
   const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
 
-  const handleMainCategoryChange = useCallback((id) => {
+  const handleMainCategoryChange = useCallback((id: string) => {
     setSelectedMainId(id);
     const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
     setSelectedSubId(firstSub ? firstSub._id : null);
   }, [categoriesData]);
 
-  const handleSubCategoryChange = (id) => setSelectedSubId(id);
+  const handleSubCategoryChange = (id: string) => setSelectedSubId(id);
 
   useEffect(() => {
     if (mainCategories.length > 0 && !selectedMainId) {
@@ -90,9 +90,9 @@ const Categories = () => {
     }
   }, [mainCategories]);
 
-  const handleViewAll = (subCatName, subCategoryId, subSubCategoryId) => {
+  const handleViewAll = (subCatName: string, subCategoryId: string | null, subSubCategoryId: string) => {
     router.push({
-      pathname: '(stack)/SelectionPage',
+      pathname: '/(stack)/SelectionPage' as any,
       params: {
         filterss: JSON.stringify({
           priceRange: [0, 10000],

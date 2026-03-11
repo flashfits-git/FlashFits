@@ -35,6 +35,7 @@ const StoreDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [merchantData, setMerchantData] = useState<Merchant | null>(null);
   const [productss, setProductss] = useState<any[]>([]);
+  console.log(productss, 'productss');
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params as { merchantId: string };
@@ -93,6 +94,8 @@ const StoreDetailPage = () => {
   };
 
   const groupedProducts = groupBySubCategory(productss);
+
+  console.log(groupedProducts, 'groupedProducts');
 
   if (loading) return <Loader />;
 

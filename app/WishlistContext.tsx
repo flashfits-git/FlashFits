@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { addToWishlist, getMyWishlist, removeFromWishlist } from './api/productApis/products';
@@ -21,7 +22,7 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
     const fetchWishlist = useCallback(async () => {
         try {
             const response = await getMyWishlist();
-            const wishlist = response?.data || [];
+            const wishlist = response?.wishlist || [];
             setWishlistItems(wishlist);
 
             const map: Record<string, string> = {};
@@ -53,6 +54,10 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
         const strVariantId = String(variantId);
         const existingWishlistItemId = wishlistMap[strVariantId];
 
+        // Save original states for potential rollback
+        const originalMap = { ...wishlistMap };
+        const originalItems = [...wishlistItems];
+
         try {
             if (existingWishlistItemId) {
                 // Optimistic UI update: Remove
@@ -62,22 +67,35 @@ export const WishlistProvider = ({ children }: { children: ReactNode }) => {
                 setWishlistItems(prev => prev.filter(item => String(item._id) !== String(existingWishlistItemId)));
                 await SecureStore.setItemAsync('Wishlist', JSON.stringify(newMap));
 
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 await removeFromWishlist(existingWishlistItemId);
             } else {
-                // Add
+                // Optimistic UI update: Add (with temp ID)
+                const tempId = `temp-${Date.now()}`;
+                const newMap = { ...wishlistMap, [strVariantId]: tempId };
+                setWishlistMap(newMap);
+                // Note: wishlistItems will be fully updated after fetchWishlist() below
+
+                await SecureStore.setItemAsync('Wishlist', JSON.stringify(newMap));
+
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 const res = await addToWishlist(productId, strVariantId);
-                const newWishlistItemId = res?.data?._id;
+                const newWishlistItemId = res?.data?._id || res?._id;
 
                 if (newWishlistItemId) {
-                    const newMap = { ...wishlistMap, [strVariantId]: newWishlistItemId };
-                    setWishlistMap(newMap);
-                    // Re-fetch to get the full product info for the new item in wishlistItems
+                    // Update map with real ID and fetch full details
+                    setWishlistMap(prev => ({ ...prev, [strVariantId]: String(newWishlistItemId) }));
                     await fetchWishlist();
+                } else {
+                    throw new Error('Failed to get new wishlist item ID');
                 }
             }
         } catch (error) {
             console.error('Wishlist toggle error:', error);
-            fetchWishlist();
+            // Rollback on error
+            setWishlistMap(originalMap);
+            setWishlistItems(originalItems);
+            await SecureStore.setItemAsync('Wishlist', JSON.stringify(originalMap));
         }
     };
 

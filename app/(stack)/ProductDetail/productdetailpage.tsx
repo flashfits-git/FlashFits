@@ -60,6 +60,7 @@ const ProductDetailPage = () => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const errorTimeoutRef = useRef<any>(null);
   const navigation = useNavigation<any>();
+  
 
   const router = useRouter();
   const route = useRoute<any>();
@@ -87,6 +88,9 @@ const ProductDetailPage = () => {
 
         const data = await productDetailPage(id);
         setProduct(data);
+
+        console.log(data,'da342232ta');
+        
 
         const merchantId = data?.merchantId?._id;
 
@@ -130,6 +134,7 @@ const ProductDetailPage = () => {
         rating: products.ratings,
         name: products.name,
         variants: selectedVariant,
+        isTriable: products.isTriable,
       });
     }
   }, [products, selectedVariant]);
@@ -379,22 +384,21 @@ const ProductDetailPage = () => {
               onPress={handleAddToWishlist}
               disabled={wishlistLoading}
             >
-              {wishlistLoading ? (
-                <ActivityIndicator size="small" color="#fff" />
-              ) : (
-                <Ionicons
-                  name={isInWishlist(selectedVariant?._id) ? 'heart' : 'heart-outline'}
-                  size={20}
-                  color={isInWishlist(selectedVariant?._id) ? 'red' : '#fff'}
-                />
-              )}
+              <Ionicons
+                name={isInWishlist(selectedVariant?._id) ? 'heart' : 'heart-outline'}
+                size={20}
+                color={isInWishlist(selectedVariant?._id) ? 'red' : '#fff'}
+              />
             </TouchableOpacity>
 
-            {discountPercentage > 0 && (
+              <View style={discountPercentage > 0 ? styles.tryBeforeBuyBadge: styles.discountBadge }>
+                <Text style={styles.discountText}>{products?.isTriable ? 'Try Before Buy' : discountPercentage > 0 ? `${discountPercentage}% OFF` : ''}</Text>
+              </View>
+            {/* {discountPercentage > 0 && (
               <View style={styles.discountBadge}>
                 <Text style={styles.discountText}>{discountPercentage}% OFF</Text>
               </View>
-            )}
+            )} */}
           </View>
 
           <View style={styles.infoContainer}>
@@ -617,7 +621,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: 'bold',
     fontSize: 16,
-    fontFamily: 'Montserrat',
+    fontFamily: 'Manrope-Bold',
     textTransform: 'uppercase',
     paddingVertical: 10,
   },
@@ -642,9 +646,13 @@ const styles = StyleSheet.create({
   },
   discountBadge: {
     position: 'absolute', bottom: 16, left: 20, zIndex: 10,
-    backgroundColor: '#FF4444', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
+    backgroundColor: '#983535ff', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
   },
-  discountText: { color: '#fff', fontSize: 12, fontWeight: 'bold', fontFamily: 'Montserrat' },
+  tryBeforeBuyBadge: {
+    position: 'absolute', bottom: 16, left: 20, zIndex: 10,
+    backgroundColor: '#028a34', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12,
+  },
+  discountText: { color: '#fff', fontSize: 12, fontWeight: 'bold', fontFamily: 'Manrope-Bold' },
   titleContainer: {
     position: 'absolute',
     left: 0,
@@ -657,30 +665,30 @@ const styles = StyleSheet.create({
     zIndex: -1,
   },
   infoContainer: { padding: 10 },
-  title: { fontSize: 20, fontWeight: '600', fontFamily: 'Montserrat', marginLeft: 5, },
+  title: { fontSize: 20, fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
   rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 },
   priceSection: { flex: 1, gap: 4 },
-  price: { fontSize: 20, fontWeight: 'bold', fontFamily: 'Montserrat', paddingLeft: 4 },
-  strike: { textDecorationLine: 'line-through', fontSize: 14, color: '#888', marginLeft: 5, fontFamily: 'Montserrat' },
+  price: { fontSize: 20, fontWeight: 'bold', fontFamily: 'Manrope-Bold' },
+  strike: { textDecorationLine: 'line-through', fontSize: 14, color: '#888', marginLeft: 5, fontFamily: 'Manrope' },
   ratingContainer: { flexDirection: 'row', alignItems: 'center', marginVertical: 4 },
-  ratingText: { marginLeft: 5, fontSize: 12, color: '#888', fontFamily: 'Montserrat' },
+  ratingText: { marginLeft: 5, fontSize: 12, color: '#888', fontFamily: 'Manrope' },
 
-  colorRow: { flexDirection: 'row', paddingLeft: 4, paddingTop: 2, flexWrap: 'wrap' },
+  colorRow: { flexDirection: 'row', paddingTop: 2, flexWrap: 'wrap' },
   colorCircle: { width: 30, height: 30, borderRadius: 15, marginRight: 10, borderWidth: 1 },
-  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Montserrat' },
+  optionLabel: { fontSize: 14, fontWeight: '600', marginBottom: 5, marginTop: 10, fontFamily: 'Manrope-SemiBold' },
 
   quantityContainer: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
   circleButton: {
     width: 50, height: 50, borderRadius: 16, borderWidth: 1, borderColor: '#ccc',
     justifyContent: 'center', alignItems: 'center', marginHorizontal: 5,
   },
-  buttonText: { fontSize: 18, fontFamily: 'Montserrat' },
-  quantityText: { fontSize: 16, minWidth: 20, textAlign: 'center', fontFamily: 'Montserrat' },
+  buttonText: { fontSize: 18, fontFamily: 'Manrope-Medium' },
+  quantityText: { fontSize: 16, minWidth: 20, textAlign: 'center', fontFamily: 'Manrope-Medium' },
 
   featuresContainer: { marginTop: 10 },
-  featureText: { fontSize: 12, color: '#666', fontFamily: 'Montserrat', marginLeft: 10 },
-  description: { fontSize: 14, marginVertical: 10, color: '#444', fontFamily: 'Montserrat' },
-  readMore: { color: '#007BFF', fontWeight: '500', fontFamily: 'Montserrat' },
+  featureText: { fontSize: 12, color: '#666', fontFamily: 'Manrope', marginLeft: 10 },
+  description: { fontSize: 14, marginVertical: 10, color: '#444', fontFamily: 'Manrope' },
+  readMore: { color: '#007BFF', fontWeight: '500', fontFamily: 'Manrope-Medium' },
 
   fixedButton: {
     position: 'absolute',
@@ -708,19 +716,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
+  addToBagText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Manrope-Bold' },
 
   modal: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingTop: 10 },
   modalHandle: { backgroundColor: '#ccc', width: 60, height: 6, borderRadius: 3, alignSelf: 'center', marginVertical: 10 },
   modalContent: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, marginTop: 12, fontFamily: 'Montserrat' },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, marginTop: 12, fontFamily: 'Manrope-SemiBold' },
   sizeRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10, marginTop: 12, marginLeft: 15 },
   sizeOption: {
     borderRadius: 30, width: 50, height: 50, marginRight: 10, marginBottom: 10,
     justifyContent: 'center', alignItems: 'center',
   },
-  sizeText: { textAlign: 'center' },
-  stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Montserrat' },
+  sizeText: { textAlign: 'center', fontFamily: 'Manrope' },
+  stockText: { marginLeft: 15, fontSize: 14, fontFamily: 'Manrope' },
   errorBox: {
     position: 'absolute',
     top: 80,
@@ -746,18 +754,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 24,
   },
   selectButton: { height: 70, borderRadius: 28, justifyContent: 'center', alignItems: 'center' },
-  selectButtonText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Montserrat' },
+  selectButtonText: { color: '#fff', fontSize: 23, fontWeight: 'bold', fontFamily: 'Manrope-Bold' },
 
   toast: {
     position: 'absolute', bottom: 110, alignSelf: 'center', zIndex: 1000,
     backgroundColor: '#2DBE74', paddingHorizontal: 20, paddingVertical: 12,
     borderRadius: 20, width: 200, height: 50, justifyContent: 'center', alignItems: 'center',
   },
-  toastText: { color: '#fff', fontSize: 14, fontWeight: '600', fontFamily: 'Montserrat' },
+  toastText: { color: '#fff', fontSize: 14, fontWeight: '600', fontFamily: 'Manrope-SemiBold' },
 
-  errorText: { fontSize: 16, fontFamily: 'Montserrat', color: '#FF4444', textAlign: 'center', marginBottom: 20 },
+  errorText: { fontSize: 16, fontFamily: 'Manrope', color: '#FF4444', textAlign: 'center', marginBottom: 20 },
   retryButton: { backgroundColor: '#000', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
-  retryButtonText: { color: '#fff', fontFamily: 'Montserrat', fontWeight: '600' },
+  retryButtonText: { color: '#fff', fontFamily: 'Manrope-SemiBold', fontWeight: '600' },
 });
 
 export default ProductDetailPage;

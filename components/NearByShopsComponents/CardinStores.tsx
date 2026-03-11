@@ -1,13 +1,13 @@
+import { useNavigation } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
   Image,
-  StyleSheet,
-  TouchableOpacity,
   ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useNavigation } from 'expo-router';
 
 const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId }) => {
   const navigation = useNavigation();
@@ -45,7 +45,7 @@ const DressCard = ({ image, title, price, oldPrice, discount, rating, merchantId
 export default function CardinStores({ products }) {
 
   // console.log(products,'products');
-  
+
   return (
     <View style={styles.container}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>

@@ -2,13 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import {
-  ActivityIndicator,
   FlatList,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { useWishlist } from '../../app/WishlistContext';
 
@@ -55,15 +54,11 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
             onPress={handleWishlistToggle}
             disabled={wishlistLoading}
           >
-            {wishlistLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons
-                name={isLiked ? 'heart' : 'heart-outline'}
-                size={18}
-                color={isLiked ? '#FF4444' : '#fff'}
-              />
-            )}
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isLiked ? '#FF4444' : '#fff'}
+            />
           </TouchableOpacity>
 
           <View style={styles.ratingContainer}>

@@ -1,23 +1,21 @@
+import Loader from '@/components/Loader/Loader';
+import { useNavigation } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
   Animated,
   Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
-  TouchableOpacity
+  View
 } from 'react-native';
-import NearbyStores from '../../components/NearByShopsComponents/NearbyStores';
-import NearbyHeaderBar from '../../components/NearByShopsComponents/NearbyHeaderBar';
-import PopularStores from '../../components/NearByShopsComponents/PopularStores';
-import { useNavigation } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
-import React, { useState, useRef, useEffect } from 'react';
-import PopupCart from '../../components/HomeComponents/PopupCart';
-import { getMerchants, getProductsBatch } from '../api/merchatApis/getMerchantHome';
-import Loader from '@/components/Loader/Loader';
 import Footer from '../../components/Footer';
+import NearbyHeaderBar from '../../components/NearByShopsComponents/NearbyHeaderBar';
+import NearbyStores from '../../components/NearByShopsComponents/NearbyStores';
+import PopularStores from '../../components/NearByShopsComponents/PopularStores';
+import { getMerchants, getProductsBatch } from '../api/merchatApis/getMerchantHome';
 
 export default function FlashfitsStores() {
   const navigation = useNavigation();
@@ -26,10 +24,11 @@ export default function FlashfitsStores() {
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [merchants, setMerchants] = useState([]);
-  const [productsByMerchant, setProductsByMerchant] = useState({}); // New state for batch products
+  const [merchants, setMerchants] = useState<any[]>([]);
+  const [productsByMerchant, setProductsByMerchant] = useState<Record<string, any[]>>({}); // New state for batch products
   const [searchQuery, setSearchQuery] = useState('');
-  // console.log(merchants,'merchantsmerchantsmerchantsmerchants');
+  console.log(merchants, 'merchantsmerchantsmerchantsmerchants');
+
 
 
   useEffect(() => {
@@ -182,9 +181,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111',
     marginTop: 16,
     marginLeft: 20,
     marginBottom: 12,

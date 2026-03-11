@@ -55,7 +55,7 @@ export default function AnimatedSearchBar() {
                 style={styles.cartButton}
                 onPress={() => router.push('/ShoppingBag')}
             >
-                <Ionicons name="bag-handle-outline" size={24} color="#0F0F0F" />
+                <Ionicons name="bag-handle" size={24} color="#0F0F0F" />
                 {cartCount > 0 && (
                     <View style={styles.badge}>
                         <Text style={styles.badgeText}>{cartCount}</Text>
@@ -71,7 +71,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginHorizontal: 16,
-        marginBottom: 16,
         gap: 10,
     },
     container: {

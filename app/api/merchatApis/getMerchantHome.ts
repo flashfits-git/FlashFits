@@ -17,7 +17,7 @@ export const getMerchants = async () => {
 export const getMerchantById = async (id: string) => {
     try {
         const response = await api.get(`/admin/getMerchant/${id}`);
-        console.log(response,'783r88686');
+        // console.log(response,'783r88686');
 
         return response.data;
     } catch (error) {
@@ -39,7 +39,7 @@ export const getProductsBatch = async (merchantIds: string[]) => {
 export const getProductsByMerchantId = async (merchantId: string) => {
     try {
         const response = await api.get(`user/products/merchant/${merchantId}`);
-        console.log(response,'7888vd686');
+        // console.log(response,'7888vd686');
 
         return response.data.products;
     } catch (error) {

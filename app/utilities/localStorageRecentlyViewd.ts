@@ -18,6 +18,16 @@ export const addToPreviouslyViewed = async (product: any) => {
     }
 };
 
+export const clearPreviouslyViewed = async () => {
+  try {
+    console.log("✅ Previously viewed data cleared");
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    console.log("✅ Previously viewed data cleared");
+  } catch (e) {
+    console.log("❌ Error clearing previously viewed", e);
+  }
+};
+
 export const getPreviouslyViewed = async (): Promise<any[]> => {
     try {
         const jsonValue = await AsyncStorage.getItem(STORAGE_KEY);

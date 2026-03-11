@@ -15,7 +15,6 @@ import React, {
 } from 'react';
 import {
   Animated,
-  Easing,
   Platform,
   RefreshControl,
   StyleSheet,
@@ -30,11 +29,10 @@ import Footer from '../../components/Footer';
 import AnimatedSearchBar from '../../components/HomeComponents/AnimatedSearchBar';
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
-import { fetchnewArrivalsProductsData, getMyWishlist } from '../api/productApis/products';
+import { useGender } from '../GenderContext';
+import { fetchnewArrivalsProductsData } from '../api/productApis/products';
 import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
 
-const HEADER_HEIGHT = 70;
-const SCROLL_THRESHOLD = 5;
 const ANIMATION_DURATION = 700;
 
 export default function Home() {
@@ -42,6 +40,12 @@ export default function Home() {
   const navigation = useNavigation();
 
   const { selectedAddress, setSelectedAddress } = useAddress(); // <-- now from context
+  const { selectedGender } = useGender();
+  // const insets = useSafeAreaInsets();
+
+  const L_HEIGHT = 70; // Location header height
+  const S_HEIGHT = 64; // Search bar height
+  // const TOTAL_ABSOLUTE_HEIGHT = insets.top + L_HEIGHT + S_HEIGHT;
 
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState<any[]>([]);
@@ -55,48 +59,22 @@ export default function Home() {
   const [isServiceable, setIsServiceable] = useState<boolean | null>(null);
   const [hasError, setHasError] = useState(false);
 
-  // ------------------- HEADER ANIMATION -------------------
-  const headerAnim = useRef(new Animated.Value(0)).current; // 0 = expanded, 1 = collapsed
-  const isHeaderCollapsed = useRef(false);
-
-  const collapseHeader = useCallback(() => {
-    if (isHeaderCollapsed.current) return;
-    isHeaderCollapsed.current = true;
-    Animated.timing(headerAnim, {
-      toValue: 1,
-      duration: ANIMATION_DURATION,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [headerAnim]);
-
-  const expandHeader = useCallback(() => {
-    if (!isHeaderCollapsed.current) return;
-    isHeaderCollapsed.current = false;
-    Animated.timing(headerAnim, {
-      toValue: 0,
-      duration: ANIMATION_DURATION,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false,
-    }).start();
-  }, [headerAnim]);
-
-  // Animated values derived from headerAnim
-  const headerHeight = headerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [HEADER_HEIGHT, 0],
+  // Animated values derived from scrollOffset
+  const headerTranslateY = scrollOffset.interpolate({
+    inputRange: [0, L_HEIGHT],
+    outputRange: [0, -L_HEIGHT],
     extrapolate: 'clamp',
   });
 
-  const headerOpacity = headerAnim.interpolate({
-    inputRange: [0, 0.5],
+  const headerOpacity = scrollOffset.interpolate({
+    inputRange: [0, L_HEIGHT * 0.75],
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
-  const headerTranslateY = headerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, -HEADER_HEIGHT],
+  const searchBarTranslateY = scrollOffset.interpolate({
+    inputRange: [0, L_HEIGHT],
+    outputRange: [0, -L_HEIGHT + 10], // Margin when fixed
     extrapolate: 'clamp',
   });
 
@@ -106,14 +84,13 @@ export default function Home() {
     try {
       await Promise.all([
         loadInitialData(),
-        syncWishlistVariants(),
       ]);
     } catch (e) {
       console.error('Refresh error:', e);
     } finally {
       setRefreshing(false);
     }
-  }, [loadInitialData, syncWishlistVariants]);
+  }, [loadInitialData]);
 
   useEffect(() => {
     return () => setIsActive(false);
@@ -153,47 +130,23 @@ export default function Home() {
     loadInitialData();
   }, []);
 
-  useEffect(() => {
-    syncWishlistVariants();
-  }, [syncWishlistVariants]);
-
-  const syncWishlistVariants = useCallback(async () => {
-    try {
-      const response = await getMyWishlist();
-      const wishlist = response?.data || [];
-
-      const wishlistMap = wishlist.reduce((acc: any, item: any) => {
-        const variantId = item?.product?.variant?._id;
-        const wishlistItemId = item?._id;
-        if (variantId && wishlistItemId) {
-          acc[String(variantId)] = String(wishlistItemId);
-        }
-        return acc;
-      }, {});
-
-      await SecureStore.setItemAsync('Wishlist', JSON.stringify(wishlistMap));
-    } catch (e) {
-      console.error(e);
-    }
-  }, []);
 
 
 
-  // ------------------- TAB BAR + HEADER SCROLL -------------------
+
+
+
   useEffect(() => {
     const listener = scrollOffset.addListener(({ value }) => {
       const clampedValue = Math.max(0, value);
       const delta = clampedValue - currentOffset.current;
 
-      // Scrolling DOWN (finger moves up) → collapse header + hide tab bar
-      if (delta > SCROLL_THRESHOLD) {
-        collapseHeader();
+      // Hiding/Showing Tab Bar based on scroll direction
+      if (delta > 10 && isTabBarVisible) {
         setIsTabBarVisible(false);
         navigation.setOptions({ tabBarStyle: { display: 'none' } });
       }
-      // Scrolling UP (finger moves down) → expand header + show tab bar
-      else if (delta < -SCROLL_THRESHOLD) {
-        expandHeader();
+      else if (delta < -10 && !isTabBarVisible) {
         setIsTabBarVisible(true);
         navigation.setOptions({
           tabBarStyle: {
@@ -216,20 +169,21 @@ export default function Home() {
     });
 
     return () => scrollOffset.removeListener(listener);
-  }, [collapseHeader, expandHeader]);
+  }, [isTabBarVisible]);
 
   // ------------------- HEADER -------------------
   const Header = useMemo(
     () => (
       <>
-        <Carousel />
+        {/* Spacer for the absolute headers */}
+        {/* <View style={{ height: 30 }} /> */}
         <HomeCategorySwitcherShops />
         <RecentlyViewed product={recentlyViewed} />
-        <CategorySwitcher />
+        {selectedGender !== 'All' && <CategorySwitcher />}
         <ParentCategoryIndexing products={newArrivalsProducts} />
       </>
     ),
-    [newArrivalsProducts, recentlyViewed],
+    [newArrivalsProducts, recentlyViewed, selectedGender],
   );
 
   if (loading) return <Loader />;
@@ -267,70 +221,74 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <View style={styles.container}>
-        {/* COLLAPSIBLE LOCATION HEADER */}
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              height: headerHeight,
-              opacity: headerOpacity,
-              transform: [{ translateY: headerTranslateY }],
-              overflow: 'hidden',
-            },
-          ]}
-        >
-          <View style={styles.locationWrapper}>
-            <Ionicons
-              name="location-outline"
-              size={30}
-              color="black"
-              style={styles.locationIcon}
-            />
+        {/* FIXED POSITION HEADERS — transparent overlay so no white bg on scroll */}
+        <View style={styles.headerContainer} pointerEvents="box-none">
+          {/* LOCATION HEADER */}
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                height: L_HEIGHT,
+                opacity: headerOpacity,
+                transform: [{ translateY: headerTranslateY }],
+              },
+            ]}
+          >
+            <View style={styles.locationWrapper}>
+              <Ionicons
+                name="location-outline"
+                size={30}
+                color="black"
+                style={styles.locationIcon}
+              />
 
-            <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen" as any)}
-              style={{ paddingVertical: 20 }}>
-              <View
-                style={styles.locationTextWrapper}
-              >
-                <View style={styles.locationRow}>
-                  <Text style={styles.cityText} numberOfLines={1}>
-                    {selectedAddress?.addressType === 'Non-serviceable'
-                      ? 'Oops! We don\'t deliver here'
-                      : selectedAddress
-                        ? [
-                          selectedAddress.addressLine1,
-                          selectedAddress.area,
-                          selectedAddress.city,
-                        ].filter(Boolean).join(', ')
-                        : 'Select Location'}
-                  </Text>
+              <TouchableOpacity onPress={() => router.push("/(stack)/SavedAddressesScreen" as any)}
+                style={{ paddingVertical: 20 }}>
+                <View
+                  style={styles.locationTextWrapper}
+                >
+                  <View style={styles.locationRow}>
+                    <Text style={styles.cityText} numberOfLines={1}>
+                      {selectedAddress?.addressType === 'Non-serviceable'
+                        ? 'Oops! We don\'t deliver here'
+                        : selectedAddress
+                          ? [
+                            selectedAddress.addressLine1,
+                            selectedAddress.area,
+                            selectedAddress.city,
+                          ].filter(Boolean).join(', ')
+                          : 'Select Location'}
+                    </Text>
+                  </View>
+
+                  <View style={styles.subRow}>
+                    <Text style={styles.subText} numberOfLines={1}>
+                      {selectedAddress?.addressType === 'Non-serviceable'
+                        ? 'We\'ll be there soon'
+                        : selectedAddress?.addressType || 'Explore trending styles around you!'}
+                    </Text>
+                    <TouchableOpacity>
+                      <Ionicons
+                        name="chevron-down-outline"
+                        size={16}
+                        color="black"
+                      />
+                    </TouchableOpacity>
+                  </View>
                 </View>
+              </TouchableOpacity>
+            </View>
 
-                <View style={styles.subRow}>
-                  <Text style={styles.subText} numberOfLines={1}>
-                    {selectedAddress?.addressType === 'Non-serviceable'
-                      ? 'We\'ll be there soon'
-                      : selectedAddress?.addressType || 'Explore trending styles around you!'}
-                  </Text>
-                  <TouchableOpacity>
-                    <Ionicons
-                      name="chevron-down-outline"
-                      size={16}
-                      color="black"
-                    />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </TouchableOpacity>
-          </View>
+            <View style={styles.notificationIcon}>
+              <SearchCartProfileButton hideSearchIcon={true} />
+            </View>
+          </Animated.View>
 
-          <View style={styles.notificationIcon}>
-            <SearchCartProfileButton hideSearchIcon={true} />
-          </View>
-        </Animated.View>
-
-        {/* SEARCH BAR — always visible */}
-        <AnimatedSearchBar />
+          {/* SEARCH BAR */}
+          <Animated.View style={{ height: S_HEIGHT, transform: [{ translateY: searchBarTranslateY }] }}>
+            <AnimatedSearchBar />
+          </Animated.View>
+        </View>
 
         <Animated.FlatList
           data={[]}
@@ -342,7 +300,7 @@ export default function Home() {
           )}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
+          contentContainerStyle={{ paddingTop: L_HEIGHT + S_HEIGHT, paddingBottom: 100 }}
           keyExtractor={() => 'dummy'}
           refreshControl={
             <RefreshControl
@@ -365,9 +323,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
-    height: HEADER_HEIGHT,
-    backgroundColor: '#fff',
+    paddingHorizontal: 10,
+    backgroundColor: 'transparent',
     zIndex: 10,
   },
   locationWrapper: { flexDirection: 'row', alignItems: 'center', flex: 1 },
@@ -388,4 +345,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
   },
   notificationIcon: { marginRight: 20 },
+  headerContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    backgroundColor: 'transparent',
+  },
 });

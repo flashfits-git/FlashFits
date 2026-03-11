@@ -1,16 +1,23 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useWishlist } from '../../app/WishlistContext';
 
 
 const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) => {
+
+  console.log(product, 'product');
+
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [wishlistLoading, setWishlistLoading] = React.useState(false);
 
-  const variantId = product?.variantId || (Array.isArray(product?.variants) ? product.variants[0]?._id : product?.variants?._id);
-  const imageUrl = product?.images?.[0]?.url;
+  const variant = product?.variant || (Array.isArray(product?.variants) ? product.variants[0] : product?.variants);
+  const variantId = variant?._id || product.variantId;
+  const imageUrl = variant?.images?.[0]?.url || product?.images?.[0]?.url;
+  console.log(imageUrl, 'imageUrl')
+  const price = variant?.price || product?.price || 0;
+  const mrp = variant?.mrp || product?.mrp || 0;
 
   const isLiked = variantId ? isInWishlist(variantId) : false;
 
@@ -37,20 +44,12 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
             onPress={handleWishlistToggle}
             disabled={wishlistLoading}
           >
-            {wishlistLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Ionicons
-                name={isLiked ? 'heart' : 'heart-outline'}
-                size={18}
-                color={isLiked ? '#FF4444' : '#fff'}
-              />
-            )}
+            <Ionicons
+              name={isLiked ? 'heart' : 'heart-outline'}
+              size={18}
+              color={isLiked ? '#FF4444' : '#fff'}
+            />
           </TouchableOpacity>
-
-          <View style={styles.ratingContainer}>
-            <Text style={styles.ratingText}>⭐ {product.ratings || '0.0'}</Text>
-          </View>
         </View>
       </View>
 
@@ -58,14 +57,26 @@ const DressCard = ({ product, onPress }: { product: any; onPress: () => void }) 
         <Text style={styles.title} numberOfLines={1}>
           {product?.name || 'Unnamed Product'}
         </Text>
-        <Text style={styles.deliveryText}>13 mins</Text>
+      </View>
+
+      <View style={styles.ratingRow}>
+        <View style={styles.ratingContainerInner}>
+          <Ionicons name="star" size={10} color="#028a34" />
+          <Text style={styles.ratingValue}>{product.ratings || '4.2'}</Text>
+        </View>
+        {product.isTriable && (
+          <View style={styles.tryContainer}>
+            <Text style={styles.tryText}>Try & Buy</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.price}>₹{product?.price || '0'}</Text>
-        {product?.mrp && product?.mrp > product?.price ? (
-          <Text style={styles.oldPrice}>₹{product?.mrp}</Text>
+        <Text style={styles.price}>₹{price}</Text>
+        {mrp > price ? (
+          <Text style={styles.oldPrice}>₹{mrp}</Text>
         ) : null}
+        {/* <Text style={styles.discount}>13-20 mins</Text> */}
       </View>
     </TouchableOpacity>
   );
@@ -109,24 +120,42 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
   },
-  ratingContainer: {
-    position: 'absolute',
-    bottom: 8,
-    left: 8,
-    backgroundColor: 'white',
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    marginTop: 4,
+    gap: 8,
+  },
+  ratingContainerInner: {
+    backgroundColor: '#fff',
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    elevation: 2,
-    opacity: 0.8,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  ratingText: {
-    fontSize: 7,
-    fontWeight: 'bold',
-    color: '#000',
-    fontFamily: 'Montserrat',
+  tryContainer: {
+    backgroundColor: '#e6f7ef',
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 0.5,
+    borderColor: '#028a34',
+  },
+  tryText: {
+    fontSize: 9,
+    color: '#028a34',
+    fontWeight: '700',
+    fontFamily: 'Manrope-Bold',
+  },
+  ratingValue: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F0F0F',
+    fontFamily: 'Manrope-Bold',
   },
   wishlistButton: {
     position: 'absolute',
@@ -149,7 +178,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#333',
     flex: 1,
-    marginRight: 6,
+    fontFamily: 'Manrope-Medium',
   },
   deliveryText: {
     fontSize: 12,
@@ -166,12 +195,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#000',
+    fontFamily: 'Manrope-Bold',
   },
   oldPrice: {
     fontSize: 12,
     color: '#999',
     textDecorationLine: 'line-through',
     marginLeft: 8,
+    fontFamily: 'Manrope',
+  },
+  discount: {
+    fontSize: 11,
+    color: '#242424ff',
+    marginLeft: 6,
+    fontWeight: '600',
+    fontFamily: 'Manrope-SemiBold',
   },
 });
 

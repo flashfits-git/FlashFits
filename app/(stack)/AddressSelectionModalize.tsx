@@ -1,16 +1,27 @@
+import { useAddress } from '@/app/AddressContext';
+import { getAddresses } from '@/app/api/productApis/cartProduct';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store';
 import React, {
     forwardRef,
     useImperativeHandle,
     useRef,
-    useEffect,
-    useState,
+    useState
 } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import {
+    ActivityIndicator,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
+} from 'react-native';
 import { Modalize } from 'react-native-modalize';
-import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store';
-import { useAddress } from '@/app/AddressContext';
-import { getAddresses } from '@/app/api/productApis/cartProduct';
+import Colors from '../../assets/theme/Colors';
+
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 interface AddressModalProps {
     onSelectAddress?: (address: any) => void;
@@ -37,7 +48,7 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
     const loadAddresses = async () => {
         try {
             const res = await getAddresses();
-            console.log(res?.addresses, 'res?.addressesres?.addressesres?.addresses');
+            // console.log(res?.addresses, 'res?.addressesres?.addressesres?.addresses');
             setAddresses(res?.addresses || []);
 
         } catch (err) {
@@ -69,13 +80,13 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
 
     const EmptyAddress = ({ router, modalRef }: any) => (
         <View style={styles.emptyContainer}>
-            {/* <View style={styles.emptyIconContainer}>
-                <Text style={styles.emptyIcon}>📍</Text>
-            </View> */}
+            <View style={styles.emptyIconContainer}>
+                <Ionicons name="location-outline" size={40} color={Colors.primary} />
+            </View>
 
             <Text style={styles.emptyTitle}>No Address Found</Text>
             <Text style={styles.emptySubtitle}>
-                Add your delivery address to continue
+                Add your delivery address to continue shopping
             </Text>
 
             <TouchableOpacity
@@ -86,15 +97,16 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
                 style={styles.addButtonLarge}
                 activeOpacity={0.8}
             >
+                <Ionicons name="add" size={20} color={Colors.white} style={{ marginRight: 8 }} />
                 <Text style={styles.addButtonLargeText}>
-                    + Add New Address
+                    Add New Address
                 </Text>
             </TouchableOpacity>
         </View>
     );
 
     const AddressList = ({ addresses, router, modalRef, selectAddress }: any) => (
-        <View style={styles.listContainer}>
+        <View style={{ flex: 1, paddingBottom: 16 }}>
             <View style={styles.header}>
                 <View>
                     <Text style={styles.headerTitle}>Deliver To</Text>
@@ -102,23 +114,23 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
                         {addresses.length} saved {addresses.length === 1 ? 'address' : 'addresses'}
                     </Text>
                 </View>
+                <TouchableOpacity
+                    onPress={() => {
+                        modalRef.current?.close();
+                        router.push('/(stack)/SelectLocationScreen');
+                    }}
+                    style={styles.headerAddButton}
+                >
+                    <Ionicons name="add-circle-outline" size={24} color={Colors.primary} />
+                </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-                onPress={() => {
-                    modalRef.current?.close();
-                    router.push('/(stack)/SelectLocationScreen');
-                }}
-                style={styles.addButtonLarge}
-                activeOpacity={0.8}
+            <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={styles.addressesContainer}
             >
-                <Text style={styles.addButtonLargeText}>
-                    + Add New Address
-                </Text>
-            </TouchableOpacity>
-
-            <View style={styles.addressesContainer}>
-                {addresses.map((item: any, index: number) => (
+                {addresses.map((item: any) => (
                     <TouchableOpacity
                         key={item._id}
                         onPress={() => selectAddress(item)}
@@ -130,17 +142,24 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
                     >
                         <View style={styles.addressHeader}>
                             <View style={styles.addressTypeContainer}>
-                                <Text style={styles.addressTypeIcon}>
-                                    {item.addressType === 'Home' ? '🏠' :
-                                        item.addressType === 'Work' ? '💼' : '📍'}
-                                </Text>
+                                <View style={[
+                                    styles.typeIconBox,
+                                    selectedAddress?._id === item._id && styles.typeIconBoxSelected
+                                ]}>
+                                    <Ionicons
+                                        name={item.addressType === 'Home' ? 'home' :
+                                            item.addressType === 'Work' ? 'briefcase' : 'location'}
+                                        size={16}
+                                        color={selectedAddress?._id === item._id ? Colors.white : Colors.primary}
+                                    />
+                                </View>
                                 <Text style={styles.addressType}>
                                     {item.addressType}
                                 </Text>
                             </View>
                             {selectedAddress?._id === item._id && (
                                 <View style={styles.selectedBadge}>
-                                    <Text style={styles.selectedBadgeText}>✓</Text>
+                                    <Ionicons name="checkmark" size={12} color={Colors.white} />
                                 </View>
                             )}
                         </View>
@@ -150,24 +169,40 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
                         </Text>
 
                         <View style={styles.contactInfo}>
-                            <Text style={styles.contactText}>
-                                👤 {item.name}
-                            </Text>
-                            <Text style={styles.contactDivider}>•</Text>
-                            <Text style={styles.contactText}>
-                                📞 {item.phone}
-                            </Text>
+                            <View style={styles.contactItem}>
+                                <Ionicons name="person-outline" size={14} color={Colors.secondary} />
+                                <Text style={styles.contactText}>{item.name}</Text>
+                            </View>
+                            <View style={styles.contactDivider} />
+                            <View style={styles.contactItem}>
+                                <Ionicons name="call-outline" size={13} color={Colors.secondary} />
+                                <Text style={styles.contactText}>{item.phone}</Text>
+                            </View>
                         </View>
                     </TouchableOpacity>
                 ))}
-            </View>
+            </ScrollView>
+
+            <TouchableOpacity
+                onPress={() => {
+                    modalRef.current?.close();
+                    router.push('/(stack)/SelectLocationScreen');
+                }}
+                style={[styles.addButtonLarge, { marginTop: 12 }]}
+                activeOpacity={0.8}
+            >
+                <Ionicons name="add" size={18} color={Colors.white} style={{ marginRight: 6 }} />
+                <Text style={styles.addButtonLargeText}>
+                    Add New Address
+                </Text>
+            </TouchableOpacity>
         </View>
     );
 
     return (
         <Modalize
             ref={modalRef}
-            adjustToContentHeight
+            modalHeight={SCREEN_HEIGHT * 0.5}
             onOpened={handleOpen}
             onClosed={handleClosed}
             withOverlay={true}
@@ -176,7 +211,7 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
             <View style={styles.container}>
                 {loading ? (
                     <View style={styles.loadingContainer}>
-                        <ActivityIndicator size="large" color="#000" />
+                        <ActivityIndicator size="large" color={Colors.primary} />
                         <Text style={styles.loadingText}>Loading addresses...</Text>
                     </View>
                 ) : addresses.length === 0 ? (
@@ -196,55 +231,58 @@ const AddressModalize = forwardRef(({ onSelectAddress }: AddressModalProps, ref)
 
 const styles = StyleSheet.create({
     modalStyle: {
-        pointerEvents: 'auto',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        backgroundColor: Colors.white,
     },
     container: {
+        flex: 1,
         paddingHorizontal: 20,
         paddingTop: 24,
-        paddingBottom: 32,
+        paddingBottom: 24,
     },
     loadingContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 40,
+        paddingVertical: 60,
     },
     loadingText: {
-        marginTop: 12,
-        fontSize: 14,
-        color: '#666',
-        fontWeight: '500',
+        marginTop: 16,
+        fontSize: 15,
+        color: Colors.secondary,
+        fontWeight: '600',
+        fontFamily: 'Manrope-SemiBold',
     },
 
     // Empty State
     emptyContainer: {
         alignItems: 'center',
-        paddingVertical: 20,
+        paddingVertical: 40,
     },
     emptyIconContainer: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: Colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
-    },
-    emptyIcon: {
-        fontSize: 40,
+        marginBottom: 24,
     },
     emptyTitle: {
-        fontSize: 20,
-        fontWeight: '700',
-        color: '#000',
+        fontSize: 22,
+        fontWeight: '800',
+        color: Colors.primary,
         marginBottom: 8,
+        fontFamily: 'Manrope-ExtraBold',
     },
     emptySubtitle: {
-        fontSize: 14,
-        color: '#666',
+        fontSize: 15,
+        color: Colors.secondary,
         marginBottom: 32,
         textAlign: 'center',
+        fontFamily: 'Manrope-Medium',
+        paddingHorizontal: 20,
+        lineHeight: 22,
     },
 
     // List View
@@ -255,113 +293,133 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
     },
     headerTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: '#000',
-        marginBottom: 4,
+        fontSize: 20,
+        fontWeight: '800',
+        color: Colors.primary,
+        fontFamily: 'Manrope-ExtraBold',
     },
     headerSubtitle: {
         fontSize: 13,
-        color: '#666',
-        fontWeight: '500',
+        color: Colors.secondary,
+        fontWeight: '600',
+        fontFamily: 'Manrope-SemiBold',
+        marginTop: 2,
+    },
+    headerAddButton: {
+        padding: 4,
     },
 
     // Add Button (Large)
     addButtonLarge: {
-        backgroundColor: '#000',
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderRadius: 12,
+        flexDirection: 'row',
+        backgroundColor: Colors.primary,
+        paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 24,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        elevation: 8,
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
     },
     addButtonLargeText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '700',
-        letterSpacing: 0.3,
+        color: Colors.white,
+        fontSize: 15,
+        fontWeight: '800',
+        fontFamily: 'Manrope-ExtraBold',
+        letterSpacing: 0.5,
     },
 
     // Address Cards
     addressesContainer: {
         gap: 12,
+        paddingBottom: 8,
     },
     addressCard: {
         padding: 16,
         borderRadius: 16,
-        borderWidth: 2,
-        borderColor: '#e5e5e5',
-        backgroundColor: '#fff',
-        elevation: 1,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
+        borderWidth: 1.5,
+        borderColor: '#F0F0F0',
+        backgroundColor: Colors.white,
+        shadowColor: Colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 2,
     },
     addressCardSelected: {
-        borderColor: '#000',
-        backgroundColor: '#f9f9f9',
+        borderColor: Colors.primary,
+        backgroundColor: Colors.white,
+        borderWidth: 2,
     },
     addressHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     addressTypeContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
     },
-    addressTypeIcon: {
-        fontSize: 20,
-    },
-    addressType: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#000',
-    },
-    selectedBadge: {
-        width: 24,
-        height: 24,
-        borderRadius: 12,
-        backgroundColor: '#000',
+    typeIconBox: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        backgroundColor: Colors.surface,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    selectedBadgeText: {
-        color: '#fff',
-        fontSize: 14,
+    typeIconBoxSelected: {
+        backgroundColor: Colors.primary,
+    },
+    addressType: {
+        fontSize: 15,
         fontWeight: '700',
+        color: Colors.primary,
+        fontFamily: 'Manrope-Bold',
+    },
+    selectedBadge: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        backgroundColor: Colors.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     addressLine: {
         fontSize: 14,
-        color: '#444',
+        color: Colors.dark2,
         lineHeight: 20,
-        marginBottom: 12,
+        marginBottom: 10,
+        fontFamily: 'Manrope-Medium',
     },
     contactInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 10,
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
     },
     contactText: {
         fontSize: 13,
-        color: '#666',
-        fontWeight: '500',
+        color: Colors.secondary,
+        fontWeight: '600',
+        fontFamily: 'Manrope-SemiBold',
     },
     contactDivider: {
-        fontSize: 13,
-        color: '#ccc',
+        width: 1,
+        height: 10,
+        backgroundColor: '#E0E0E0',
     },
 });
 

@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { fetchCategories, Category } from '../../app/api/categories';
 import { getMerchants } from '../../app/api/merchatApis/getMerchantHome';
 import { useGender } from '../../app/GenderContext';
-import { normalizeCategory } from '../../app/utilities/categoryUtils';
+
+import Carousel from '../HomeComponents/Carousel';
 import ShopGridHome from '../HomeComponents/ShopGridHome';
 
 const CATEGORIES: ('All' | 'Men' | 'Women' | 'Kids')[] = ['All', 'Men', 'Women', 'Kids'];
@@ -17,20 +19,30 @@ const CATEGORIES: ('All' | 'Men' | 'Women' | 'Kids')[] = ['All', 'Men', 'Women',
 const CategorySwitcherShops = () => {
   const { selectedGender, setSelectedGender } = useGender(); // Use context
   const [merchantData, setMerchantData] = React.useState<any[]>([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchMerchants = async () => {
       try {
         const res = await getMerchants();
-        // console.log(res,'3323w');
-
         setMerchantData(res?.merchants || []);
       } catch (err) {
         console.error('Error fetching merchants:', err);
+      } 
+    };
+
+    const loadCategories = async () => {
+      try {
+        const res = await fetchCategories();
+        setCategories(res || []);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
       }
     };
+
     fetchMerchants();
+    loadCategories();
   }, []);
 
   const categoryMap = useMemo(() => {
@@ -41,23 +53,18 @@ const CategorySwitcherShops = () => {
       Kids: [],
     };
 
-    const seenInSpecific = new Set<string>(); // Track merchants already in Men/Women/Kids
-
     merchantData.forEach((merchant) => {
-      const normalized = normalizeCategory(merchant.category);
-      const id = merchant._id;
+      const gender = (merchant.genderCategory || '').toLowerCase();
 
-      // Always push to All - safe because it's separate
+      // Always push to All
       map.All.push(merchant);
 
-      // Only push to specific gender if it's not Unisex and matches
-      if (normalized === 'Men' || normalized === 'Women' || normalized === 'Kids') {
-        if (!seenInSpecific.has(id)) {
-          map[normalized].push(merchant);
-          seenInSpecific.add(id); // Prevent same merchant in multiple genders
-        }
-      }
-      // Unisex stays only in All → perfect
+      // Men + Unisex → Men tab
+      if (gender === 'men' || gender === 'unisex') map.Men.push(merchant);
+      // Women + Unisex → Women tab
+      if (gender === 'women' || gender === 'unisex') map.Women.push(merchant);
+      // Kids only → Kids tab
+      if (gender === 'kids') map.Kids.push(merchant);
     });
 
     return map;
@@ -66,6 +73,32 @@ const CategorySwitcherShops = () => {
   const filteredMerchants = useMemo(() => {
     return categoryMap[selectedGender] || [];
   }, [categoryMap, selectedGender]);
+
+  const carouselBanners = useMemo(() => {
+    const level0 = categories.filter(c => c.level === 0);
+    let targetCategories: Category[] = [];
+
+    if (selectedGender === 'All') {
+      targetCategories = level0.filter(c => {
+        const name = c.name.toLowerCase();
+        return name.includes('men') || name.includes('women') || name.includes('kids') || name.includes('unisex');
+      });
+    } else {
+      const genderLower = selectedGender.toLowerCase();
+      targetCategories = level0.filter(c => c.name.toLowerCase() === genderLower);
+    }
+
+    const urls: string[] = [];
+    targetCategories.forEach(c => {
+      if (c.title_banners && Array.isArray(c.title_banners)) {
+        c.title_banners.forEach((b: any) => {
+          if (b.url) urls.push(b.url);
+        });
+      }
+    });
+
+    return urls;
+  }, [categories, selectedGender]);
 
   return (
     <View style={styles.container}>
@@ -89,6 +122,7 @@ const CategorySwitcherShops = () => {
           </TouchableOpacity>
         ))}
       </View>
+      <Carousel banners={carouselBanners} />
 
       {/* Shops Grid */}
       <ShopGridHome merchants={filteredMerchants} />
@@ -98,7 +132,7 @@ const CategorySwitcherShops = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { marginTop: 16 },
+  container: { marginTop: 5 },
   topTabs: {
     flexDirection: 'row',
     justifyContent: 'space-around',

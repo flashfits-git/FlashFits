@@ -1,7 +1,7 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 import { useNavigation } from 'expo-router';
+import React from 'react';
+import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import CardinStores from '../../components/NearByShopsComponents/CardinStores';
 // import { Ionicons } from '@expo/vector-icons';
 
 
