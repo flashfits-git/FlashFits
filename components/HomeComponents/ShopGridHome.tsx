@@ -84,6 +84,7 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     horizontalListContent: {
+        paddingTop:16,
         paddingLeft: 5,
         paddingRight: 8,
         paddingBottom: 16,

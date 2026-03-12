@@ -85,7 +85,7 @@ const Carousel = ({ banners }: CarouselProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: { height: height * 0.17, backgroundColor: '#000' },
+  container: { height: height * 0.18, backgroundColor: '#000' },
   imageContainer: {
     width: width,
     height: height * 0.20,
