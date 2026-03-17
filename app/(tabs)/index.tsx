@@ -30,8 +30,9 @@ import AnimatedSearchBar from '../../components/HomeComponents/AnimatedSearchBar
 import RecentlyViewed from '../../components/HomeComponents/RecentlyViewed';
 import { useAddress } from '../AddressContext'; // ✅ NEW — use selectedAddress context'
 import { useGender } from '../GenderContext';
-import { fetchnewArrivalsProductsData } from '../api/productApis/products';
+import { fetchnewArrivalsProductsData, fetchTrendingProductsData, fetchRecommendedProductsData, fetchBanners } from '../api/productApis/products';
 import { getPreviouslyViewed } from '../utilities/localStorageRecentlyViewd';
+import ProductHorizontalList from '../../components/HomeComponents/ProductHorizontalList';
 
 const ANIMATION_DURATION = 700;
 
@@ -49,8 +50,13 @@ export default function Home() {
 
   const [recentlyViewed, setRecentlyViewed] = useState<any[]>([]);
   const [newArrivalsProducts, setNewArrivalsProducts] = useState<any[]>([]);
+  const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
+  const [recommendedProducts, setRecommendedProducts] = useState<any[]>([]);
+  const [banners, setBanners] = useState<{ [key: string]: any }>({});
   const [loading, setLoading] = useState(true);
+  const [sectionLoading, setSectionLoading] = useState(false);
 
+  const isInitialRender = useRef(true);
   const scrollOffset = useRef(new Animated.Value(0)).current;
   const currentOffset = useRef(0);
   const [isTabBarVisible, setIsTabBarVisible] = useState(true);
@@ -78,12 +84,62 @@ export default function Home() {
     extrapolate: 'clamp',
   });
 
+  // ------------------- LOAD DATA -------------------
+  const loadInitialData = useCallback(async (isInitialLoad = false) => {
+    if (isInitialLoad) {
+      setLoading(true);
+    } else {
+      setSectionLoading(true);
+    }
+    
+    try {
+      // Pass selectedGender to all product fetches
+      const genderParam = selectedGender === 'All' ? undefined : selectedGender.toLowerCase();
+      
+      const [products, trending, recommended, viewed, bannerData, storedAddress] = await Promise.all([
+        fetchnewArrivalsProductsData(genderParam),
+        fetchTrendingProductsData(genderParam),
+        fetchRecommendedProductsData(genderParam),
+        getPreviouslyViewed(),
+        fetchBanners(),
+        SecureStore.getItemAsync('selectedAddress'),
+      ]);
+
+      setNewArrivalsProducts(products || []);
+      setTrendingProducts(trending || []);
+      setRecommendedProducts(recommended || []);
+      setRecentlyViewed(viewed || []);
+      
+      const actualBanners = bannerData?.banners || bannerData || {};
+      setBanners(actualBanners);
+
+      // Set address from SecureStore to Context 
+      if (storedAddress) {
+        const parsed = JSON.parse(storedAddress);
+        setSelectedAddress(parsed);
+      }
+
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setSectionLoading(false);
+      }
+    } catch (error) {
+      console.error('Error loading initial data:', error);
+      setHasError(true);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setSectionLoading(false);
+      }
+    }
+  }, [selectedGender]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       await Promise.all([
-        loadInitialData(),
+        loadInitialData(false),
       ]);
     } catch (e) {
       console.error('Refresh error:', e);
@@ -96,39 +152,18 @@ export default function Home() {
     return () => setIsActive(false);
   }, []);
 
-  // ------------------- LOAD DATA -------------------
-  const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [products, viewed, storedAddress] = await Promise.all([
-        fetchnewArrivalsProductsData(),
-        getPreviouslyViewed(),
-        SecureStore.getItemAsync('selectedAddress'),
-      ]);
-      // console.log(viewed, 'viewsss');
-
-      setNewArrivalsProducts(products || []);
-      setRecentlyViewed(viewed || []);
-
-      // Set address from SecureStore to Context 
-      if (storedAddress) {
-        const parsed = JSON.parse(storedAddress);
-        setSelectedAddress(parsed);
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error('Error loading initial data:', error);
-      setHasError(true);
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (!isActive) return;
-
-    loadInitialData();
-  }, []);
+    
+    // First time mount, use the full screen loader. 
+    // Subsequent gender changes, use the skeleton loader.
+    if (isInitialRender.current) {
+      loadInitialData(true);
+      isInitialRender.current = false;
+    } else {
+      loadInitialData(false);
+    }
+  }, [isActive, selectedGender, loadInitialData]); // Re-fetch when gender changes
 
 
 
@@ -180,10 +215,29 @@ export default function Home() {
         <HomeCategorySwitcherShops />
         <RecentlyViewed product={recentlyViewed} />
         {selectedGender !== 'All' && <CategorySwitcher />}
-        <ParentCategoryIndexing products={newArrivalsProducts} />
+        
+        {/* New dynamic sections */}
+        <ProductHorizontalList 
+          title="New Arrivals" 
+          data={newArrivalsProducts} 
+          isLoading={sectionLoading} 
+          banner={banners['new_arrivals_banner']?.[0]}
+        />
+        <ProductHorizontalList 
+          title="Trending Now" 
+          data={trendingProducts} 
+          isLoading={sectionLoading} 
+          banner={banners['trending_banner']?.[0]}
+        />
+        <ProductHorizontalList 
+          title="You May Like" 
+          data={recommendedProducts} 
+          isLoading={sectionLoading} 
+          banner={banners['recommended_banner']?.[0]}
+        />
       </>
     ),
-    [newArrivalsProducts, recentlyViewed, selectedGender],
+    [newArrivalsProducts, trendingProducts, recommendedProducts, recentlyViewed, selectedGender, sectionLoading, banners],
   );
 
   if (loading) return <Loader />;
