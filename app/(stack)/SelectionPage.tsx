@@ -1,6 +1,6 @@
 import Card from '@/components/HomeComponents/Card';
 import Loader from '@/components/Loader/Loader';
-import { FontAwesome, Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -9,6 +9,7 @@ import {
   Platform,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from 'react-native';
@@ -45,7 +46,7 @@ export default function SelectionPage() {
   const router = useRouter();
   const route = useRoute<any>();
   const { query, subCatName, filterss, categoryPath, gender } = (route.params as any) || {};
-  console.log(filterss, 'filterssfilterssfilterssfilterss');
+  // console.log(filterss, 'filterssfilterssfilterssfilterss');
 
   const { cartItems, cartCount } = useCart();
 
@@ -62,11 +63,11 @@ export default function SelectionPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<string[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+  const [localQuery, setLocalQuery] = useState(query || '');
   // console.log(selectedCategoryIds,'selectedCategoryIds');
 
-  const sortModalRef = useRef(null);
-  const genderModalRef = useRef(null);
-  const filterModalRef = useRef(null);
+  const sortModalRef = useRef<Modalize>(null);
+  const filterModalRef = useRef<Modalize>(null);
 
   const filters = useMemo(() => ({
     priceRange,
@@ -146,7 +147,7 @@ export default function SelectionPage() {
       setIsLoadingProducts(true);
 
       const apiFilters = {
-        ...(query ? { search: query } : {}),
+        ...(localQuery ? { search: localQuery } : {}),
         ...filters,
         selectedCategoryIds:
           selectedCategoryIds.length > 0
@@ -158,13 +159,14 @@ export default function SelectionPage() {
       console.log("🔎 Fetching products with filters:", apiFilters);
 
       const res = await getFilteredProducts(apiFilters);
+
       setProducts(res?.products || []);
     } catch (err) {
       console.error("Error fetching filtered products:", err);
     } finally {
       setIsLoadingProducts(false);
     }
-  }, [query, filters, selectedCategoryIds, selectedGender]);
+  }, [localQuery, filters, selectedCategoryIds, selectedGender]);
 
   // useEffect(() => {
   //   fetchFiltered();
@@ -177,6 +179,7 @@ export default function SelectionPage() {
 
     const hasFilters =
       query?.trim()?.length > 0 ||
+      localQuery?.trim()?.length > 0 ||
       selectedGender ||
       selectedCategoryIds.length > 0 ||
       selectedColors.length > 0 ||
@@ -187,7 +190,7 @@ export default function SelectionPage() {
     if (hasFilters) {
       fetchFiltered();
     }
-  }, [query, filters, selectedGender, selectedCategoryIds]);
+  }, [filters, selectedGender, selectedCategoryIds]); // Removed localQuery to sync with onSubmitEditing
 
 
   // Fetch filtered products when filters change
@@ -233,7 +236,9 @@ export default function SelectionPage() {
   }, []);
 
   const mainCategories = categoriesData.filter(c => c.level === 0);
-  const subCategories = categoriesData.filter(c => c.level === 1 && c.parentId === selectedMainId);
+  const subCategories = selectedMainId
+    ? categoriesData.filter(c => c.level === 1 && c.parentId === selectedMainId)
+    : categoriesData.filter(c => c.level === 1);
   const subSubCategories = categoriesData.filter(c => c.level === 2 && c.parentId === selectedSubId);
 
   const handleMainCategoryChange = useCallback((id: string) => {
@@ -242,13 +247,8 @@ export default function SelectionPage() {
     if (mainCat) {
       setSelectedGender(mainCat.name);
     }
-    const firstSub = categoriesData.find(c => c.parentId === id && c.level === 1);
-    if (firstSub) {
-      setSelectedSubId(firstSub._id);
-      setSelectedCategoryIds([id, firstSub._id]);
-    } else {
-      setSelectedCategoryIds([id]);
-    }
+    setSelectedSubId(null);
+    setSelectedCategoryIds([id]);
   }, [categoriesData]);
 
   const handleSubCategoryChange = useCallback((id) => {
@@ -291,13 +291,28 @@ export default function SelectionPage() {
             <TouchableOpacity onPress={() => router.back()}>
               <Ionicons name="chevron-back" size={24} color="black" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{subCatName || query}</Text>
+
+            <View style={styles.searchContainer}>
+              <Ionicons name="search-outline" size={18} color="#8E8E93" style={{ marginRight: 8 }} />
+              <TextInput
+                style={styles.searchInput}
+                value={localQuery}
+                onChangeText={setLocalQuery}
+                placeholder="Search styles..."
+                onSubmitEditing={fetchFiltered}
+                returnKeyType="search"
+                placeholderTextColor="#A0A0A0"
+              />
+              {localQuery.length > 0 && (
+                <TouchableOpacity onPress={() => setLocalQuery('')} style={styles.clearButton}>
+                  <Ionicons name="close-circle" size={18} color="#C7C7CC" />
+                </TouchableOpacity>
+              )}
+            </View>
+
             <View style={styles.headerIcons}>
-              <TouchableOpacity onPress={() => router.push('/MainSearchPage')}>
-                <Ionicons name="search" size={22} color="black" />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => router.push('/ShoppingBag')}>
-                <Ionicons name="bag-handle-outline" size={22} color="black" />
+              <TouchableOpacity onPress={() => router.push('/ShoppingBag')} style={styles.iconButton}>
+                <Ionicons name="bag-handle-outline" size={24} color="black" />
                 {cartCount > 0 && (
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>{cartCount}</Text>
@@ -307,16 +322,50 @@ export default function SelectionPage() {
             </View>
           </View>
 
-          {/* Filter / Sort / Gender */}
+          {/* Gender Selection Tabs (Men, Women, Kids) */}
+          <View style={styles.topTabs}>
+            {['Men', 'Women', 'Kids'].map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                onPress={() => {
+                  const isActive = selectedGender.toLowerCase() === cat.toLowerCase();
+                  if (isActive) {
+                    // Deselect - handle "All" case
+                    setSelectedGender('');
+                    setSelectedMainId(null);
+                    setSelectedSubId(null);
+                    setSelectedCategoryIds([]);
+                  } else {
+                    const foundMain = mainCategories.find(m => m.name.toLowerCase() === cat.toLowerCase());
+                    if (foundMain) {
+                      handleMainCategoryChange(foundMain._id);
+                    } else {
+                      setSelectedGender(cat);
+                    }
+                  }
+                }}
+                style={styles.tabButton}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    selectedGender.toLowerCase() === cat.toLowerCase() && styles.activeTabText,
+                  ]}
+                >
+                  {cat}
+                </Text>
+                {selectedGender.toLowerCase() === cat.toLowerCase() && <View style={styles.underline} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Filter / Sort Row */}
           <View style={styles.filterGenderWrapper}>
             <TouchableOpacity onPress={() => filterModalRef.current?.open()} style={styles.filterButton}>
               <Text style={styles.filterText}>FILTER</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={() => sortModalRef.current?.open()} style={styles.filterButton1}>
               <Text style={styles.filterText}>SORT</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => genderModalRef.current?.open()} style={styles.genderButton}>
-              <MaterialCommunityIcons name="gender-male-female" size={18} color="black" />
             </TouchableOpacity>
           </View>
 
@@ -490,48 +539,7 @@ export default function SelectionPage() {
           </View>
         </Modalize>
 
-        {/* GENDER Modal */}
-        <Modalize ref={genderModalRef} adjustToContentHeight>
-          <View style={{ paddingVertical: 12 }}>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: '500',
-                color: '#888',
-                paddingHorizontal: 20,
-                marginBottom: 8,
-              }}
-            >
-              GENDER
-            </Text>
-            {mainCategories.map((cat) => (
-              <TouchableOpacity
-                key={cat._id}
-                style={{
-                  paddingVertical: 14,
-                  paddingHorizontal: 20,
-                  borderBottomWidth: 1,
-                  borderBottomColor: '#eee',
-                }}
-                onPress={() => {
-                  setSelectedGender(cat.name);
-                  handleMainCategoryChange(cat._id);
-                  genderModalRef.current?.close();
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 16,
-                    color: '#222',
-                    fontWeight: selectedGender === cat.name ? '700' : '400',
-                  }}
-                >
-                  {cat.name}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </Modalize>
+
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -558,28 +566,49 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: 'bold',
     textTransform: 'uppercase',
-    marginVertical: 12,     // Adds space above and below
-    paddingHorizontal: 16,  // Adds space to the sides
-    textAlign: 'center',    // Center the text (optional)
     color: '#333'
+  },
+  searchContainer: {
+    flex: 1,
+    marginHorizontal: 12,
+    height: 44,
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#000',
+    paddingVertical: 8,
+    fontFamily: 'Manrope-Medium',
+  },
+  clearButton: {
+    padding: 4,
   },
   headerIcons: {
     flexDirection: 'row',
     gap: 12,
   },
-  icon: {
-    marginRight: 10,
+  iconButton: {
+    padding: 4,
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    backgroundColor: 'red',
-    borderRadius: 8,
-    width: 16,
-    height: 16,
+    top: -2,
+    right: -2,
+    backgroundColor: '#FF3B30',
+    borderRadius: 9,
+    width: 18,
+    height: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
   },
   genderText: {
     marginLeft: 8,
@@ -701,9 +730,6 @@ const styles = StyleSheet.create({
   filterText: {
     fontWeight: '600',
   },
-  cardList: {
-    paddingBottom: 20,
-  },
   sectionTitle: {
     fontWeight: '700',
     fontSize: 14,
@@ -778,5 +804,34 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: 'center',
+  },
+  topTabs: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  tabButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  tabText: {
+    fontSize: 15,
+    color: '#777',
+    fontWeight: '500',
+  },
+  activeTabText: {
+    color: '#000',
+    fontWeight: '700',
+  },
+  underline: {
+    height: 2,
+    backgroundColor: '#000',
+    marginTop: 4,
+    width: '100%',
+    borderRadius: 2,
   },
 });

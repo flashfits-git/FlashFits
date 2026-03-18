@@ -3,9 +3,7 @@ import Constants from "expo-constants";
 import * as SecureStore from 'expo-secure-store';
 import { DeviceEventEmitter } from 'react-native';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL ||
-    (Constants as any).manifest2?.extra?.expoConfig?.extra?.BACKEND_URL ||
-    "https://ff-api-web-1.onrender.com";
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || "https://fdf0-2405-201-f001-8ff-5930-af76-cae3-335c.ngrok-free.app";
 
 const api = axios.create({
     baseURL: `${BACKEND_URL}/api/`,

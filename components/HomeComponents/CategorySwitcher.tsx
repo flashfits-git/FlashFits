@@ -55,7 +55,7 @@ const CategorySwitcher = () => {
     const loadCategories = async () => {
       try {
         const res = await fetchCategories();
-        console.log(res,'332332323cwec');
+        console.log(res, '332332323cwec');
 
         setCategories(res || []);
         // console.log(res);

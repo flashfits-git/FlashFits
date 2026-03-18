@@ -89,13 +89,20 @@ const CategorySwitcherShops = () => {
     } else {
       const genderLower = selectedGender.toLowerCase();
       targetCategories = level0.filter(c => c.name.toLowerCase() === genderLower);
+      if (targetCategories.length === 0) {
+        // Fallback to "All" if no specific gender category found
+        targetCategories = level0.filter(c => {
+          const name = c.name.toLowerCase();
+          return name.includes('men') || name.includes('women') || name.includes('kids') || name.includes('unisex');
+        });
+      }
     }
 
     const urls: string[] = [];
     targetCategories.forEach(c => {
       if (c.title_banners && Array.isArray(c.title_banners)) {
         c.title_banners.forEach((b: any) => {
-          if (b.url) urls.push(b.url);
+          if (b.url && b.url.trim() !== '') urls.push(b.url);
         });
       }
     });

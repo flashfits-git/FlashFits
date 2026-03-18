@@ -2,9 +2,7 @@ import Constants from "expo-constants";
 import { io, Socket } from "socket.io-client";
 import { getUserId } from "../utilities/secureStore";
 
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL ||
-    (Constants as any).manifest2?.extra?.expoConfig?.extra?.BACKEND_URL ||
-    "https://ff-api-web-1.onrender.com";
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || "https://fdf0-2405-201-f001-8ff-5930-af76-cae3-335c.ngrok-free.app";
 
 let socket: Socket | null = null;
 

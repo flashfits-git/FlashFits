@@ -22,7 +22,11 @@ const Carousel = ({ banners }: CarouselProps) => {
 
   const displayImages = useMemo(() => {
     if (banners && banners.length > 0) {
-      return banners.map(url => ({ uri: url }));
+      // Filter out invalid/empty URLs
+      const validBanners = banners.filter(url => url && typeof url === 'string' && url.trim() !== '');
+      if (validBanners.length > 0) {
+        return validBanners.map(url => ({ uri: url }));
+      }
     }
     return images;
   }, [banners]);
@@ -59,7 +63,9 @@ const Carousel = ({ banners }: CarouselProps) => {
               source={item}
               style={styles.image}
               contentFit="cover"
-              transition={200}
+              transition={300}
+              placeholder={{ uri: 'https://via.placeholder.com/800x400/F0F0F0/8E8E93?text=Loading...' }} // Simple placeholder
+              cachePolicy="memory-disk"
             />
           </View>
         )}
@@ -85,7 +91,7 @@ const Carousel = ({ banners }: CarouselProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: { height: height * 0.18, backgroundColor: '#000' },
+  container: { height: height * 0.20, backgroundColor: '#f0f0f0', overflow: 'hidden', width: '100%', marginTop: 10 },
   imageContainer: {
     width: width,
     height: height * 0.20,

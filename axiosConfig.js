@@ -4,7 +4,7 @@ import Constants from "expo-constants";
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || Constants.manifest2?.extra?.expoConfig?.extra?.BACKEND_URL || "https://ff-api-web-1.onrender.com";
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || Constants.manifest2?.extra?.expoConfig?.extra?.BACKEND_URL || "https://fdf0-2405-201-f001-8ff-5930-af76-cae3-335c.ngrok-free.app";
 
 // const api = axios.create({
 //   // baseURL: 'http://192.168.0.106:5000/api/',
