@@ -6,13 +6,12 @@ export interface Category {
     parentId: string | null;
     level: number;
     image?: { url: string };
+    allowedGenders?: string[];
     ancestors?: {
-        grandparentGender?: string;
-        grandparentName?: string;
-        parentGender?: string;
         parentName?: string;
     };
     title_banners?: { url: string }[];
+    isTriable?: boolean;
 }
 
 export const fetchCategories = async (): Promise<Category[]> => {

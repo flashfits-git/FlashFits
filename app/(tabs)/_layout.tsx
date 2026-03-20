@@ -27,7 +27,7 @@ import { useAddress } from '../AddressContext';
 const ADDRESS_MODAL_SHOWN_KEY = 'addressModalShown';
 const toRad = (x: number) => (x * Math.PI) / 180;
 
-const distanceInMeters = (lat1, lon1, lat2, lon2) => {
+const distanceInMeters = (lat1: number, lon1: number, lat2: number, lon2: number) => {
   const R = 6371e3; // meters
 
   const φ1 = toRad(lat1);
@@ -44,7 +44,7 @@ const distanceInMeters = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-const AnimatedIconWrapper = ({ focused, iconName, size, color, label }) => {
+const AnimatedIconWrapper = ({ focused, iconName, size, color, label }: { focused: boolean, iconName: any, size?: number, color: string, label: string }) => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const bgAnim = useRef(new Animated.Value(0)).current;
 
@@ -162,7 +162,7 @@ function TabsWithCart() {
 //            MAIN SCREEN (CLEAN)
 // --------------------------------------------
 export default function TabLayout() {
-  const addressModalRef = useRef(null);
+  const addressModalRef = useRef<any>(null);
 
   const { setAddresses, setSelectedAddress } = useAddress();
   const [loading, setLoading] = useState(true);
@@ -206,7 +206,26 @@ export default function TabLayout() {
 
             // Restore saved
             if (saved) {
-              setSelectedAddress(JSON.parse(saved));
+              const parsedSaved = JSON.parse(saved);
+              setSelectedAddress(parsedSaved);
+
+              // ✅ Check if current location is near ANY saved address
+              // Using a 200m threshold to account for GPS jitter
+              const isNearAnySaved = userAddresses.some((addr: any) => {
+                if (addr.location?.coordinates) {
+                  const [lng, lat] = addr.location.coordinates;
+                  const distance = distanceInMeters(latitude, longitude, lat, lng);
+                  return distance < 200; 
+                }
+                return false;
+              });
+
+              if (!isNearAnySaved) {
+                setTimeout(() => {
+                  addressModalRef.current?.open();
+                }, 300);
+              }
+
               setLoading(false);
               return;
             }

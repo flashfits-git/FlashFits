@@ -5,18 +5,21 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
 import { getMerchantById, getProductsByMerchantId } from '../../api/merchatApis/getMerchantHome';
 import { useGender } from '../../GenderContext';
+import { useAddress } from '../../AddressContext';
+import { calculateDistanceKm, calculateEstimatedTime } from '../../utils/locationHelper';
 
 interface Merchant {
   merchant?: {
@@ -27,23 +30,27 @@ interface Merchant {
       city?: string;
       street?: string;
       state?: string;
+      location?: {
+        coordinates: [number, number];
+      };
     };
     logo?: { url: string };
+    backgroundImage?: { url: string };  // <-- add this
     genderCategory?: string | string[];
   };
 }
 
-// Map store-level gender to product-level gender values
+
 const GENDER_PRODUCT_MAP: Record<string, string[]> = {
-  Men: ['men', 'unisex'],
-  Women: ['women', 'unisex'],
-  Kids: ['kids', 'boys', 'girls', 'babies'],
+  MEN: ['MEN'],
+  WOMEN: ['WOMEN'],
+  KIDS: ['KIDS'],
 };
 
 const GENDER_ICON_MAP: Record<string, any> = {
-  Men: 'male',
-  Women: 'female',
-  Kids: 'happy-outline',
+  MEN: 'male',
+  WOMEN: 'female',
+  KIDS: 'happy-outline',
 };
 
 const StoreDetailPage = () => {
@@ -51,37 +58,45 @@ const StoreDetailPage = () => {
   const [merchantData, setMerchantData] = useState<Merchant | null>(null);
   const [productss, setProductss] = useState<any[]>([]);
   const [localSelectedGender, setLocalSelectedGender] = useState<string | null>(null);
-  console.log(productss, 'productss');
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params as { merchantId: string };
   const { selectedGender, setSelectedGender } = useGender();
+  const { selectedAddress } = useAddress();
+
+  const locationStats = useMemo(() => {
+    const merchantCoords = merchantData?.merchant?.address?.location?.coordinates;
+    const userCoords = selectedAddress?.location?.coordinates;
+    if (!merchantCoords || !userCoords) {
+      return { distance: '2.4 km', time: '25-30 mins' };
+    }
+    const distance = calculateDistanceKm(
+      userCoords[1], userCoords[0],
+      merchantCoords[1], merchantCoords[0]
+    );
+    const time = calculateEstimatedTime(distance);
+    return { distance: `${distance.toFixed(1)} km`, time };
+  }, [merchantData, selectedAddress]);
 
   const handleViewAll = (subCatName: string, products: any[]) => {
     const filters = {
       priceRange: [0, 10000],
       selectedCategoryIds: [
         products[0]?.categoryId?._id || '',
-        products[0]?.subCategoryId?._id || ''
+        products[0]?.subCategoryId?._id || '',
       ].filter(Boolean),
       selectedColors: [],
       selectedStores: [merchantId],
       sortBy: [],
     };
-
     router.push({
       pathname: '(stack)/SelectionPage' as any,
-      params: {
-        filterss: JSON.stringify(filters),
-        subCatName,
-        type: 'Max',
-      },
+      params: { filterss: JSON.stringify(filters), subCatName, type: 'Max' },
     });
   };
 
   useEffect(() => {
     if (!merchantId) return;
-
     const fetchMerchantandProducts = async () => {
       try {
         setLoading(true);
@@ -95,73 +110,45 @@ const StoreDetailPage = () => {
         setLoading(false);
       }
     };
-
     fetchMerchantandProducts();
   }, [merchantId]);
 
-  // Derive available genders from the merchant's genderCategory
   const availableGenders = useMemo(() => {
     const raw = merchantData?.merchant?.genderCategory;
     if (!raw) return [];
     const arr = Array.isArray(raw) ? raw : [raw];
-    // Normalize and filter valid entries
     return arr
-      .map((g: string) => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase())
-      .filter((g: string) => ['Men', 'Women', 'Kids', 'Unisex'].includes(g));
+      .map((g: string) => String(g).toUpperCase())
+      .filter((g: string) => ['MEN', 'WOMEN', 'KIDS'].includes(g));
   }, [merchantData]);
 
-  // Set initial local gender when merchant data loads
   useEffect(() => {
     if (availableGenders.length === 0) return;
-
-    // Check if a gender is supported (Unisex supports both Men and Women)
-    const isSupported = (g: string) => {
-      if (availableGenders.includes(g as any)) return true;
-      if (availableGenders.includes('Unisex') && (g === 'Men' || g === 'Women')) return true;
-      return false;
-    };
-
-    // If the global gender matches one available, use it
-    if (selectedGender !== 'All' && isSupported(selectedGender)) {
-      setLocalSelectedGender(selectedGender);
-    } else if (availableGenders.includes('Unisex')) {
-      // If shop is Unisex, default to Men
-      setLocalSelectedGender('Men');
+    const globalUpper = selectedGender !== 'All' ? selectedGender.toUpperCase() : null;
+    if (globalUpper && availableGenders.includes(globalUpper)) {
+      setLocalSelectedGender(globalUpper);
     } else {
       setLocalSelectedGender(availableGenders[0]);
     }
   }, [availableGenders, selectedGender]);
 
-  // Expand Unisex into Men & Women for tabs display
-  const displayGenderTabs = useMemo(() => {
-    const tabs: string[] = [];
-    availableGenders.forEach((g: string) => {
-      if (g === 'Unisex') {
-        if (!tabs.includes('Men')) tabs.push('Men');
-        if (!tabs.includes('Women')) tabs.push('Women');
-      } else {
-        if (!tabs.includes(g)) tabs.push(g);
-      }
-    });
-    return tabs;
-  }, [availableGenders]);
+  const displayGenderTabs = availableGenders;
 
-  // Filter products based on selected gender
   const filteredProducts = useMemo(() => {
     if (!localSelectedGender || displayGenderTabs.length <= 1) return productss;
     const allowedProductGenders = GENDER_PRODUCT_MAP[localSelectedGender] || [];
     return productss.filter((product: any) => {
-      const productGender = (product.gender || '').toLowerCase();
-      return allowedProductGenders.includes(productGender);
+      const productGenders: string[] = Array.isArray(product.gender)
+        ? product.gender.map((g: string) => g.toUpperCase())
+        : [String(product.gender || '').toUpperCase()];
+      return productGenders.some((g) => allowedProductGenders.includes(g));
     });
   }, [productss, localSelectedGender, displayGenderTabs]);
 
   const groupBySubCategory = (products: any[]) => {
     return products.reduce((acc: any, product: any) => {
       const subCatName = product.subCategoryId?.name || 'Others';
-      if (!acc[subCatName]) {
-        acc[subCatName] = [];
-      }
+      if (!acc[subCatName]) acc[subCatName] = [];
       acc[subCatName].push(product);
       return acc;
     }, {});
@@ -169,171 +156,186 @@ const StoreDetailPage = () => {
 
   const groupedProducts = groupBySubCategory(filteredProducts);
 
-  console.log(groupedProducts, 'groupedProducts');
-
   if (loading) return <Loader />;
+
+  const merchant = merchantData?.merchant;
+  const ratingValue = merchant?.rating && merchant.rating > 0 ? merchant.rating : '4.4';
+  const reviewCount = merchant?.reviewCount && merchant.reviewCount > 0 ? `${merchant.reviewCount}+` : '3.8K+';
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <LinearGradient
-        colors={['#f9fafb', '#ffffff']}
-        style={styles.background}
-      >
-        {/* TOP ACTION BAR */}
-        <View style={styles.topActionBar}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#000" />
+      {/* TOP ACTION BAR — frosted glass style */}
+      <View style={styles.topActionBar}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
+          <Ionicons name="arrow-back" size={20} color="#1c1c1c" />
+        </TouchableOpacity>
+        <View style={styles.topRightActions}>
+          <TouchableOpacity style={styles.iconCircle}>
+            <Ionicons name="search-outline" size={20} color="#1c1c1c" />
           </TouchableOpacity>
-          <View style={styles.topRightActions}>
-            <TouchableOpacity style={styles.actionIconButton}>
-              <Ionicons name="search-outline" size={22} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionIconButton}>
-              <Ionicons name="people-outline" size={22} color="#000" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionIconButton}>
-              <Ionicons name="ellipsis-vertical" size={22} color="#000" />
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.iconCircle}>
+            <Ionicons name="share-social-outline" size={20} color="#1c1c1c" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconCircle}>
+            <Ionicons name="ellipsis-horizontal" size={20} color="#1c1c1c" />
+          </TouchableOpacity>
         </View>
+      </View>
 
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* STORE INFO HEADER */}
-          <View style={styles.storeHeaderContainer}>
-            <View style={styles.nameRow}>
-              <Text style={styles.premiumStoreName}>
-                {merchantData?.merchant?.shopName || 'Shop Name'}
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+
+        // Add at the top of the ScrollView, before the headerCard
+
+{/* HERO IMAGE */}
+<View style={styles.heroContainer}>
+  {merchant?.backgroundImage?.url ? (
+    <Image source={{ uri: merchant.backgroundImage.url }} style={styles.heroImage} resizeMode="cover" />
+  ) : (
+    <LinearGradient
+      colors={['#1a1a2e', '#16213e', '#0f3460']}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={styles.heroFallback}
+    >
+      <Ionicons name="storefront-outline" size={48} color="rgba(255,255,255,0.25)" />
+      <Text style={styles.heroFallbackText}>{merchant?.shopName || 'Store'}</Text>
+    </LinearGradient>
+  )}
+  <LinearGradient
+    colors={['transparent', 'rgba(245,245,247,0.8)', '#F5F5F7']}
+    style={styles.heroGradientOverlay}
+  />
+</View>
+
+        {/* STORE HEADER CARD */}
+        <View style={styles.headerCard}>
+          {/* Logo + Name Row */}
+          <View style={styles.logoNameRow}>
+            {merchant?.logo?.url ? (
+              <Image source={{ uri: merchant.logo.url }} style={styles.storeLogo} />
+            ) : (
+              <View style={styles.storeLogoPlaceholder}>
+                <Ionicons name="storefront" size={24} color="#999" />
+              </View>
+            )}
+            <View style={{ flex: 1, marginLeft: 14 }}>
+              <Text style={styles.storeName} numberOfLines={1}>
+                {merchant?.shopName || 'Shop Name'}
               </Text>
-              <Ionicons name="information-circle-outline" size={18} color="#666" style={{ marginLeft: 6 }} />
-
-              <View style={styles.ratingBadge}>
-                <View style={styles.ratingInner}>
-                  <Ionicons name="star" size={14} color="#fff" />
-                  <Text style={styles.ratingValueText}>
-                    {merchantData?.merchant?.rating && merchantData.merchant.rating > 0 ? merchantData.merchant.rating : '4.4'}
-                  </Text>
-                </View>
-                <Text style={styles.reviewCountText}>
-                  By {merchantData?.merchant?.reviewCount && merchantData.merchant.reviewCount > 0 ? `${merchantData.merchant.reviewCount}+` : '3.8K+'}
+              <View style={styles.locationChip}>
+                <Ionicons name="location" size={12} color="#FF6B35" />
+                <Text style={styles.locationText}>
+                  {locationStats.distance} • {merchant?.address?.city || 'Downtown'}
                 </Text>
               </View>
             </View>
-
-            <View style={styles.distanceRow}>
-              <Ionicons name="location-outline" size={16} color="#666" />
-              <Text style={styles.distanceText}>
-                2.4 km • {merchantData?.merchant?.address?.city || 'Downtown'}
-              </Text>
-              <Ionicons name="chevron-down" size={14} color="#666" style={{ marginLeft: 4 }} />
-            </View>
-
-            <View style={styles.timeRow}>
-              <Ionicons name="time-outline" size={16} color="#666" />
-              <Text style={styles.timeLabel}>
-                25-30 mins • Schedule for later
-              </Text>
-              <Ionicons name="chevron-down" size={14} color="#666" style={{ marginLeft: 4 }} />
-            </View>
-
-            {/* QUICK TAGS */}
-            <View style={styles.tagRow}>
-              <View style={styles.statusTag}>
-                <Ionicons name="checkmark" size={14} color="#02b075" />
-                <Text style={styles.tagText}>No packaging charges</Text>
-              </View>
-              <View style={styles.statusTag}>
-                <Ionicons name="checkmark" size={14} color="#02b075" />
-                <Text style={styles.tagText}>Frequently reordered</Text>
-              </View>
-            </View>
-
-            {/* OFFERS BAR */}
-            <View style={styles.offerBanner}>
-              <Ionicons name="pricetag" size={16} color="#3c6be5" />
-              <Text style={styles.offerText}>Flat ₹175 OFF above ₹1399</Text>
+            {/* Rating Pill */}
+            <View style={styles.ratingPill}>
+              <Ionicons name="star" size={13} color="#fff" />
+              <Text style={styles.ratingText}>{ratingValue}</Text>
             </View>
           </View>
 
-          {/* GENDER SWITCHER — only show if more than 1 tab */}
-          {displayGenderTabs.length > 1 && (
-            <View style={styles.genderSwitcherContainer}>
-              <View style={styles.premiumSwitcher}>
-                {displayGenderTabs.map((gender) => (
+          {/* Meta Row */}
+          <View style={styles.metaRow}>
+            <View style={styles.metaItem}>
+              <Ionicons name="time-outline" size={15} color="#888" />
+              <Text style={styles.metaText}>{locationStats.time}</Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Ionicons name="chatbubble-outline" size={14} color="#888" />
+              <Text style={styles.metaText}>{reviewCount} reviews</Text>
+            </View>
+            <View style={styles.metaDivider} />
+            <View style={styles.metaItem}>
+              <Ionicons name="cube-outline" size={14} color="#888" />
+              <Text style={styles.metaText}>Free packing</Text>
+            </View>
+          </View>
+
+          {/* Offer Strip */}
+          <LinearGradient
+            colors={['#EEF2FF', '#E8EDFF']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.offerStrip}
+          >
+            <View style={styles.offerIconCircle}>
+              <Ionicons name="pricetag" size={14} color="#4F46E5" />
+            </View>
+            <Text style={styles.offerStripText}>Flat ₹175 OFF above ₹1399</Text>
+            <Ionicons name="chevron-forward" size={16} color="#4F46E5" />
+          </LinearGradient>
+        </View>
+
+        {/* GENDER SWITCHER */}
+        {displayGenderTabs.length > 1 && (
+          <View style={styles.genderSwitcherContainer}>
+            <View style={styles.genderSwitcherTrack}>
+              {displayGenderTabs.map((gender) => {
+                const isActive = localSelectedGender === gender;
+                return (
                   <TouchableOpacity
                     key={gender}
                     onPress={() => {
                       setLocalSelectedGender(gender);
-                      setSelectedGender(gender as any); // Sync with global context
+                      const labelMap: Record<string, string> = { MEN: 'Men', WOMEN: 'Women', KIDS: 'Kids' };
+                      setSelectedGender((labelMap[gender] || gender) as any);
                     }}
-                    style={[
-                      styles.genderTab,
-                      localSelectedGender === gender && styles.genderTabActive,
-                    ]}
+                    style={[styles.genderTab, isActive && styles.genderTabActive]}
                     activeOpacity={0.8}
                   >
-                    <Ionicons 
-                      name={GENDER_ICON_MAP[gender] || 'person'} 
-                      size={16} 
-                      color={localSelectedGender === gender ? '#fff' : '#666'} 
-                      style={{ marginRight: 6 }}
+                    <Ionicons
+                      name={GENDER_ICON_MAP[gender] || 'person'}
+                      size={15}
+                      color={isActive ? '#fff' : '#888'}
                     />
-                    <Text
-                      style={[
-                        styles.genderTabText,
-                        localSelectedGender === gender && styles.genderTabTextActive,
-                      ]}
-                    >
-                      {gender}
+                    <Text style={[styles.genderTabText, isActive && styles.genderTabTextActive]}>
+                      {gender.charAt(0) + gender.slice(1).toLowerCase()}
                     </Text>
                   </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* SHOP OFFERS */}
-          <View style={{ marginTop: 10 }}>
-            <ShopOffersCarousel />
-          </View>
-
-          <View style={styles.sectionContainer}>
-            <View style={styles.flexRow}>
-              <Text style={styles.sectionTitle}>Featured Collections</Text>
+                );
+              })}
             </View>
           </View>
+        )}
 
-          <View style={{ paddingHorizontal: 4 }}>
-            <FeaturedDress />
-          </View>
+        {/* CATEGORIES TITLE */}
+        <View style={styles.sectionTitleContainer}>
+          <View style={styles.sectionTitleAccent} />
+          <Text style={styles.sectionTitle}>Categories in Store</Text>
+        </View>
 
-          <View style={styles.sectionContainer}>
-            <View style={styles.flexRow}>
-              <Text style={styles.sectionTitle}>Categories in Store</Text>
+        {/* PRODUCT CATEGORIES */}
+        {Object.entries(groupedProducts).map(([subCatName, products]) => (
+          <View key={subCatName} style={styles.categoryCard}>
+            <View style={styles.categoryHeader}>
+              <Text style={styles.categoryName}>{subCatName}</Text>
+              <TouchableOpacity
+                style={styles.viewAllBtn}
+                onPress={() => handleViewAll(subCatName, products as any[])}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.viewAllBtnText}>See all</Text>
+                <Ionicons name="arrow-forward" size={14} color="#4F46E5" />
+              </TouchableOpacity>
             </View>
+            <RecentlyViewed deataiPageproducts={products} />
           </View>
+        ))}
 
-          {Object.entries(groupedProducts).map(([subCatName, products]) => (
-            <View key={subCatName} style={styles.categorySection}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.subTitle}>{subCatName}</Text>
-                <TouchableOpacity
-                  style={styles.viewAllButton}
-                  onPress={() => handleViewAll(subCatName, products as any[])}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.viewAllText}>View All</Text>
-                  <Ionicons name="chevron-forward" size={14} color="#666" />
-                </TouchableOpacity>
-              </View>
-              <RecentlyViewed deataiPageproducts={products} />
-            </View>
-          ))}
-        </ScrollView>
-      </LinearGradient>
+        {Object.keys(groupedProducts).length === 0 && (
+          <View style={styles.emptyState}>
+            <Ionicons name="bag-outline" size={48} color="#ccc" />
+            <Text style={styles.emptyText}>No products available</Text>
+          </View>
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -341,220 +343,304 @@ const StoreDetailPage = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F7',
   },
-  background: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  // Add to your StyleSheet
+heroContainer: {
+  height: 220,
+  width: '100%',
+  position: 'relative',
+},
+heroImage: {
+  width: '100%',
+  height: '100%',
+},
+heroFallback: {
+  width: '100%',
+  height: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 12,
+},
+heroFallbackText: {
+  fontSize: 24,
+  fontWeight: '800',
+  color: 'rgba(255,255,255,0.4)',
+  letterSpacing: 2,
+  textTransform: 'uppercase',
+},
+heroGradientOverlay: {
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  right: 0,
+  height: 80,
+},
+
   topActionBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    backgroundColor: '#F5F5F7',
   },
-  backButton: {
-    padding: 8,
+  iconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
   },
   topRightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
-  },
-  actionIconButton: {
-    padding: 4,
-  },
-  storeHeaderContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  nameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-    marginBottom: 8,
-  },
-  premiumStoreName: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#1c1c1c',
-    letterSpacing: -0.5,
-  },
-  ratingBadge: {
-    position: 'absolute',
-    right: 0,
-    top: -5,
-    alignItems: 'center',
-  },
-  ratingInner: {
-    backgroundColor: '#028a34',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    gap: 4,
-  },
-  ratingValueText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  reviewCountText: {
-    fontSize: 10,
-    color: '#666',
-    marginTop: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    borderStyle: 'dashed',
-  },
-  distanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 8,
-  },
-  distanceText: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '500',
-  },
-  timeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: '#444',
-    fontWeight: '500',
-  },
-  tagRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statusTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f1f8f5',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
-    gap: 6,
-    borderWidth: 1,
-    borderColor: '#e2f0e9',
-  },
-  tagText: {
-    fontSize: 12,
-    color: '#444',
-    fontWeight: '500',
-  },
-  offerBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  offerText: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
+    gap: 10,
   },
   scrollView: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
   },
   scrollContent: {
     paddingBottom: 40,
   },
-  sectionContainer: {
-    marginTop: 24,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  flexRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1c1c1c',
-    letterSpacing: -0.2,
-  },
-  categorySection: {
-    marginBottom: 24,
+
+  // Header Card
+  headerCard: {
+    marginHorizontal: 16,
     backgroundColor: '#fff',
-    paddingVertical: 16,
+    borderRadius: 20,
+    padding: 18,
+    marginTop: -60,  // <-- pulls card up over hero
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-  },
-  subTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1c1c1c',
-  },
-  viewAllButton: {
+  logoNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  storeLogo: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
+  },
+  storeLogoPlaceholder: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  storeName: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    letterSpacing: -0.3,
+  },
+  locationChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
     gap: 4,
   },
-  viewAllText: {
+  locationText: {
+    fontSize: 13,
+    color: '#777',
+    fontWeight: '500',
+  },
+  ratingPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#16A34A',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  ratingText: {
+    color: '#fff',
+    fontWeight: '800',
     fontSize: 14,
-    fontWeight: '600',
+  },
+
+  // Meta Row
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  metaItem: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  metaText: {
+    fontSize: 12,
     color: '#666',
+    fontWeight: '600',
   },
+  metaDivider: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#e5e5e5',
+  },
+
+  // Offer Strip
+  offerStrip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    gap: 10,
+  },
+  offerIconCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offerStripText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#4F46E5',
+  },
+
+  // Gender Switcher
   genderSwitcherContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    backgroundColor: '#f8f8f8',
+    paddingHorizontal: 16,
+    marginTop: 18,
   },
-  premiumSwitcher: {
+  genderSwitcherTrack: {
     flexDirection: 'row',
     backgroundColor: '#fff',
-    borderRadius: 30,
-    padding: 6,
-    gap: 8,
-    // Soft shadow for premium feel
+    borderRadius: 16,
+    padding: 4,
+    gap: 4,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   genderTab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 25,
-    backgroundColor: 'transparent',
+    paddingVertical: 11,
+    borderRadius: 13,
+    gap: 6,
   },
   genderTabActive: {
-    backgroundColor: '#1c1c1c',
+    backgroundColor: '#1a1a1a',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   genderTabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
-    color: '#666',
-    letterSpacing: 0.3,
+    color: '#888',
   },
   genderTabTextActive: {
     color: '#fff',
+  },
+
+  // Section Title
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 26,
+    marginBottom: 14,
+    gap: 10,
+  },
+  sectionTitleAccent: {
+    width: 4,
+    height: 22,
+    borderRadius: 2,
+    backgroundColor: '#4F46E5',
+  },
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: '800',
+    color: '#1a1a1a',
+    letterSpacing: -0.2,
+  },
+
+  // Category Cards
+  categoryCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 1,
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    marginBottom: 12,
+  },
+  categoryName: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1a1a1a',
+  },
+  viewAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F0EDFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  viewAllBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4F46E5',
+  },
+
+  // Empty State
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+    gap: 12,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: '#999',
+    fontWeight: '500',
   },
 });
 

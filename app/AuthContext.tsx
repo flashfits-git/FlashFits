@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { setAuthToken } from './axiosConfig';
+import { setAuthToken } from '../axiosConfig';
 import { usePushNotifications } from './hooks/usePushNotifications';
 
 interface AuthContextType {

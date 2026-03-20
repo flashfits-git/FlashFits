@@ -28,9 +28,9 @@ type Category = {
   parentId: string | null;
   level: number;
   image?: { url: string };
+  allowedGenders?: string[];
   ancestors?: {
     parentName?: string;
-    grandparentName?: string;
   };
 };
 
@@ -99,39 +99,15 @@ export default function SelectionPage() {
       const catIds = parsedFilters.selectedCategoryIds || [];
       if (catIds.length === 0) return;
 
-      // Handle main and sub category IDs
+      // Handle main and sub category IDs (2-level: L0 and L1)
       const mainId = catIds[0];
       const subId = catIds[1];
-      const subSubId = catIds[2];
 
-      // Set main category
       if (mainId) {
         setSelectedMainId(mainId);
-        // If gender wasn't passed, derive it from the main category (level 0)
-        if (!gender) {
-          const mainCat = categoriesData.find(c => c._id === mainId);
-          if (mainCat) {
-            setSelectedGender(mainCat.name);
-          }
-        }
       }
-
-      // Set subcategory and potentially derive gender if still missing
       if (subId) {
-        const subCat = categoriesData.find(c => c._id === subId);
-        if (subCat) {
-          setSelectedSubId(subId);
-          if (!gender && !selectedGender) {
-            const derivedGender = subCat.level === 1
-              ? subCat.ancestors?.parentName
-              : subCat.level === 2
-                ? subCat.ancestors?.grandparentName
-                : null;
-            if (derivedGender) {
-              setSelectedGender(derivedGender);
-            }
-          }
-        }
+        setSelectedSubId(subId);
       }
 
     } catch (error) {
@@ -235,21 +211,18 @@ export default function SelectionPage() {
     load();
   }, []);
 
+  // L0 main categories
   const mainCategories = categoriesData.filter(c => c.level === 0);
+  // L1 subcategories
   const subCategories = selectedMainId
     ? categoriesData.filter(c => c.level === 1 && c.parentId === selectedMainId)
     : categoriesData.filter(c => c.level === 1);
-  const subSubCategories = categoriesData.filter(c => c.level === 2 && c.parentId === selectedSubId);
 
   const handleMainCategoryChange = useCallback((id: string) => {
     setSelectedMainId(id);
-    const mainCat = categoriesData.find(c => c._id === id);
-    if (mainCat) {
-      setSelectedGender(mainCat.name);
-    }
     setSelectedSubId(null);
     setSelectedCategoryIds([id]);
-  }, [categoriesData]);
+  }, []);
 
   const handleSubCategoryChange = useCallback((id) => {
     setSelectedSubId(id);
@@ -322,26 +295,24 @@ export default function SelectionPage() {
             </View>
           </View>
 
-          {/* Gender Selection Tabs (Men, Women, Kids) */}
+          {/* Gender Selection Tabs (MEN, WOMEN, KIDS) */}
           <View style={styles.topTabs}>
-            {['Men', 'Women', 'Kids'].map((cat) => (
+            {[
+              { label: 'Men', value: 'MEN' },
+              { label: 'Women', value: 'WOMEN' },
+              { label: 'Kids', value: 'KIDS' },
+            ].map((cat) => (
               <TouchableOpacity
-                key={cat}
+                key={cat.value}
                 onPress={() => {
-                  const isActive = selectedGender.toLowerCase() === cat.toLowerCase();
+                  const isActive = selectedGender === cat.value;
                   if (isActive) {
-                    // Deselect - handle "All" case
                     setSelectedGender('');
                     setSelectedMainId(null);
                     setSelectedSubId(null);
                     setSelectedCategoryIds([]);
                   } else {
-                    const foundMain = mainCategories.find(m => m.name.toLowerCase() === cat.toLowerCase());
-                    if (foundMain) {
-                      handleMainCategoryChange(foundMain._id);
-                    } else {
-                      setSelectedGender(cat);
-                    }
+                    setSelectedGender(cat.value);
                   }
                 }}
                 style={styles.tabButton}
@@ -349,12 +320,12 @@ export default function SelectionPage() {
                 <Text
                   style={[
                     styles.tabText,
-                    selectedGender.toLowerCase() === cat.toLowerCase() && styles.activeTabText,
+                    selectedGender === cat.value && styles.activeTabText,
                   ]}
                 >
-                  {cat}
+                  {cat.label}
                 </Text>
-                {selectedGender.toLowerCase() === cat.toLowerCase() && <View style={styles.underline} />}
+                {selectedGender === cat.value && <View style={styles.underline} />}
               </TouchableOpacity>
             ))}
           </View>
@@ -397,30 +368,30 @@ export default function SelectionPage() {
               />
             </View>
 
-            {/* CATEGORY (Subcategory pills + Sub-sub checkboxes) */}
+            {/* CATEGORY (L0 pills + L1 checkboxes) */}
             <Text style={styles.sectionTitle}>CATEGORY</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
-              {subCategories.map(sub => (
+              {mainCategories.map(cat => (
                 <TouchableOpacity
-                  key={sub._id}
+                  key={cat._id}
                   style={[
                     styles.pill,
-                    selectedSubId === sub._id && styles.pillActive
+                    selectedMainId === cat._id && styles.pillActive
                   ]}
-                  onPress={() => handleSubCategoryChange(sub._id)}
+                  onPress={() => handleMainCategoryChange(cat._id)}
                 >
                   <Text style={[
                     styles.pillText,
-                    selectedSubId === sub._id && styles.pillTextActive
+                    selectedMainId === cat._id && styles.pillTextActive
                   ]}>
-                    {sub.name}
+                    {cat.name}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <View style={{ flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-              {subSubCategories.map(item => (
+              {subCategories.map(item => (
                 <TouchableOpacity
                   key={item._id}
                   onPress={() => toggleCategoryCheckbox(item._id)}

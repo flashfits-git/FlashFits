@@ -1,4 +1,4 @@
-// components/HomeComponents/HomeCategorySwitcherShops.tsx (or your file)
+// components/HomeComponents/HomeCategorySwitcherShops.tsx
 import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useMemo } from 'react';
 import {
@@ -16,8 +16,11 @@ import ShopGridHome from '../HomeComponents/ShopGridHome';
 
 const CATEGORIES: ('All' | 'Men' | 'Women' | 'Kids')[] = ['All', 'Men', 'Women', 'Kids'];
 
+// Map UI gender labels to backend enum values
+const GENDER_MAP: Record<string, string> = { Men: 'MEN', Women: 'WOMEN', Kids: 'KIDS' };
+
 const CategorySwitcherShops = () => {
-  const { selectedGender, setSelectedGender } = useGender(); // Use context
+  const { selectedGender, setSelectedGender } = useGender();
   const [merchantData, setMerchantData] = React.useState<any[]>([]);
   const [categories, setCategories] = React.useState<Category[]>([]);
   const navigation = useNavigation();
@@ -54,20 +57,17 @@ const CategorySwitcherShops = () => {
     };
 
     merchantData.forEach((merchant) => {
-      // Robustly handle both legacy strings and new array formats
       const rawGender = merchant.genderCategory;
       const genders: string[] = Array.isArray(rawGender)
-        ? rawGender.map((g: any) => String(g).toLowerCase())
-        : [String(rawGender || '').toLowerCase()];
+        ? rawGender.map((g: any) => String(g).toUpperCase())
+        : [String(rawGender || '').toUpperCase()];
 
       // Always push to All
       map.All.push(merchant);
 
-      const isUnisex = genders.includes('unisex');
-
-      if (genders.includes('men') || isUnisex) map.Men.push(merchant);
-      if (genders.includes('women') || isUnisex) map.Women.push(merchant);
-      if (genders.includes('kids')) map.Kids.push(merchant);
+      if (genders.includes('MEN')) map.Men.push(merchant);
+      if (genders.includes('WOMEN')) map.Women.push(merchant);
+      if (genders.includes('KIDS')) map.Kids.push(merchant);
     });
 
     return map;
@@ -78,24 +78,18 @@ const CategorySwitcherShops = () => {
   }, [categoryMap, selectedGender]);
 
   const carouselBanners = useMemo(() => {
-    const level0 = categories.filter(c => c.level === 0);
+    const backendGender = GENDER_MAP[selectedGender];
+
+    // Filter categories whose allowedGenders includes selected gender
     let targetCategories: Category[] = [];
 
     if (selectedGender === 'All') {
-      targetCategories = level0.filter(c => {
-        const name = c.name.toLowerCase();
-        return name.includes('men') || name.includes('women') || name.includes('kids') || name.includes('unisex');
-      });
+      // Show banners from all categories
+      targetCategories = categories;
     } else {
-      const genderLower = selectedGender.toLowerCase();
-      targetCategories = level0.filter(c => c.name.toLowerCase() === genderLower);
-      if (targetCategories.length === 0) {
-        // Fallback to "All" if no specific gender category found
-        targetCategories = level0.filter(c => {
-          const name = c.name.toLowerCase();
-          return name.includes('men') || name.includes('women') || name.includes('kids') || name.includes('unisex');
-        });
-      }
+      targetCategories = categories.filter(c =>
+        (c.allowedGenders || []).includes(backendGender)
+      );
     }
 
     const urls: string[] = [];
@@ -146,7 +140,6 @@ const styles = StyleSheet.create({
   topTabs: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    // paddingHorizontal: 20,
     marginBottom: 12,
   },
   tabButton: { paddingVertical: 8, paddingHorizontal: 12 },

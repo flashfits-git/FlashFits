@@ -3,27 +3,29 @@ import axios from 'axios';
 import Constants from "expo-constants";
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { DeviceEventEmitter } from 'react-native';
 
-const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || Constants.manifest2?.extra?.expoConfig?.extra?.BACKEND_URL || "https://fdf0-2405-201-f001-8ff-5930-af76-cae3-335c.ngrok-free.app";
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || Constants.manifest2?.extra?.expoConfig?.extra?.BACKEND_URL;
 
-// const api = axios.create({
-//   // baseURL: 'http://192.168.0.106:5000/api/',
-//   baseURL: 'https://55a299101e7c.ngrok-free.app/api/',
-//   timeout: 10000,
-// });
 const api = axios.create({
-  // baseURL: 'http://192.168.0.106:5000/api/',
-  // baseURL: 'https://55a299101e7c.ngrok-free.app/api/',
   baseURL: `${BACKEND_URL}/api/`,
   timeout: 10000,
 });
 
+let inMemoryToken = null;
+
+/**
+ * Update the in-memory token for immediate use by axios.
+ * This helps avoid race conditions with SecureStore lookup.
+ */
+export const setAuthToken = (token) => {
+  inMemoryToken = token;
+};
 
 // Add interceptor to attach token to each request
 api.interceptors.request.use(
-
   async (config) => {
-    const token = await SecureStore.getItemAsync('token');
+    const token = inMemoryToken || await SecureStore.getItemAsync('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -41,8 +43,13 @@ api.interceptors.response.use(
       await SecureStore.deleteItemAsync('token');
       await SecureStore.deleteItemAsync('selectedAddress');
       await SecureStore.setItemAsync("addressSelectedOnce", "false");
+      
+      setAuthToken(null);
 
-      // Redirect to auth
+      // Notify UI via event emitter (used in _layout.tsx)
+      DeviceEventEmitter.emit('auth_unauthorized');
+
+      // Fallback redirect
       router.replace('/(auth)');
     }
     return Promise.reject(error);
