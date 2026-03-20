@@ -63,14 +63,8 @@ export const ConfirmClothSelection = async (payload: any) => {
     }
 };
 
-export const someSelectedOtherReturn = async (payload: any) => {
-    try {
-        console.log(payload, "payload");
-    } catch (error) {
-        console.error("Axios error:", error);
-        throw error;
-    }
-};
+
+
 
 export const getOrderById = async (orderId: string) => {
     try {

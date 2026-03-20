@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -16,6 +16,7 @@ import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
 import { getMerchantById, getProductsByMerchantId } from '../../api/merchatApis/getMerchantHome';
+import { useGender } from '../../GenderContext';
 
 interface Merchant {
   merchant?: {
@@ -28,17 +29,33 @@ interface Merchant {
       state?: string;
     };
     logo?: { url: string };
+    genderCategory?: string | string[];
   };
 }
+
+// Map store-level gender to product-level gender values
+const GENDER_PRODUCT_MAP: Record<string, string[]> = {
+  Men: ['men', 'unisex'],
+  Women: ['women', 'unisex'],
+  Kids: ['kids', 'boys', 'girls', 'babies'],
+};
+
+const GENDER_ICON_MAP: Record<string, any> = {
+  Men: 'male',
+  Women: 'female',
+  Kids: 'happy-outline',
+};
 
 const StoreDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [merchantData, setMerchantData] = useState<Merchant | null>(null);
   const [productss, setProductss] = useState<any[]>([]);
+  const [localSelectedGender, setLocalSelectedGender] = useState<string | null>(null);
   console.log(productss, 'productss');
   const router = useRouter();
   const route = useRoute();
   const { merchantId } = route.params as { merchantId: string };
+  const { selectedGender, setSelectedGender } = useGender();
 
   const handleViewAll = (subCatName: string, products: any[]) => {
     const filters = {
@@ -82,6 +99,63 @@ const StoreDetailPage = () => {
     fetchMerchantandProducts();
   }, [merchantId]);
 
+  // Derive available genders from the merchant's genderCategory
+  const availableGenders = useMemo(() => {
+    const raw = merchantData?.merchant?.genderCategory;
+    if (!raw) return [];
+    const arr = Array.isArray(raw) ? raw : [raw];
+    // Normalize and filter valid entries
+    return arr
+      .map((g: string) => g.charAt(0).toUpperCase() + g.slice(1).toLowerCase())
+      .filter((g: string) => ['Men', 'Women', 'Kids', 'Unisex'].includes(g));
+  }, [merchantData]);
+
+  // Set initial local gender when merchant data loads
+  useEffect(() => {
+    if (availableGenders.length === 0) return;
+
+    // Check if a gender is supported (Unisex supports both Men and Women)
+    const isSupported = (g: string) => {
+      if (availableGenders.includes(g as any)) return true;
+      if (availableGenders.includes('Unisex') && (g === 'Men' || g === 'Women')) return true;
+      return false;
+    };
+
+    // If the global gender matches one available, use it
+    if (selectedGender !== 'All' && isSupported(selectedGender)) {
+      setLocalSelectedGender(selectedGender);
+    } else if (availableGenders.includes('Unisex')) {
+      // If shop is Unisex, default to Men
+      setLocalSelectedGender('Men');
+    } else {
+      setLocalSelectedGender(availableGenders[0]);
+    }
+  }, [availableGenders, selectedGender]);
+
+  // Expand Unisex into Men & Women for tabs display
+  const displayGenderTabs = useMemo(() => {
+    const tabs: string[] = [];
+    availableGenders.forEach((g: string) => {
+      if (g === 'Unisex') {
+        if (!tabs.includes('Men')) tabs.push('Men');
+        if (!tabs.includes('Women')) tabs.push('Women');
+      } else {
+        if (!tabs.includes(g)) tabs.push(g);
+      }
+    });
+    return tabs;
+  }, [availableGenders]);
+
+  // Filter products based on selected gender
+  const filteredProducts = useMemo(() => {
+    if (!localSelectedGender || displayGenderTabs.length <= 1) return productss;
+    const allowedProductGenders = GENDER_PRODUCT_MAP[localSelectedGender] || [];
+    return productss.filter((product: any) => {
+      const productGender = (product.gender || '').toLowerCase();
+      return allowedProductGenders.includes(productGender);
+    });
+  }, [productss, localSelectedGender, displayGenderTabs]);
+
   const groupBySubCategory = (products: any[]) => {
     return products.reduce((acc: any, product: any) => {
       const subCatName = product.subCategoryId?.name || 'Others';
@@ -93,7 +167,7 @@ const StoreDetailPage = () => {
     }, {});
   };
 
-  const groupedProducts = groupBySubCategory(productss);
+  const groupedProducts = groupBySubCategory(filteredProducts);
 
   console.log(groupedProducts, 'groupedProducts');
 
@@ -183,6 +257,43 @@ const StoreDetailPage = () => {
               <Text style={styles.offerText}>Flat ₹175 OFF above ₹1399</Text>
             </View>
           </View>
+
+          {/* GENDER SWITCHER — only show if more than 1 tab */}
+          {displayGenderTabs.length > 1 && (
+            <View style={styles.genderSwitcherContainer}>
+              <View style={styles.premiumSwitcher}>
+                {displayGenderTabs.map((gender) => (
+                  <TouchableOpacity
+                    key={gender}
+                    onPress={() => {
+                      setLocalSelectedGender(gender);
+                      setSelectedGender(gender as any); // Sync with global context
+                    }}
+                    style={[
+                      styles.genderTab,
+                      localSelectedGender === gender && styles.genderTabActive,
+                    ]}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons 
+                      name={GENDER_ICON_MAP[gender] || 'person'} 
+                      size={16} 
+                      color={localSelectedGender === gender ? '#fff' : '#666'} 
+                      style={{ marginRight: 6 }}
+                    />
+                    <Text
+                      style={[
+                        styles.genderTabText,
+                        localSelectedGender === gender && styles.genderTabTextActive,
+                      ]}
+                    >
+                      {gender}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
 
           {/* SHOP OFFERS */}
           <View style={{ marginTop: 10 }}>
@@ -405,6 +516,45 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#666',
+  },
+  genderSwitcherContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    backgroundColor: '#f8f8f8',
+  },
+  premiumSwitcher: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 30,
+    padding: 6,
+    gap: 8,
+    // Soft shadow for premium feel
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  genderTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 25,
+    backgroundColor: 'transparent',
+  },
+  genderTabActive: {
+    backgroundColor: '#1c1c1c',
+  },
+  genderTabText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#666',
+    letterSpacing: 0.3,
+  },
+  genderTabTextActive: {
+    color: '#fff',
   },
 });
 

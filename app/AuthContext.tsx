@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { setAuthToken } from './axiosConfig';
+import { usePushNotifications } from './hooks/usePushNotifications';
 
 interface AuthContextType {
     isAuthenticated: boolean;
@@ -18,6 +19,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [hasSeenOnboarding, setHasSeenOnboarding] = useState<boolean>(false);
+    
+    // Setup Push Notifications
+    const { expoPushToken, sendPushTokenToBackend } = usePushNotifications();
+
+    // Auto-send token if user is already authenticated on boot and token is ready
+    useEffect(() => {
+        if (isAuthenticated && expoPushToken) {
+            sendPushTokenToBackend(expoPushToken);
+        }
+    }, [isAuthenticated, expoPushToken]);
 
     useEffect(() => {
         // Check for token on mount
@@ -60,6 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Mark authenticated state immediately so root layout knows we are logged in
             setAuthToken(token); // Update in-memory token immediately to avoid race conditions
             setIsAuthenticated(true);
+            
+            if (expoPushToken) {
+                sendPushTokenToBackend(expoPushToken);
+            }
 
             setTimeout(() => {
                 if (isNewUser || !hasSeenOnboarding) {

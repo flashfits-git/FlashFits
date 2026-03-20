@@ -1,11 +1,38 @@
 import api from '../../../axiosConfig';
 
-export const fetchnewArrivalsProductsData = async () => {
+export const fetchnewArrivalsProductsData = async (gender?: string) => {
     try {
-        const res = await api.get('user/products/newArrivals');
+        const res = await api.get('user/products/newArrivals', {
+            params: { gender }
+        });
+        console.log(res.data, 'new arrivals');
         return res.data;
     } catch (error) {
-        console.error('Axios error:', error);
+        console.error('Axios error in new arrivals:', error);
+        throw error;
+    }
+};
+
+export const fetchTrendingProductsData = async (gender?: string) => {
+    try {
+        const res = await api.get('user/products/trending', {
+            params: { gender }
+        });
+        return res.data;
+    } catch (error) {
+        console.error('Axios error in trending:', error);
+        throw error;
+    }
+};
+
+export const fetchRecommendedProductsData = async (gender?: string) => {
+    try {
+        const res = await api.get('user/products/recommended', {
+            params: { gender }
+        });
+        return res.data;
+    } catch (error) {
+        console.error('Axios error in recommended:', error);
         throw error;
     }
 };
@@ -80,5 +107,14 @@ export const getMyWishlist = async () => {
         return res.data;
     } catch (err: any) {
         throw err.response?.data || err;
+    }
+};
+export const fetchBanners = async () => {
+    try {
+        const res = await api.get('user/banners');
+        return res.data;
+    } catch (error) {
+        console.error('Axios error in banners:', error);
+        throw error;
     }
 };

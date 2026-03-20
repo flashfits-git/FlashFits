@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { fetchCategories, Category } from '../../app/api/categories';
+import { Category, fetchCategories } from '../../app/api/categories';
 import { getMerchants } from '../../app/api/merchatApis/getMerchantHome';
 import { useGender } from '../../app/GenderContext';
 
@@ -29,7 +29,7 @@ const CategorySwitcherShops = () => {
         setMerchantData(res?.merchants || []);
       } catch (err) {
         console.error('Error fetching merchants:', err);
-      } 
+      }
     };
 
     const loadCategories = async () => {
@@ -54,17 +54,20 @@ const CategorySwitcherShops = () => {
     };
 
     merchantData.forEach((merchant) => {
-      const gender = (merchant.genderCategory || '').toLowerCase();
+      // Robustly handle both legacy strings and new array formats
+      const rawGender = merchant.genderCategory;
+      const genders: string[] = Array.isArray(rawGender)
+        ? rawGender.map((g: any) => String(g).toLowerCase())
+        : [String(rawGender || '').toLowerCase()];
 
       // Always push to All
       map.All.push(merchant);
 
-      // Men + Unisex → Men tab
-      if (gender === 'men' || gender === 'unisex') map.Men.push(merchant);
-      // Women + Unisex → Women tab
-      if (gender === 'women' || gender === 'unisex') map.Women.push(merchant);
-      // Kids only → Kids tab
-      if (gender === 'kids') map.Kids.push(merchant);
+      const isUnisex = genders.includes('unisex');
+
+      if (genders.includes('men') || isUnisex) map.Men.push(merchant);
+      if (genders.includes('women') || isUnisex) map.Women.push(merchant);
+      if (genders.includes('kids')) map.Kids.push(merchant);
     });
 
     return map;
