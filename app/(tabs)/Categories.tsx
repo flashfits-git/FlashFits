@@ -1,6 +1,6 @@
 import Loader from '@/components/Loader/Loader';
 import { useNavigation, useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -15,18 +15,26 @@ import {
 } from 'react-native';
 import CategoryTitleBar from '../../components/CategoryPageComponents/CategoryTitleBar';
 import { fetchCategories } from '../api/categories';
+import { useGender } from '../GenderContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const productsAreaWidth = SCREEN_WIDTH * 0.75; // since flex:4 vs flex:1
-const cardSize = (productsAreaWidth - 48) / 3; // spacing included
+const productsAreaWidth = SCREEN_WIDTH * 0.75;
+const cardSize = (productsAreaWidth - 48) / 3;
+
+// Static gender tabs (replaces old L0 gender categories)
+const GENDER_TABS = ['All', 'Men', 'Women', 'Kids'] as const;
+type GenderTab = typeof GENDER_TABS[number];
+
+// Map UI labels to backend enum
+const GENDER_MAP: Record<string, string> = { Men: 'MEN', Women: 'WOMEN', Kids: 'KIDS' };
 
 const Categories = () => {
   const navigation = useNavigation();
   const router = useRouter();
 
+  const { selectedGender, setSelectedGender } = useGender(); // Use global gender context
   const [categoriesData, setCategoriesData] = useState<any[]>([]);
   const [selectedMainId, setSelectedMainId] = useState<string | null>(null);
-  const [selectedSubId, setSelectedSubId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const scrollOffset = useRef(new Animated.Value(0)).current;
@@ -72,33 +80,48 @@ const Categories = () => {
     loadCategories();
   }, []);
 
-  const mainCategories = categoriesData.filter(cat => cat.level === 0);
-  const subCategories = categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
-  const subSubCategories = categoriesData.filter(cat => cat.level === 2 && cat.parentId === selectedSubId);
+  // L0 categories filtered by allowedGenders matching selected gender tab
+  const mainCategories = useMemo(() => {
+    if (selectedGender === 'All') {
+      return categoriesData.filter(cat => cat.level === 0);
+    }
+    const backendGender = GENDER_MAP[selectedGender];
+    return categoriesData.filter(
+      cat => cat.level === 0 && (cat.allowedGenders || []).includes(backendGender)
+    );
+  }, [categoriesData, selectedGender]);
 
-  const handleMainCategoryChange = useCallback((id: string) => {
-    setSelectedMainId(id);
-    const firstSub = categoriesData.find(cat => cat.parentId === id && cat.level === 1);
-    setSelectedSubId(firstSub ? firstSub._id : null);
-  }, [categoriesData]);
+  // L1 subcategories of the selected L0 main category, ALSO filtered by gender
+  const subCategories = useMemo(() => {
+    if (selectedGender === 'All') {
+      return categoriesData.filter(cat => cat.level === 1 && cat.parentId === selectedMainId);
+    }
+    const backendGender = GENDER_MAP[selectedGender];
+    return categoriesData.filter(
+      cat => cat.level === 1 && cat.parentId === selectedMainId && (cat.allowedGenders || []).includes(backendGender)
+    );
+  }, [categoriesData, selectedMainId, selectedGender]);
 
-  const handleSubCategoryChange = (id: string) => setSelectedSubId(id);
-
+  // Select first main category when gender changes
   useEffect(() => {
-    if (mainCategories.length > 0 && !selectedMainId) {
-      handleMainCategoryChange(mainCategories[0]._id);
+    if (mainCategories.length > 0) {
+      setSelectedMainId(mainCategories[0]._id);
+    } else {
+      setSelectedMainId(null);
     }
   }, [mainCategories]);
 
-  const handleViewAll = (subCatName: string, subCategoryId: string | null, subSubCategoryId: string) => {
+  const handleViewAll = (subCatName: string, subCategoryId: string) => {
+    const backendGender = GENDER_MAP[selectedGender];
     router.push({
       pathname: '/(stack)/SelectionPage' as any,
       params: {
         filterss: JSON.stringify({
           priceRange: [0, 10000],
-          selectedCategoryIds: [selectedMainId, subCategoryId, subSubCategoryId],
+          selectedCategoryIds: [selectedMainId, subCategoryId],
         }),
         subCatName,
+        gender: backendGender,
       },
     });
   };
@@ -109,46 +132,44 @@ const Categories = () => {
     <>
       <CategoryTitleBar />
 
-      {/* Main Category Scroll */}
+      {/* Gender Tabs (static — replaces old L0 gender scroll) */}
       <View style={styles.categoryBarContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
-          {mainCategories.map(cat => (
+          {GENDER_TABS.map(tab => (
             <TouchableOpacity
-              key={cat._id}
-              style={[styles.mainCategoryButton, selectedMainId === cat._id && styles.mainCategoryButtonSelected]}
-              onPress={() => handleMainCategoryChange(cat._id)}
+              key={tab}
+              style={[styles.mainCategoryButton, selectedGender === tab && styles.mainCategoryButtonSelected]}
+              onPress={() => setSelectedGender(tab)}
             >
-              <Image
-                source={{ uri: cat.image?.url }}
-                style={styles.mainCategoryImage}
-              />
-              <Text style={styles.mainCategoryText}>{cat.name}</Text>
+              <Text style={[styles.mainCategoryText, selectedGender === tab && { fontWeight: '800', color: '#000' }]}>
+                {tab}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       <View style={styles.mainContent}>
-        {/* Sidebar */}
+        {/* Sidebar — L0 main categories for this gender */}
         <ScrollView style={styles.sidebar} showsVerticalScrollIndicator={false}>
-          {subCategories.map(sub => (
+          {mainCategories.map(cat => (
             <TouchableOpacity
-              key={sub._id}
-              style={[styles.sidebarItem, selectedSubId === sub._id && styles.sidebarItemSelected]}
-              onPress={() => handleSubCategoryChange(sub._id)}
+              key={cat._id}
+              style={[styles.sidebarItem, selectedMainId === cat._id && styles.sidebarItemSelected]}
+              onPress={() => setSelectedMainId(cat._id)}
             >
-              <Image source={{ uri: sub.image?.url }} style={styles.sidebarImage} />
-              <Text style={[styles.sidebarText, selectedSubId === sub._id && styles.sidebarTextSelected]} numberOfLines={2}>
-                {sub.name}
+              <Image source={{ uri: cat.image?.url }} style={styles.sidebarImage} />
+              <Text style={[styles.sidebarText, selectedMainId === cat._id && styles.sidebarTextSelected]} numberOfLines={2}>
+                {cat.name}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        {/* 3 Column Grid */}
+        {/* 3 Column Grid — L1 subcategories */}
         <View style={styles.productsContainer}>
           <FlatList
-            data={subSubCategories}
+            data={subCategories}
             keyExtractor={(item) => item._id}
             numColumns={3}
             columnWrapperStyle={styles.cardRow}
@@ -156,9 +177,16 @@ const Categories = () => {
             renderItem={({ item }) => (
               <TouchableOpacity
                 style={[styles.productCard, { width: cardSize, height: cardSize + 40 }]}
-                onPress={() => handleViewAll(item.name, selectedSubId, item._id)}
+                onPress={() => handleViewAll(item.name, item._id)}
               >
-                <Image source={{ uri: item.image?.url }} style={[styles.productImage, { height: cardSize }]} />
+                <View style={{ position: 'relative' }}>
+                  <Image source={{ uri: item.image?.url }} style={[styles.productImage, { height: cardSize }]} />
+                  {item.isTriable && (
+                    <View style={styles.triableBadge}>
+                      <Text style={styles.triableText}>Try at Home</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={styles.productTitle} numberOfLines={2}>{item.name}</Text>
               </TouchableOpacity>
             )}
@@ -170,12 +198,11 @@ const Categories = () => {
 };
 
 const styles = StyleSheet.create({
-  categoryBarContainer: { height: 110, backgroundColor: '#fff', paddingTop: 10, elevation: 4 },
-  categoryScrollContent: { alignItems: 'center', paddingHorizontal: 4 },
-  mainCategoryButton: { alignItems: 'center', marginRight: 24, paddingBottom: 6, borderBottomWidth: 2, borderColor: 'transparent' },
+  categoryBarContainer: { height: 60, backgroundColor: '#fff', paddingTop: 10, elevation: 4 },
+  categoryScrollContent: { alignItems: 'center', paddingHorizontal: 16, gap: 24 },
+  mainCategoryButton: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 2, borderColor: 'transparent' },
   mainCategoryButtonSelected: { borderColor: '#4c4e50ff' },
-  mainCategoryImage: { width: 68, height: 68, borderRadius: 18, marginBottom: 6, backgroundColor: '#f0f0f0' },
-  mainCategoryText: { fontSize: 11.5, fontWeight: '600', color: '#222' },
+  mainCategoryText: { fontSize: 15, fontWeight: '600', color: '#666' },
 
   mainContent: { flex: 1, flexDirection: 'row', backgroundColor: '#fff' },
 
@@ -188,24 +215,37 @@ const styles = StyleSheet.create({
 
   productsContainer: { flex: 2, padding: 12 },
   listContent: { paddingBottom: 120 },
-  cardRow: { justifyContent: 'space-between', marginBottom: 16, },
+  cardRow: { justifyContent: 'space-between', marginBottom: 16 },
   productCard: {
     backgroundColor: '#fff',
-    borderRadius: 18,       // ← make more rounded
-    overflow: 'hidden',     // ← ensures image also follows radius
-    // elevation: 2,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 1 },
+    borderRadius: 18,
+    overflow: 'hidden',
     shadowOpacity: 0.08,
     shadowRadius: 4,
   },
   productImage: {
     width: '100%',
-    height: cardSize,       // keep your dynamic height
-    borderRadius: 18,       // ← ensure this matches productCard
+    height: cardSize,
+    borderRadius: 18,
     backgroundColor: '#f2f2f2',
   },
   productTitle: { fontSize: 11.5, textAlign: 'center', paddingVertical: 6, color: '#333' },
+  triableBadge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingVertical: 2,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+  },
+  triableText: {
+    color: '#fff',
+    fontSize: 8,
+    textAlign: 'center',
+    fontWeight: '700',
+  },
 });
 
 export default Categories;

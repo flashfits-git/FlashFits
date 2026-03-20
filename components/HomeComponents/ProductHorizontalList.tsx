@@ -1,13 +1,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import React, { memo, useEffect, useRef } from 'react';
-import { Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { memo } from 'react';
+import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useWishlist } from '../../app/WishlistContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const BANNER_WIDTH = SCREEN_WIDTH - 32;
+const BANNER_WIDTH = SCREEN_WIDTH - 24; // Small padding
 const BANNER_HEIGHT = (BANNER_WIDTH * 7) / 27;
-import { useWishlist } from '../../app/WishlistContext';
 
 interface ProductHorizontalListProps {
   title: string;
@@ -108,16 +108,16 @@ const DressCard = memo(({ product, onPress }: { product: any; onPress: () => voi
   );
 });
 
-const ProductHorizontalList: React.FC<ProductHorizontalListProps> = ({ 
-  title, 
-  data, 
+const ProductHorizontalList: React.FC<ProductHorizontalListProps> = ({
+  title,
+  data,
   isLoading = false,
   banner
 }) => {
   const router = useRouter();
 
   if (!isLoading && (!data || data.length === 0)) {
-    return null; 
+    return null;
   }
 
   return (
@@ -126,9 +126,9 @@ const ProductHorizontalList: React.FC<ProductHorizontalListProps> = ({
         {/* <Text style={styles.sectionTitle}>{title}</Text> */}
       </View>
 
-      {banner && banner.imageUrl && (
-        <TouchableOpacity 
-          activeOpacity={0.9} 
+      {banner && banner.imageUrl && banner.imageUrl.trim() !== '' && (
+        <TouchableOpacity
+          activeOpacity={0.9}
           style={styles.bannerContainer}
           onPress={() => {
             if (banner.actionUrl) {
@@ -137,39 +137,42 @@ const ProductHorizontalList: React.FC<ProductHorizontalListProps> = ({
             }
           }}
         >
-          <Image 
-            source={{ uri: banner.imageUrl }} 
-            style={styles.bannerImage} 
+          <Image
+            source={{ uri: banner.imageUrl }}
+            style={styles.bannerImage}
             contentFit="cover"
+            transition={300}
+            placeholder={{ uri: 'https://via.placeholder.com/800x200/F0F0F0/8E8E93?text=...' }}
+            cachePolicy="memory-disk"
           />
         </TouchableOpacity>
       )}
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {isLoading ? (
-            // Render 4 skeletons
-            Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
-          ) : (
-            data.map((item, index) => (
-                <DressCard
-                    key={item._id || item.id || index}
-                    product={item}
-                    onPress={() => {
-                      const vId = Array.isArray(item.variants)
-                        ? item.variants[0]?._id
-                        : item.variants?._id || item.variantId;
-                        
-                      router.push({
-                        pathname: '/ProductDetail/productdetailpage' as any,
-                        params: {
-                          id: item._id || item.id,
-                          variantId: vId,
-                        }
-                      });
-                    }}
-                />
-            ))
-          )}
+        {isLoading ? (
+          // Render 4 skeletons
+          Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
+        ) : (
+          data.map((item, index) => (
+            <DressCard
+              key={item._id || item.id || index}
+              product={item}
+              onPress={() => {
+                const vId = Array.isArray(item.variants)
+                  ? item.variants[0]?._id
+                  : item.variants?._id || item.variantId;
+
+                router.push({
+                  pathname: '/ProductDetail/productdetailpage' as any,
+                  params: {
+                    id: item._id || item.id,
+                    variantId: vId,
+                  }
+                });
+              }}
+            />
+          ))
+        )}
       </ScrollView>
     </View>
   );
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope-Bold',
   },
   bannerContainer: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',

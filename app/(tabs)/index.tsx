@@ -94,7 +94,8 @@ export default function Home() {
     
     try {
       // Pass selectedGender to all product fetches
-      const genderParam = selectedGender === 'All' ? undefined : selectedGender.toLowerCase();
+      const genderMap: Record<string, string> = { Men: 'MEN', Women: 'WOMEN', Kids: 'KIDS' };
+      const genderParam = selectedGender === 'All' ? undefined : genderMap[selectedGender];
       
       const [products, trending, recommended, viewed, bannerData, storedAddress] = await Promise.all([
         fetchnewArrivalsProductsData(genderParam),
@@ -214,7 +215,7 @@ export default function Home() {
         {/* <View style={{ height: 30 }} /> */}
         <HomeCategorySwitcherShops />
         <RecentlyViewed product={recentlyViewed} />
-        {selectedGender !== 'All' && <CategorySwitcher />}
+        <CategorySwitcher />
         
         {/* New dynamic sections */}
         <ProductHorizontalList 

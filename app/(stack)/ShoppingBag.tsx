@@ -107,7 +107,9 @@ const CartBag = () => {
 
 
       const items = cartData.items || [];
-      setDeliveryCharge(items[0]?.merchantDelivery?.deliveryCharge || 0);
+      const firstItemDelivery = items[0]?.merchantDelivery;
+      const totalInitialFee = (firstItemDelivery?.deliveryCharge || 0) + (firstItemDelivery?.returnCharge || 0);
+      setDeliveryCharge(totalInitialFee);
       setCartItems(items);
       setCartCount(items.length);
 

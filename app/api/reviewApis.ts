@@ -1,4 +1,4 @@
-import api from '../axiosConfig';
+import api from '../../axiosConfig';
 
 // Submit a review (product, merchant, or rider)
 export const submitReview = async (payload: {

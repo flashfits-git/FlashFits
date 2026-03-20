@@ -22,11 +22,9 @@ type Category = {
   parentId: string | null;
   level: number;
   image?: { url: string };
+  allowedGenders?: string[];
   ancestors?: {
     parentName?: string;
-    parentGender?: string;
-    grandparentName?: string;
-    grandparentGender?: string;
   };
 };
 
@@ -45,6 +43,9 @@ const getCategoryImage = (name: string) => {
   return CATEGORY_IMAGES[key] || CATEGORY_IMAGES.default;
 };
 
+// Map UI gender to backend enum
+const GENDER_MAP: Record<string, string> = { Men: 'MEN', Women: 'WOMEN', Kids: 'KIDS' };
+
 const CategorySwitcher = () => {
   const router = useRouter();
   const { selectedGender } = useGender();
@@ -55,11 +56,7 @@ const CategorySwitcher = () => {
     const loadCategories = async () => {
       try {
         const res = await fetchCategories();
-        console.log(res,'332332323cwec');
-
         setCategories(res || []);
-        // console.log(res);
-
       } catch (err) {
         console.error('Category fetch failed', err);
       } finally {
@@ -69,17 +66,32 @@ const CategorySwitcher = () => {
     loadCategories();
   }, []);
 
+  // Show Level 1 subcategories filtered by gender and parent's allowedGenders
   const subCategories = useMemo(() => {
-    if (selectedGender === 'All') return [];
+    // If 'All', show a default set of subcategories (first 8)
+    if (selectedGender === 'All') {
+      return categories.filter(c => c.level === 1).slice(0, 8);
+    }
 
-    const level2 = categories.filter(c => c.level === 2);
-    const genderLower = selectedGender.toLowerCase();
+    const backendGender = GENDER_MAP[selectedGender];
+    if (!backendGender) return [];
 
-    return level2.filter(c => {
-      const gpGender = (c.ancestors?.grandparentGender || '').toLowerCase();
-      if (genderLower === 'kids') return gpGender === 'kids';
-      return gpGender === genderLower || gpGender === 'unisex';
-    });
+    // Get L0 categories allowed for this gender
+    const allowedL0Ids = new Set(
+      categories
+        .filter(c => c.level === 0 && (c.allowedGenders || []).includes(backendGender))
+        .map(c => c._id)
+    );
+
+    // Get L1 categories whose parent is allowed AND which allow this gender themselves
+    return categories
+      .filter(c => 
+        c.level === 1 && 
+        c.parentId && 
+        allowedL0Ids.has(c.parentId) && 
+        (c.allowedGenders || []).includes(backendGender)
+      )
+      .slice(0, 8); // Keep it to a grid of 8 on the home page
   }, [categories, selectedGender]);
 
   const handleViewAll = useCallback(
@@ -87,36 +99,24 @@ const CategorySwitcher = () => {
       const subCatName = item.name;
       const subCategoryId = item._id;
       const parentId = item.parentId || undefined;
-      let selectedParentId = parentId;
 
-      if (selectedGender === 'All') {
-        const firstParent = categories.find(c => c.level === 0);
-        selectedParentId = firstParent?._id || undefined;
-      }
-
-      // Determine gender from ancestors
-      const gender = item.level === 1
-        ? item.ancestors?.parentName
-        : item.level === 2
-          ? item.ancestors?.grandparentName
-          : undefined;
+      const backendGender = GENDER_MAP[selectedGender] || selectedGender;
 
       router.push({
         pathname: '/(stack)/SelectionPage',
         params: {
           filterss: JSON.stringify({
             priceRange: [0, 10000],
-            selectedCategoryIds: selectedParentId
-              ? [selectedParentId, subCategoryId]
+            selectedCategoryIds: parentId
+              ? [parentId, subCategoryId]
               : [subCategoryId],
           }),
           subCatName,
-          gender: gender || selectedGender // fallback to context gender if ancestor not present
+          gender: backendGender,
         },
       } as any);
-      console.log(subCatName, subCategoryId, parentId, 'subCatName', gender);
     },
-    [router, categories, selectedGender]
+    [router, selectedGender]
   );
 
   if (loading) {
@@ -139,7 +139,6 @@ const CategorySwitcher = () => {
         contentContainerStyle={styles.gridContent}
         scrollEnabled={false}
         renderItem={({ item }) => {
-          const parent = categories.find(c => c._id === item.parentId);
           const localImage = getCategoryImage(item.name);
 
           return (
@@ -198,7 +197,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#fff',
     overflow: 'hidden',
-    // Premium Shadow
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,

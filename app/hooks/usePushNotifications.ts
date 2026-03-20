@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import api from '../axiosConfig'; // Adjust import based on the actual path if needed
+import api from '../../axiosConfig'; // Adjust import based on the actual path if needed
 
 // Safe import of expo-device — native module may not be available in Expo Go
 let Device: { isDevice: boolean } = { isDevice: Platform.OS !== 'web' };
