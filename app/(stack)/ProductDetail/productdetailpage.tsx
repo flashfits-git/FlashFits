@@ -392,7 +392,7 @@ const ProductDetailPage = () => {
             </TouchableOpacity>
 
               <View style={discountPercentage > 0 ? styles.tryBeforeBuyBadge: styles.discountBadge }>
-                <Text style={styles.discountText}>{products?.isTriable ? 'Try Before Buy' : discountPercentage > 0 ? `${discountPercentage}% OFF` : ''}</Text>
+                <Text style={styles.discountText}>{products?.isTriable ? 'Try & Buy' : discountPercentage > 0 ? `${discountPercentage}% OFF` : ''}</Text>
               </View>
             {/* {discountPercentage > 0 && (
               <View style={styles.discountBadge}>
@@ -507,7 +507,7 @@ const ProductDetailPage = () => {
           />
 
         </Animated.ScrollView>
-        <PopupCart />
+        {/* <PopupCart /> */}
 
         <View style={styles.fixedButton}>
           <TouchableOpacity style={styles.addToBagButton} onPress={() => modalizeRef.current?.open()}>

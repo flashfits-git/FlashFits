@@ -3,16 +3,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RecentlyViewed from '../../../components/HomeComponents/RecentlyViewed';
 import FeaturedDress from '../../../components/ShopDetailPage/FeaturedDress';
 import ShopOffersCarousel from '../../../components/ShopDetailPage/ShopOffersCarousel';
@@ -54,6 +56,7 @@ const GENDER_ICON_MAP: Record<string, any> = {
 };
 
 const StoreDetailPage = () => {
+  const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(true);
   const [merchantData, setMerchantData] = useState<Merchant | null>(null);
   const [productss, setProductss] = useState<any[]>([]);
@@ -163,21 +166,26 @@ const StoreDetailPage = () => {
   const reviewCount = merchant?.reviewCount && merchant.reviewCount > 0 ? `${merchant.reviewCount}+` : '3.8K+';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* TOP ACTION BAR — frosted glass style */}
-      <View style={styles.topActionBar}>
+    <View style={styles.safeArea}>
+      <StatusBar style="light" />
+
+      {/* TOP ACTION BAR — floating over hero, always visible */}
+      <View style={[styles.topActionBar, { paddingTop: insets.top + 4 }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.iconCircle}>
-          <Ionicons name="arrow-back" size={20} color="#1c1c1c" />
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.iconCircle}>
-            <Ionicons name="search-outline" size={20} color="#1c1c1c" />
+          <TouchableOpacity 
+            style={styles.iconCircle}
+            onPress={() => router.push('(stack)/ShoppingBag' as any)}
+          >
+            <Ionicons name="cart-outline" size={22} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconCircle}>
-            <Ionicons name="share-social-outline" size={20} color="#1c1c1c" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconCircle}>
-            <Ionicons name="ellipsis-horizontal" size={20} color="#1c1c1c" />
+          <TouchableOpacity 
+            style={styles.iconCircle}
+            onPress={() => router.push('/(tabs)/FlashfitsStores' as any)}
+          >
+            <Ionicons name="storefront-outline" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -188,28 +196,26 @@ const StoreDetailPage = () => {
         showsVerticalScrollIndicator={false}
       >
 
-        // Add at the top of the ScrollView, before the headerCard
-
-{/* HERO IMAGE */}
-<View style={styles.heroContainer}>
-  {merchant?.backgroundImage?.url ? (
-    <Image source={{ uri: merchant.backgroundImage.url }} style={styles.heroImage} resizeMode="cover" />
-  ) : (
-    <LinearGradient
-      colors={['#1a1a2e', '#16213e', '#0f3460']}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.heroFallback}
-    >
-      <Ionicons name="storefront-outline" size={48} color="rgba(255,255,255,0.25)" />
-      <Text style={styles.heroFallbackText}>{merchant?.shopName || 'Store'}</Text>
-    </LinearGradient>
-  )}
-  <LinearGradient
-    colors={['transparent', 'rgba(245,245,247,0.8)', '#F5F5F7']}
-    style={styles.heroGradientOverlay}
-  />
-</View>
+        {/* HERO IMAGE */}
+        <View style={styles.heroContainer}>
+          {merchant?.backgroundImage?.url ? (
+            <Image source={{ uri: merchant.backgroundImage.url }} style={styles.heroImage} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={['#1a1a2e', '#16213e', '#0f3460']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.heroFallback}
+            >
+              <Ionicons name="storefront-outline" size={48} color="rgba(255,255,255,0.25)" />
+              <Text style={styles.heroFallbackText}>{merchant?.shopName || 'Store'}</Text>
+            </LinearGradient>
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(245,245,247,0.8)', '#F5F5F7']}
+            style={styles.heroGradientOverlay}
+          />
+        </View>
 
         {/* STORE HEADER CARD */}
         <View style={styles.headerCard}>
@@ -336,7 +342,7 @@ const StoreDetailPage = () => {
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -345,58 +351,55 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F7',
   },
-  // Add to your StyleSheet
-heroContainer: {
-  height: 220,
-  width: '100%',
-  position: 'relative',
-},
-heroImage: {
-  width: '100%',
-  height: '100%',
-},
-heroFallback: {
-  width: '100%',
-  height: '100%',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 12,
-},
-heroFallbackText: {
-  fontSize: 24,
-  fontWeight: '800',
-  color: 'rgba(255,255,255,0.4)',
-  letterSpacing: 2,
-  textTransform: 'uppercase',
-},
-heroGradientOverlay: {
-  position: 'absolute',
-  bottom: 0,
-  left: 0,
-  right: 0,
-  height: 80,
-},
-
+  heroContainer: {
+    height: 260,
+    width: '100%',
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroFallback: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  heroFallbackText: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.4)',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  heroGradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 80,
+  },
   topActionBar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#F5F5F7',
+    paddingBottom: 10,
   },
   iconCircle: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
   },
   topRightActions: {
     flexDirection: 'row',
@@ -416,7 +419,7 @@ heroGradientOverlay: {
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 18,
-    marginTop: -60,  // <-- pulls card up over hero
+    marginTop: -50,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,

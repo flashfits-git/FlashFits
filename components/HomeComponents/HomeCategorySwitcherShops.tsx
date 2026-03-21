@@ -136,11 +136,11 @@ const CategorySwitcherShops = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { marginTop: 5 },
+  // container: {  },
   topTabs: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginBottom: 12,
+    // marginBottom: 5,
   },
   tabButton: { paddingVertical: 8, paddingHorizontal: 12 },
   tabText: { fontSize: 16, color: '#666' },

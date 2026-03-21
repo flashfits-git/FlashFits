@@ -91,10 +91,10 @@ const Carousel = ({ banners }: CarouselProps) => {
 };
 
 const styles = StyleSheet.create({
-  container: { height: height * 0.20, backgroundColor: '#f0f0f0', overflow: 'hidden', width: '100%', marginTop: 10 },
+  container: { height: height * 0.16, backgroundColor: '#f0f0f0', overflow: 'hidden', width: '100%', marginTop: 10 },
   imageContainer: {
     width: width,
-    height: height * 0.20,
+    height: height * 0.16,
     overflow: 'hidden',
   },
   image: {

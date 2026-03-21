@@ -1,9 +1,9 @@
 import { Alert } from 'react-native';
 import api from '../../axiosConfig';
 
-export const createOrder = async ({ addressId }: { addressId: string }) => {
+export const createOrder = async ({ addressId, deliveryTip }: { addressId: string, deliveryTip?: number }) => {
     try {
-        const res = await api.post("/user/order/create", { addressId });
+        const res = await api.post("/user/order/create", { addressId, deliveryTip });
         return res.data;
     } catch (error) {
         console.error("Axios error:", error);
@@ -36,7 +36,7 @@ export const finalpaymetVerify = async (paymentData: any, internalOrderId: strin
             }
         );
         return response.data
-    } catch (error) {
+    } catch (error: any) {
         console.error('Verification failed:', error.response?.data || error);
         Alert.alert('Verification Failed', 'Payment was made but verification failed. Contact support.');
     }
@@ -87,7 +87,7 @@ export const verifyPaymentAndConfirmOrder = async (paymentData: any, internalOrd
             }
         );
         return response.data
-    } catch (error) {
+    } catch (error: any) {
         console.error('Verification failed:', error.response?.data || error);
         Alert.alert('Verification Failed', 'Payment was made but verification failed. Contact support.');
     }

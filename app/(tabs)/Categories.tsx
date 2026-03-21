@@ -134,7 +134,7 @@ const Categories = () => {
 
       {/* Gender Tabs (static — replaces old L0 gender scroll) */}
       <View style={styles.categoryBarContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScrollContent}>
+        <View style={styles.categoryBarContent}>
           {GENDER_TABS.map(tab => (
             <TouchableOpacity
               key={tab}
@@ -146,7 +146,7 @@ const Categories = () => {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
       </View>
 
       <View style={styles.mainContent}>
@@ -198,11 +198,26 @@ const Categories = () => {
 };
 
 const styles = StyleSheet.create({
-  categoryBarContainer: { height: 60, backgroundColor: '#fff', paddingTop: 10, elevation: 4 },
-  categoryScrollContent: { alignItems: 'center', paddingHorizontal: 16, gap: 24 },
-  mainCategoryButton: { alignItems: 'center', paddingVertical: 6, paddingHorizontal: 16, borderBottomWidth: 2, borderColor: 'transparent' },
-  mainCategoryButtonSelected: { borderColor: '#4c4e50ff' },
-  mainCategoryText: { fontSize: 15, fontWeight: '600', color: '#666' },
+  categoryBarContainer: {
+    height: 50,
+    backgroundColor: '#fff',
+    elevation: 4,
+  },
+  categoryBarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 8,
+  },
+  mainCategoryButton: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderColor: 'transparent',
+  },
+  mainCategoryButtonSelected: { borderColor: '#000' },
+  mainCategoryText: { fontSize: 14, fontWeight: '600', color: '#888', letterSpacing: 0.5 },
 
   mainContent: { flex: 1, flexDirection: 'row', backgroundColor: '#fff' },
 

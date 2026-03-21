@@ -22,9 +22,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 16,
     backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee', // fixed this from 'borderColor'
-    elevation: 4,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     height: 60,

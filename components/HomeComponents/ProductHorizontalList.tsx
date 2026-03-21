@@ -20,6 +20,9 @@ interface ProductHorizontalListProps {
 }
 
 const DressCard = memo(({ product, onPress }: { product: any; onPress: () => void }) => {
+
+  console.log(product, 'wwwproductproductproductproductproduct');
+
   const { toggleWishlist, isInWishlist } = useWishlist();
   const [wishlistLoading, setWishlistLoading] = React.useState(false);
 
@@ -197,7 +200,7 @@ const SkeletonCard = () => {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 24,
+    // marginTop: 24,
     marginBottom: 8,
   },
   headerRow: {
